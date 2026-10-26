@@ -17,5 +17,5 @@
     "paths": { "@/*": ["./*"] }
   },
   "include": ["next-env.d.ts", ".next/types/**/*.ts", ".next/dev/types/**/*.ts", "**/*.ts", "**/*.tsx"],
-  "exclude": ["node_modules", "github-workbook.test.ts", "reporting.test.ts", "workbook-api.ts", "workbook.test.ts"]
+  "exclude": ["node_modules", "github-workbook.test.ts", "reporting.test.ts", "workbook-api.ts", "workbook.ts", "workbook.test.ts"]
 }
