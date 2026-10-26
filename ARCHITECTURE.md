@@ -55,11 +55,11 @@ Os vazios não são necessariamente inválidos: obrigatoriedade, significado de 
 - Fonte permanente dos dados comerciais: Excel versionado em repositório GitHub; não haverá banco de dados tradicional.
 - Hospedagem: Vercel, sem usar seu filesystem temporário como persistência.
 - Acesso ao GitHub: apenas no backend, por `lib/server/github-workbook.ts`.
-- Microsoft Entra ID/Auth.js protege as rotas de dados por lista explícita de e-mails permitidos. `AUTH_EDITOR_EMAILS` separa editores de usuários de consulta.
+- GitHub OAuth/Auth.js protege as rotas de dados por allowlist explícita de logins. `AUTH_EDITOR_GITHUB_LOGINS` separa editores de usuários de consulta.
 - As regras de entrada preservam campos opcionais; ano deve ter quatro dígitos, datas alteradas usam ISO válido e valores monetários são finitos e não negativos. Não existe deduplicação nem exclusão, pois não há chave de negócio.
 - `Layout/index.html` não está presente no workspace atual; a página administrativa é independente e não substitui um arquivo ausente.
 - O formato continua baseado nos nove cabeçalhos reais. Datas históricas em texto e vazios não são normalizados automaticamente.
-- Não há credenciais GitHub ou Entra configuradas neste workspace; integração remota e autenticação real dependem da configuração segura das variáveis de ambiente.
+- As credenciais OAuth e o token GitHub não ficam no workspace; integração remota e autenticação real dependem da configuração segura das variáveis de ambiente.
 
 ## Leitura implementada
 
@@ -142,16 +142,16 @@ package-lock.json
 vitest.config.mts
 ```
 
-Tailwind CSS 4 é integrado pelo plugin oficial de PostCSS. O `.gitignore` exclui `.env*` (mantém `.env.example`), dependências e artefatos Next. `.env.example` documenta as variáveis de servidor para Microsoft Entra e GitHub, sem credenciais reais.
+Tailwind CSS 4 é integrado pelo plugin oficial de PostCSS. O `.gitignore` exclui `.env*` (mantém `.env.example`), dependências e artefatos Next. `.env.example` documenta as variáveis de servidor para GitHub OAuth e acesso ao workbook, sem credenciais reais.
 
 ## Testes e preparação de implantação
 
 Os testes usam registros sintéticos para os casos unitários e leem a planilha local sem imprimir valores. Cobrem leitura válida, arquivo inexistente, cabeçalhos, células vazias, datas, workbook inválido, mutações em memória, preservação de linhas, expansão da tabela, validação, relatórios e rejeição de uma versão GitHub obsoleta.
 
-Antes de produção: configurar e testar o tenant Microsoft Entra, domínio, callbacks e allowlists; configurar token GitHub e branch; verificar permissões da Vercel; estabelecer backup/restauração independente; validar manualmente as divergências históricas e testar atualização/conflict real sem expor dados pessoais. A integração externa não pode ser validada sem as credenciais do proprietário do projeto.
+Antes de produção: configurar e testar o OAuth GitHub, domínio, callback e allowlists; configurar token GitHub e branch; verificar permissões da Vercel; estabelecer backup/restauração independente; validar manualmente as divergências históricas e testar atualização/conflito real sem expor dados pessoais. A integração externa não pode ser validada sem as credenciais do proprietário do projeto.
 
 ## Referências
 
 - [GitHub REST API: Git references](https://docs.github.com/en/rest/git/refs)
 - [GitHub REST API: Git commits](https://docs.github.com/en/rest/git/commits)
-- [Auth.js: Microsoft Entra ID](https://authjs.dev/getting-started/providers/microsoft-entra-id)
+- [Auth.js: GitHub](https://authjs.dev/getting-started/providers/github)
