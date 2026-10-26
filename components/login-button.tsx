@@ -6,10 +6,10 @@ export function LoginButton() {
   return (
     <button
       className="button button--primary"
-      onClick={() => void signIn("microsoft-entra-id", { redirectTo: "/" })}
+      onClick={() => void signIn("github", { redirectTo: "/" })}
       type="button"
     >
-      Entrar com Microsoft 365
+      Entrar com GitHub
     </button>
   );
 }
