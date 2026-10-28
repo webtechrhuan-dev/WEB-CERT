@@ -185,7 +185,7 @@ export function RecordManagement({ mode }: { mode: ManagementMode }) {
   const [search, setSearch] = useState("");
   const [selectedRow, setSelectedRow] = useState<number | null>(null);
   const [savedMessage, setSavedMessage] = useState<string | null>(null);
-  const canEdit = session?.user.role === "editor";
+  const canEdit = session?.user.role === "editor" || session?.user.role === "admin";
   const canPersist = data?.source === "github";
 
   const records = useMemo(() => {
