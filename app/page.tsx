@@ -59,7 +59,8 @@ function ModuleCard({
   );
 }
 
-export default function Home() {
+export default async function Home() {
+  await requirePageSession();
   return (
     <div className="app-shell">
       <AppHeader active="home" />
