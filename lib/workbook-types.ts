@@ -29,7 +29,7 @@ export type WorkbookData = {
   count: number;
   records: WorkbookRecord[];
   version?: string;
-  source?: "github" | "local";
+  source?: "github" | "local" | "mongodb";
 };
 
 export type WorkbookApiError = {
