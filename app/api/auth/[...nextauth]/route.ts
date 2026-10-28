@@ -7,6 +7,6 @@ export const POST = authConfigured
   ? handlers.POST
   : () =>
       Response.json(
-        { error: "A autenticação corporativa não está configurada." },
+        { error: "O login interno não está configurado." },
         { status: 503, headers: { "Cache-Control": "no-store" } },
       );
