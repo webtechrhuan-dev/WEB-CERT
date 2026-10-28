@@ -48,6 +48,11 @@ async function ensureInitialUsers(): Promise<void> {
 
 export const authConfigured = Boolean(process.env.AUTH_SECRET && process.env.MONGODB_URI);
 
+// Compatibility for older access checks; this fixed local username allowlist is not GitHub OAuth.
+export function isAllowedGitHubLogin(login: string): boolean {
+  return initialUsers.some((user) => user.username === login.trim().toLowerCase());
+}
+
 export const { handlers, auth, signIn, signOut } = NextAuth({
   secret: process.env.AUTH_SECRET,
   providers: [
@@ -88,16 +93,18 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
     async jwt({ token, user }) {
       if (user) {
         token.login = "login" in user && typeof user.login === "string" ? user.login : user.id;
-        token.role = "role" in user && (user.role === "admin" || user.role === "editor") ? user.role : "editor";
+        token.role = "role" in user && user.role === "admin" ? "admin" : "editor";
       }
       return token;
     },
     async session({ session, token }) {
       const login = typeof token.login === "string" ? token.login : "";
-      const role = token.role === "admin" || token.role === "editor" ? token.role : "editor";
+      const isAdmin = token.role === "admin";
+      const role = "editor";
       if (session.user) {
         session.user.login = login;
         session.user.role = role;
+        session.user.isAdmin = isAdmin;
         session.user.name = login ? login.charAt(0).toUpperCase() + login.slice(1) : "Usuário";
       }
       return session;
