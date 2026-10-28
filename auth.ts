@@ -10,6 +10,8 @@ type UserDocument = {
   role: AppRole;
   salt: string;
   passwordHash: string;
+  createdAt?: Date;
+  updatedAt?: Date;
 };
 
 const initialUsers: Array<{ username: string; displayName: string; role: AppRole }> = [
