@@ -1,4 +1,5 @@
 import { AppHeader } from "@/components/app-header";
+import { requirePageSession } from "@/lib/server/require-page-session";
 import { RecordManagement } from "@/components/record-management";
 
 export default function WorkbookEditPage() {
