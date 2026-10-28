@@ -1,11 +1,11 @@
 import "server-only";
 
-import { auth, authConfigured, isAllowedEmail } from "@/auth";
+import { auth, authConfigured, isAllowedGitHubLogin } from "@/auth";
 
 export type UserRole = "viewer" | "editor";
 
 export type AccessContext = {
-  email: string;
+  login: string;
   role: UserRole;
 };
 
@@ -29,8 +29,8 @@ export async function requireAccess(
   }
 
   const session = await auth();
-  const email = session?.user?.email;
-  if (!email || !isAllowedEmail(email)) {
+  const login = session?.user?.login;
+  if (!login || !isAllowedGitHubLogin(login)) {
     throw new AccessError("UNAUTHENTICATED");
   }
 
@@ -39,5 +39,5 @@ export async function requireAccess(
     throw new AccessError("FORBIDDEN");
   }
 
-  return { email, role };
+  return { login, role };
 }
