@@ -13,7 +13,7 @@ export type AccessErrorCode = "UNAUTHENTICATED" | "FORBIDDEN";
 
 export class AccessError extends Error {
   constructor(public readonly code: AccessErrorCode) {
-    super("Acesso não autorizado.");
+    super("Acesso interno não autorizado.");
     this.name = "AccessError";
   }
 }
