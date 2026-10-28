@@ -13,7 +13,7 @@ export function AuthControl() {
     return <Link className="auth-control-link" href="/login">Entrar</Link>;
   }
   const role = session.user.role;
-  const label = role === "admin" ? "ADM" : role === "editor" ? "Usuário" : "Consulta";
+  const label = session.user.isAdmin ? "ADM" : role === "editor" ? "Usuário" : "Consulta";
   return (
     <div className="auth-control">
       <span className="auth-user-role">{session.user.name} · {label}</span>
