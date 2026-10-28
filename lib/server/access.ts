@@ -21,7 +21,7 @@ export class AccessError extends Error {
 export async function requireAccess(minimumRole: UserRole = "viewer"): Promise<AccessContext> {
   const session = await auth();
   const login = session?.user?.login;
-  const role = session?.user?.role;
+  const role: UserRole = session?.user?.isAdmin ? "admin" : session?.user?.role ?? "viewer";
   if (!login || (role !== "admin" && role !== "editor" && role !== "viewer")) {
     throw new AccessError("UNAUTHENTICATED");
   }
