@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { requirePageSession } from "@/lib/server/require-page-session";
 import { AppHeader } from "@/components/app-header";
 import { Icon, type IconName } from "@/components/icon";
 
