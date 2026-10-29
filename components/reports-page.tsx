@@ -14,6 +14,40 @@ type Granularity = "month" | "week" | "year";
 type Group = { label: string; count: number; completedCount: number; revenue: number; cost: number; profit: number };
 const MONTHS = ["janeiro", "fevereiro", "março", "abril", "maio", "junho", "julho", "agosto", "setembro", "outubro", "novembro", "dezembro"];
 
+function cellText(value: unknown): string {
+  if (value === null || value === undefined) return "";
+  if (typeof value === "object" && value !== null && "parsed" in value) {
+    const parsed = (value as { parsed?: unknown }).parsed;
+    if (typeof parsed === "string" && parsed) return parsed;
+  }
+  if (typeof value === "object" && value !== null && "raw" in value) return String((value as { raw: unknown }).raw ?? "");
+  return String(value);
+}
+function isoDate(value: string): string {
+  const raw = value.trim();
+  let match = /^(\\d{4})-(\\d{2})-(\\d{2})$/.exec(raw);
+  if (match) return raw;
+  match = /^(\\d{1,2})[\\/.-](\\d{1,2})[\\/.-](\\d{4})$/.exec(raw);
+  if (match) return `${match[3]}-${match[2].padStart(2, "0")}-${match[1].padStart(2, "0")}`;
+  return "";
+}
+function displayDate(value: string): string {
+  const normalized = isoDate(value);
+  if (!normalized) return value || "—";
+  const [year, month, day] = normalized.split("-");
+  return `${day}/${month}/${year}`;
+}
+function exportRenewals(rows: { client: string; contact: string; model: string; expiry: string; status: string }[], month: string, year: string) {
+  const quote = (value: string) => `"${String(value).replace(/"/g, '""')}"`;
+  const content = [["Cliente", "Contato", "Modelo do certificado", "Data de vencimento", "Status / observação"], ...rows.map((row) => [row.client, row.contact, row.model, displayDate(row.expiry), row.status])]
+    .map((line) => line.map(quote).join(";")).join("\\r\\n");
+  const url = URL.createObjectURL(new Blob(["\\uFEFF", content], { type: "text/csv;charset=utf-8" }));
+  const anchor = document.createElement("a");
+  anchor.href = url;
+  anchor.download = `prospeccao-renovacoes-${month}-${year}.csv`;
+  anchor.click();
+  URL.revokeObjectURL(url);
+}
 function textValue(value: string) {
   return value && value !== "Sem preenchimento" ? value : "Não informado";
 }
@@ -112,6 +146,29 @@ export default function ReportsPage() {
   const [selectedLabel, setSelectedLabel] = useState<string | null>(null);
   const [detailSearch, setDetailSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
+  const currentMonthYear = new Intl.DateTimeFormat("en-US", { timeZone: "America/Sao_Paulo", year: "numeric", month: "2-digit" }).format(new Date()).split("/");
+  const [renewalMonth, setRenewalMonth] = useState(currentMonthYear[0] ?? String(new Date().getFullYear()));
+  const [renewalYear, setRenewalYear] = useState(currentMonthYear[1] ?? String(new Date().getMonth() + 1).padStart(2, "0"));
+  const renewalRows = useMemo(() => {
+    if (!data) return [];
+    const clientIndex = data.headers.indexOf("Cliente");
+    const contactIndex = data.headers.indexOf("Contato");
+    const modelIndex = data.headers.indexOf("Modelo");
+    const expiryIndex = data.headers.indexOf("Data de vencimento");
+    const statusIndex = data.headers.indexOf("Status / Observação");
+    if ([clientIndex, expiryIndex].some((index) => index < 0)) return [];
+    return data.records.map((record) => {
+      const expiry = isoDate(cellText(record.values[expiryIndex]));
+      return {
+        client: cellText(record.values[clientIndex]) || "Cliente não informado",
+        contact: contactIndex >= 0 ? cellText(record.values[contactIndex]) : "",
+        model: modelIndex >= 0 ? cellText(record.values[modelIndex]) : "",
+        expiry,
+        status: statusIndex >= 0 ? cellText(record.values[statusIndex]) : "",
+      };
+    }).filter((row) => row.expiry && row.expiry.slice(5, 7) === renewalMonth && row.expiry.slice(0, 4) === renewalYear)
+      .sort((a, b) => a.expiry.localeCompare(b.expiry) || a.client.localeCompare(b.client, "pt-BR"));
+  }, [data, renewalMonth, renewalYear]);
   const summary = useMemo(() => data ? summarizeWorkbook(data, dimension) : null, [data, dimension]);
   const rows = useMemo(() => data ? getWorkbookReportRows(data) : [], [data]);
   const groups = useMemo(() => {
@@ -171,6 +228,18 @@ export default function ReportsPage() {
       <section className="module-page-heading" style={{ marginBottom: 24 }}><p className="eyebrow">INTELIGÊNCIA COMERCIAL</p><h1>Relatórios e análises</h1><p>Explore faturamento, custos, vendas, modelos e evolução por mês, semana ou ano.</p></section>
       {status === "loading" || loading ? <section className="state-panel" aria-busy="true"><span className="loading-spinner" /><div className="state-copy"><h2>Conferindo os dados da planilha…</h2><p>Os indicadores serão calculados após o carregamento.</p></div></section> : !session?.user ? <div><ReportError message={error ?? "Entre com sua conta para acessar os dados."} /><Link className="button button--secondary button--small" href="/login">Ir para o acesso</Link></div> : error || !summary ? <div><ReportError message={error ?? "Não foi possível calcular os indicadores."} /><button className="button button--secondary button--small" onClick={() => void refresh()} type="button">Tentar novamente</button></div> : <div style={{ display: "grid", gap: 22 }}>
         <section style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 16, flexWrap: "wrap" }}><div><h2 style={{ margin: 0, fontSize: 18, fontWeight: 750 }}>Resumo do negócio</h2><p style={{ margin: "5px 0 0", color: "#64748b", fontSize: 13 }}>Mês/ano seguem a competência das pastas anuais; semanas usam a data de emissão/renovação. Valores incompletos ficam em revisão.</p></div><div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}><button className="button button--secondary button--small" type="button" onClick={() => void refresh()} disabled={loading}><Icon name="refresh" /> Atualizar dados</button><button className="button button--primary button--small" type="button" onClick={() => exportCsv(filteredGroups)} disabled={!filteredGroups.length}>Exportar CSV</button></div></section>
+        <section aria-labelledby="renewals-title" style={{ background: "#fff", border: "1px solid #b8dfe2", borderRadius: 16, overflow: "hidden", boxShadow: "0 5px 20px rgba(15,23,42,.04)" }}>
+          <div style={{ padding: "22px 24px", display: "flex", alignItems: "end", justifyContent: "space-between", gap: 18, flexWrap: "wrap", borderBottom: "1px solid #e7edf4" }}>
+            <div><p className="eyebrow" style={{ margin: "0 0 6px" }}>PROSPECÇÃO COMERCIAL</p><h2 id="renewals-title" style={{ margin: 0, fontSize: 19, color: "#10233f" }}>Clientes com certificado vencendo no mês</h2><p style={{ margin: "6px 0 0", fontSize: 13, color: "#64748b" }}>Lista para entrar em contato e oferecer a renovação do certificado digital, ordenada pela data de vencimento.</p></div>
+            <div style={{ display: "flex", alignItems: "end", gap: 10, flexWrap: "wrap" }}>
+              <label style={{ display: "grid", gap: 6, fontSize: 12, color: "#52647a", fontWeight: 650 }}>Mês<select value={renewalMonth} onChange={(e) => setRenewalMonth(e.target.value)} style={{ minHeight: 42, border: "1px solid #cbd7e5", borderRadius: 9, padding: "0 12px", background: "#fff", color: "#10233f" }}>{MONTHS.map((month, index) => <option key={month} value={String(index + 1).padStart(2, "0")}>{month.charAt(0).toLocaleUpperCase("pt-BR") + month.slice(1)}</option>)}</select></label>
+              <label style={{ display: "grid", gap: 6, fontSize: 12, color: "#52647a", fontWeight: 650 }}>Ano<select value={renewalYear} onChange={(e) => setRenewalYear(e.target.value)} style={{ minHeight: 42, border: "1px solid #cbd7e5", borderRadius: 9, padding: "0 12px", background: "#fff", color: "#10233f" }}>{Array.from({ length: 7 }, (_, index) => String(new Date().getFullYear() - 2 + index)).map((year) => <option key={year} value={year}>{year}</option>)}</select></label>
+              <button className="button button--primary button--small" type="button" onClick={() => exportRenewals(renewalRows, renewalMonth, renewalYear)} disabled={!renewalRows.length}>Exportar lista CSV</button>
+            </div>
+          </div>
+          <div style={{ padding: "12px 24px", background: "#f7f9fc", borderBottom: "1px solid #e7edf4", color: "#52647a", fontSize: 13 }}><strong style={{ color: "#10233f" }}>{numbers.format(renewalRows.length)}</strong> {renewalRows.length === 1 ? "cliente com vencimento" : "clientes com vencimento"} em {MONTHS[Number(renewalMonth) - 1]} de {renewalYear}.</div>
+          <div style={{ overflowX: "auto" }}><table className="records-table report-table" style={{ width: "100%", minWidth: 760 }}><thead><tr><th>Cliente</th><th>Contato</th><th>Modelo do certificado</th><th>Data de vencimento</th><th>Status / observação</th></tr></thead><tbody>{renewalRows.map((row, index) => <tr key={`${row.client}-${row.expiry}-${index}`}><td style={{ fontWeight: 650, color: "#10233f" }}>{row.client}</td><td>{row.contact || "—"}</td><td>{row.model || "—"}</td><td style={{ whiteSpace: "nowrap", fontWeight: 750, color: "#b45309" }}>{displayDate(row.expiry)}</td><td>{row.status || "—"}</td></tr>)}{!renewalRows.length && <tr><td colSpan={5} style={{ padding: 24, textAlign: "center", color: "#64748b" }}>Nenhum cliente com data de vencimento registrada para este mês. Confira também se os registros possuem o campo “Data de vencimento” preenchido.</td></tr>}</tbody></table></div>
+        </section>
         <section aria-label="Indicadores financeiros" style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(190px, 1fr))", gap: 14 }}>
           {[
             { label: "Registros de clientes", value: numbers.format(summary.count), note: `${numbers.format(summary.completedCount)} contabilizados no financeiro`, color: "#10233f" },
