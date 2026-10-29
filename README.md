@@ -23,13 +23,13 @@ Copie `.env.example` para `.env.local` apenas para desenvolvimento e configure a
 3. Configure `AUTH_GITHUB_ID` e `AUTH_GITHUB_SECRET` na Vercel, junto com o `AUTH_SECRET` já gerado.
 4. Defina `AUTH_ALLOWED_GITHUB_LOGINS` com os logins permitidos, separados por vírgulas. `AUTH_EDITOR_GITHUB_LOGINS` concede permissão de edição aos logins listados; os demais ficam como consulta. Uma allowlist vazia mantém a API fechada.
 
-O login GitHub controla o acesso ao sistema, mas não torna privada a planilha quando o repositório GitHub é público.
+A autenticação atual usa usuário e senha internos armazenados com hash no MongoDB. Não use credenciais padrão; configure senhas únicas e fortes no ambiente do servidor para bootstrap de contas novas.
 
 ### Planilha no GitHub
 
 1. Configure `GITHUB_OWNER`, `GITHUB_REPO`, `GITHUB_BRANCH` e `GITHUB_DATA_PATH` apontando ao repositório, branch e caminho real da planilha. O valor de exemplo do caminho aponta para a raiz; ajuste se o arquivo estiver numa subpasta.
 2. Crie um fine-grained token com permissão **Contents: read and write**, limitado apenas ao repositório da planilha, e configure como `GITHUB_TOKEN` no ambiente seguro do servidor/Vercel.
-3. O token da planilha não substitui o login da aplicação. Como este repositório está público, qualquer pessoa pode baixar o arquivo Excel diretamente pelo GitHub.
+3. O token da planilha não substitui o login da aplicação. A planilha foi removida da versão atual deste repositório. Como ela esteve versionada anteriormente, os dados ainda podem estar acessíveis no histórico Git enquanto o repositório permanecer público. Torne o repositório privado imediatamente e purgue o histórico antigo com procedimento controlado; rotacione quaisquer segredos que tenham sido commitados.
 
 A API lê a versão atual do branch, identifica o commit esperado e publica o workbook atualizado por novos objetos Git e um commit. A referência do branch é atualizada sem `force`; versões obsoletas ou corridas são rejeitadas e exigem recarregar antes de tentar novamente. O token nunca é enviado ao navegador. O histórico de commits é rastreável, mas não substitui backup independente. Branch protection, permissões do token, limites e disponibilidade do GitHub continuam sendo dependências externas.
 
@@ -49,7 +49,7 @@ Os testes de cadastro e edição trabalham somente em memória e não publicam c
 
 ## Segurança e implantação
 
-As rotas `/api/records` e `/api/records/[rowNumber]` exigem uma sessão GitHub autorizada pela allowlist; gravações também exigem função `editor`. As respostas não são cacheadas, as falhas não revelam caminhos internos, tokens ou valores do workbook e os logs não incluem células.
+As rotas `/api/records` e `/api/records/[rowNumber]` exigem sessão autenticada; gravações também exigem função `editor`. O app aplica cabeçalhos HTTP de segurança e rejeita a senha padrão `12345678`. As respostas não são cacheadas, as falhas não revelam caminhos internos, tokens ou valores do workbook e os logs não incluem células.
 
 Não use o filesystem temporário da Vercel como armazenamento. A planilha local do workspace não garante disponibilidade em produção. Antes de publicar, configure o OAuth do GitHub, domínio/callback, usuários permitidos, variáveis de ambiente e uma política de backup/recuperação.
 
