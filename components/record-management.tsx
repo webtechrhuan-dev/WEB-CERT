@@ -42,7 +42,7 @@ const MONTH_NAMES = ["janeiro", "fevereiro", "março", "abril", "maio", "junho",
 
 function availableYears(): string[] {
   const currentYear = Number(currentPeriod().year);
-  return Array.from({ length: 11 }, (_, index) => String(currentYear - index));
+  return Array.from({ length: Math.max(0, currentYear - 2024 + 1) }, (_, index) => String(currentYear - index));
 }
 
 function currentPeriod(): { year: string; month: string } {
@@ -200,7 +200,7 @@ function RecordForm({
         })}
       </div>
       <p className="form-help">
-        Ano e mês podem ser selecionados em cada venda; o período atual aparece como padrão e as opções de ano avançam automaticamente com o calendário.
+        Ano e mês podem ser selecionados em cada venda; o período atual aparece como padrão e as opções de ano começam em 2024 e avançam automaticamente com o calendário.
         Campos podem ficar vazios. Datas alteradas devem usar AAAA-MM-DD; valores monetários aceitam formato brasileiro ou decimal.
       </p>
       {error && <p className="form-message form-message--error" role="alert">{error}</p>}

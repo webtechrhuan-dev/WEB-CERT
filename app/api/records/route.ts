@@ -39,7 +39,7 @@ export async function POST(request: Request) {
     const selectedYear = values[yearIndex];
     const selectedMonth = values[monthIndex];
     const currentYear = Number(currentPeriod().year);
-    const validYears = Array.from({ length: 11 }, (_, index) => String(currentYear - index));
+    const validYears = Array.from({ length: Math.max(0, currentYear - 2024 + 1) }, (_, index) => String(currentYear - index));
     if (typeof selectedYear !== "string" || !validYears.includes(selectedYear)) {
       throw new Error("INVALID_INPUT");
     }
