@@ -5,5 +5,41 @@ import { WORKBOOK_HEADERS } from "@/lib/workbook-types";
 import { validateRecordInput, valuesFromInput } from "@/lib/server/record-validation";
 
 export const runtime = "nodejs";
-export async function GET() { try { await requireAccess(); return Response.json(await readCertificateData(), { headers: { "Cache-Control": "no-store" } }); } catch (e) { return apiErrorResponse(e, "api/records"); } }
-export async function POST(request: Request) { try { await requireAccess("editor"); const body = await request.json(); const parsed = validateRecordInput(body?.values); await createCertificate(valuesFromInput(parsed)); return Response.json({ ok: true, headers: WORKBOOK_HEADERS }, { status: 201, headers: { "Cache-Control": "no-store" } }); } catch (e) { return apiErrorResponse(e, "api/records"); } }
+
+const MONTH_NAMES = ["janeiro", "fevereiro", "março", "abril", "maio", "junho", "julho", "agosto", "setembro", "outubro", "novembro", "dezembro"];
+
+function currentPeriod(): { year: string; month: string } {
+  const parts = new Intl.DateTimeFormat("en-US", {
+    timeZone: "America/Sao_Paulo",
+    year: "numeric",
+    month: "numeric",
+  }).formatToParts(new Date());
+  const year = parts.find((part) => part.type === "year")?.value ?? String(new Date().getFullYear());
+  const monthNumber = Number(parts.find((part) => part.type === "month")?.value ?? new Date().getMonth() + 1);
+  return { year, month: MONTH_NAMES[monthNumber - 1] ?? MONTH_NAMES[0] };
+}
+
+export async function GET() {
+  try {
+    await requireAccess();
+    return Response.json(await readCertificateData(), { headers: { "Cache-Control": "no-store" } });
+  } catch (e) {
+    return apiErrorResponse(e, "api/records");
+  }
+}
+
+export async function POST(request: Request) {
+  try {
+    await requireAccess("editor");
+    const body = await request.json();
+    const parsed = validateRecordInput(body?.values);
+    const values = valuesFromInput(parsed);
+    const period = currentPeriod();
+    values[WORKBOOK_HEADERS.indexOf("Ano da planilha")] = period.year;
+    values[WORKBOOK_HEADERS.indexOf("Mês da planilha")] = period.month;
+    await createCertificate(values);
+    return Response.json({ ok: true, headers: WORKBOOK_HEADERS }, { status: 201, headers: { "Cache-Control": "no-store" } });
+  } catch (e) {
+    return apiErrorResponse(e, "api/records");
+  }
+}

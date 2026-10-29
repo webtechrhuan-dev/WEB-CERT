@@ -37,13 +37,30 @@ function apiErrorMessage(value: unknown): string | null {
     : null;
 }
 
+const AUTO_FIELDS = ["Ano da planilha", "Mês da planilha"] as const;
+const MONTH_NAMES = ["janeiro", "fevereiro", "março", "abril", "maio", "junho", "julho", "agosto", "setembro", "outubro", "novembro", "dezembro"];
+
+function currentPeriod(): { year: string; month: string } {
+  const parts = new Intl.DateTimeFormat("en-US", {
+    timeZone: "America/Sao_Paulo",
+    year: "numeric",
+    month: "numeric",
+  }).formatToParts(new Date());
+  const year = parts.find((part) => part.type === "year")?.value ?? String(new Date().getFullYear());
+  const monthNumber = Number(parts.find((part) => part.type === "month")?.value ?? new Date().getMonth() + 1);
+  return { year, month: MONTH_NAMES[monthNumber - 1] ?? MONTH_NAMES[0] };
+}
+
 function formValues(record?: WorkbookRecord): FormValues {
-  return Object.fromEntries(
-    WORKBOOK_HEADERS.map((header, index) => [
-      header,
-      valueAsText(record?.values[index]),
-    ]),
+  const values = Object.fromEntries(
+    WORKBOOK_HEADERS.map((header, index) => [header, valueAsText(record?.values[index])]),
   );
+  if (!record) {
+    const period = currentPeriod();
+    values["Ano da planilha"] = period.year;
+    values["Mês da planilha"] = period.month;
+  }
+  return values;
 }
 
 function RecordForm({
@@ -69,7 +86,7 @@ function RecordForm({
 
     const changes = Object.fromEntries(
       WORKBOOK_HEADERS
-        .filter((header) => mode === "create" || values[header] !== initialValues[header])
+        .filter((header) => !AUTO_FIELDS.includes(header as (typeof AUTO_FIELDS)[number]) && (mode === "create" || values[header] !== initialValues[header]))
         .map((header) => [header, values[header] === "" ? null : values[header]]),
     );
     if (Object.keys(changes).length === 0) {
@@ -114,6 +131,7 @@ function RecordForm({
     <form className="record-form" onSubmit={submit}>
       <div className="record-form-grid">
         {WORKBOOK_HEADERS.map((header) => {
+          const automaticField = AUTO_FIELDS.includes(header as (typeof AUTO_FIELDS)[number]);
           const dateField = header === "Data de emissão/renovação";
           const moneyField =
             header === "Faturamento (R$)" || header === "Custo (R$)";
@@ -122,6 +140,8 @@ function RecordForm({
               <span>{header}</span>
               <input
                 autoComplete="off"
+                readOnly={automaticField}
+                aria-readonly={automaticField || undefined}
                 inputMode={moneyField ? "decimal" : undefined}
                 onChange={(event) =>
                   setValues((current) => ({
@@ -130,11 +150,13 @@ function RecordForm({
                   }))
                 }
                 placeholder={
-                  dateField
-                    ? "AAAA-MM-DD"
-                    : moneyField
-                      ? "Ex.: 1.250,00"
-                      : "Opcional"
+                  automaticField
+                    ? "Preenchido automaticamente"
+                    : dateField
+                      ? "AAAA-MM-DD"
+                      : moneyField
+                        ? "Ex.: 1.250,00"
+                        : "Opcional"
                 }
                 type="text"
                 value={values[header] ?? ""}
@@ -144,8 +166,8 @@ function RecordForm({
         })}
       </div>
       <p className="form-help">
-        Campos podem ficar vazios. Datas alteradas devem usar AAAA-MM-DD; valores
-        monetários aceitam formato brasileiro ou decimal.
+        Ano e mês são preenchidos automaticamente. Os demais campos são digitados em cada venda.
+        Campos podem ficar vazios. Datas alteradas devem usar AAAA-MM-DD; valores monetários aceitam formato brasileiro ou decimal.
       </p>
       {error && <p className="form-message form-message--error" role="alert">{error}</p>}
       {conflict && (
