@@ -71,6 +71,9 @@ function formValues(record?: WorkbookRecord): FormValues {
     const period = currentPeriod();
     values["Ano da planilha"] = period.year;
     values["Mês da planilha"] = period.month;
+    // Todo registro cadastrado nesta tela representa uma venda já fechada.
+    // Mantém o campo legado preenchido internamente para compatibilidade com os relatórios.
+    values["Status / Observação"] = "Concluído";
   }
   return values;
 }
@@ -143,6 +146,8 @@ function RecordForm({
     <form className="record-form" onSubmit={submit}>
       <div className="record-form-grid">
         {WORKBOOK_HEADERS.map((header) => {
+          // Campo legado mantido na estrutura de dados, mas removido do formulário.
+          if (header === "Status / Observação") return null;
           const periodField = PERIOD_FIELDS.includes(header as (typeof PERIOD_FIELDS)[number]);
           const yearField = header === "Ano da planilha";
           const monthField = header === "Mês da planilha";
