@@ -2243,3 +2243,5 @@ input:focus-visible,
   .period-filter-bar { grid-template-columns: 1fr; padding: 16px; gap: 12px; }
   .period-filter-clear { width: 100%; }
 }
+
+.period-filter-bar{display:grid;grid-template-columns:repeat(2,minmax(220px,300px)) auto;align-items:end;justify-content:start;gap:18px;padding:24px;background:#fff}.period-filter-bar .record-form-field{display:grid;min-width:0;gap:8px;margin:0;color:#415769;font-size:12px;font-weight:650}.period-filter-bar .record-form-field select{display:block;width:100%;min-width:0;height:44px;padding:0 12px;border:1px solid #cbd9e3;border-radius:8px;background:#fff;color:#152c3b;font:inherit;font-size:13px;cursor:pointer}.period-filter-bar .record-form-field select:focus{border-color:#078eac;outline:3px solid rgb(5 168 195 / 13%)}.period-filter-clear{height:44px;min-height:44px;white-space:nowrap}.period-filter-empty{margin:0;padding:28px 24px;border-top:1px solid #edf1f4;background:#f9fbfc;color:#627586;font-size:13px;line-height:1.6;text-align:left}@media(max-width:700px){.period-filter-bar{grid-template-columns:minmax(0,1fr);gap:14px;padding:18px}.period-filter-clear{width:100%}}
