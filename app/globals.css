@@ -2175,3 +2175,30 @@ input:focus-visible,
   margin: 18px 0 0;
   padding: 10px 12px;
 }
+
+
+/* Identidade visual Web Tech na autenticação */
+.login-panel--branded {
+  position: relative;
+  overflow: hidden;
+  border-color: #d8e5ec;
+  box-shadow: 0 18px 48px rgb(7 21 34 / 12%);
+}
+
+.login-panel--branded::before {
+  position: absolute;
+  inset: 0 0 auto;
+  height: 3px;
+  background: linear-gradient(90deg, #203e76 0%, #087da7 55%, #12c2d2 100%);
+  content: "";
+}
+
+.login-brand-logo {
+  display: block;
+  width: min(100%, 300px);
+  height: auto;
+  margin: 0 auto 25px;
+  border-radius: 7px;
+  background: #000;
+  object-fit: contain;
+}
