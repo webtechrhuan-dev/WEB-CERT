@@ -38,6 +38,8 @@ export async function GET() {
 export async function POST(request: Request) {
   try {
     await requireAccess("editor");
+    const contentLength = Number(request.headers.get("content-length") ?? 0);
+    if (contentLength > 512_000) return Response.json({ error: { code: "PAYLOAD_TOO_LARGE", message: "Requisição muito grande." } }, { status: 413, headers: { "Cache-Control": "no-store" } });
     const body = await request.json();
     const parsed = validateRecordInput(body?.values);
     const values = valuesFromInput(parsed);
