@@ -280,19 +280,33 @@ export function RecordManagement({ mode }: { mode: ManagementMode }) {
     status === "authenticated",
   );
   const [search, setSearch] = useState("");
+  const [filterYear, setFilterYear] = useState("");
+  const [filterMonth, setFilterMonth] = useState("");
   const [selectedRow, setSelectedRow] = useState<number | null>(null);
   const [savedMessage, setSavedMessage] = useState<string | null>(null);
   const canEdit = session?.user.role === "editor";
   const canPersist = data?.source === "github" || data?.source === "mongodb";
 
-  const records = useMemo(() => {
+  const periodIndexes = useMemo(() => ({
+    year: data?.headers.indexOf("Ano da planilha") ?? -1,
+    month: data?.headers.indexOf("Mês da planilha") ?? -1,
+  }), [data]);
+  const availableYearOptions = useMemo(() => {
     if (!data) return [];
+    return [...new Set(data.records.map((record) => valueAsText(record.values[periodIndexes.year])).filter(Boolean))]
+      .sort((a, b) => Number(b) - Number(a));
+  }, [data, periodIndexes]);
+  const records = useMemo(() => {
+    if (!data || !filterYear || !filterMonth) return [];
     const query = search.trim().toLocaleLowerCase("pt-BR");
     return data.records.filter((record) => {
+      const year = valueAsText(record.values[periodIndexes.year]);
+      const month = valueAsText(record.values[periodIndexes.month]).toLocaleLowerCase("pt-BR");
+      if (year !== filterYear || month !== filterMonth.toLocaleLowerCase("pt-BR")) return false;
       if (!query) return true;
       return record.values.some((value) => valueAsText(value).toLocaleLowerCase("pt-BR").includes(query));
     });
-  }, [data, search]);
+  }, [data, filterYear, filterMonth, search, periodIndexes]);
   const yearIndexForGroup = data?.headers.indexOf("Ano da planilha") ?? -1;
   const monthIndexForGroup = data?.headers.indexOf("Mês da planilha") ?? -1;
   const groupedRecords = useMemo(() => {
@@ -390,16 +404,38 @@ export function RecordManagement({ mode }: { mode: ManagementMode }) {
       ) : (
         <section className="content-panel">
           <div className="panel-heading">
-            <div><h2>Selecionar registro</h2><p>Pesquise e escolha uma linha para editar todos os seus campos.</p></div>
-            <span className="record-count">{records.length} de {data.count}</span>
+            <div><h2>Gestão de vendas</h2><p>Selecione o ano e o mês para exibir somente as vendas do período escolhido.</p></div>
+            <span className="record-count">{filterYear && filterMonth ? `${records.length} vendas` : `${data.count} registros disponíveis`}</span>
           </div>
-          <label className="search-field management-search">
-            <span className="search-label">Pesquisar registros</span>
-            <span className="search-control">
-              <Icon name="search" className="search-icon" />
-              <input value={search} onChange={(event) => { setSearch(event.target.value); setSelectedRow(null); }} placeholder="Nome, modelo, ano ou qualquer campo" type="search" />
-            </span>
-          </label>
+          <div className="period-filter-bar">
+            <label className="record-form-field">
+              <span>Ano</span>
+              <select value={filterYear} onChange={(event) => { setFilterYear(event.target.value); setSearch(""); setSelectedRow(null); }}>
+                <option value="">Selecione o ano</option>
+                {availableYearOptions.map((year) => <option key={year} value={year}>{year}</option>)}
+              </select>
+            </label>
+            <label className="record-form-field">
+              <span>Mês</span>
+              <select value={filterMonth} onChange={(event) => { setFilterMonth(event.target.value); setSearch(""); setSelectedRow(null); }}>
+                <option value="">Selecione o mês</option>
+                {MONTH_NAMES.map((month) => <option key={month} value={month}>{month.charAt(0).toLocaleUpperCase("pt-BR") + month.slice(1)}</option>)}
+              </select>
+            </label>
+            <button className="button button--secondary button--small period-filter-clear" onClick={() => { setFilterYear(""); setFilterMonth(""); setSearch(""); setSelectedRow(null); }} type="button">Limpar filtros</button>
+          </div>
+          {filterYear && filterMonth && (
+            <label className="search-field management-search">
+              <span className="search-label">Pesquisar neste período</span>
+              <span className="search-control">
+                <Icon name="search" className="search-icon" />
+                <input value={search} onChange={(event) => { setSearch(event.target.value); setSelectedRow(null); }} placeholder="Nome do cliente, modelo ou qualquer campo" type="search" />
+              </span>
+            </label>
+          )}
+          {!filterYear || !filterMonth ? (
+            <p className="period-filter-empty">Selecione um ano e um mês para carregar as vendas. Nenhum registro será exibido antes disso.</p>
+          ) : (
           <div className="record-picker record-picker--grouped">
             {records.length === 0 ? (
               <p className="empty-state">Nenhum registro corresponde à pesquisa.</p>
@@ -450,6 +486,7 @@ export function RecordManagement({ mode }: { mode: ManagementMode }) {
               })
             )}
           </div>
+          )}
 
         </section>
       )}
