@@ -3,6 +3,13 @@ import { apiErrorResponse } from "@/lib/server/api-errors";
 import { readCertificateData, updateCertificate } from "@/lib/server/certificate-store";
 import { validateRecordInput, valuesFromInput } from "@/lib/server/record-validation";
 
+function expiryFromIssueDate(value: unknown): string | null {
+ if (typeof value !== "string" || !/^\\d{4}-\\d{2}-\\d{2}$/.test(value)) return null;
+ const [year, month, day] = value.split("-").map(Number);
+ const expiryYear = year + 1;
+ const lastDay = new Date(Date.UTC(expiryYear, month, 0)).getUTCDate();
+ return [expiryYear, String(month).padStart(2, "0"), String(Math.min(day, lastDay)).padStart(2, "0")].join("-");
+}
 const MONTH_NAMES = ["janeiro", "fevereiro", "março", "abril", "maio", "junho", "julho", "agosto", "setembro", "outubro", "novembro", "dezembro"];
 
 function currentYear(): number {
@@ -15,4 +22,4 @@ export async function PATCH(request: Request, context: { params: Promise<{ rowNu
  const validYears = Array.from({ length: Math.max(0, currentYear() - 2024 + 1) }, (_, index) => String(currentYear() - index));
  if (parsed["Ano da planilha"] !== undefined && (typeof parsed["Ano da planilha"] !== "string" || !validYears.includes(parsed["Ano da planilha"]))) throw new Error("INVALID_INPUT");
  if (parsed["Mês da planilha"] !== undefined && (typeof parsed["Mês da planilha"] !== "string" || !MONTH_NAMES.includes(parsed["Mês da planilha"]))) throw new Error("INVALID_INPUT");
- const values = [...current.values]; for (const [header, value] of Object.entries(parsed)) values[data.headers.indexOf(header)] = value === null ? null : value; await updateCertificate(rowNumber, values, body?.expectedVersion); return Response.json({ ok: true, version: new Date().toISOString() }, { headers: { "Cache-Control": "no-store" } }); } catch (e) { return apiErrorResponse(e, "api/records/[rowNumber]"); } }
+ const values = [...current.values]; for (const [header, value] of Object.entries(parsed)) { if (header !== "Data de vencimento") values[data.headers.indexOf(header)] = value === null ? null : value; } const issueIndex = data.headers.indexOf("Data de emissão/renovação"); const expiryIndex = data.headers.indexOf("Data de vencimento"); values[expiryIndex] = expiryFromIssueDate(values[issueIndex]); await updateCertificate(rowNumber, values, body?.expectedVersion); return Response.json({ ok: true, version: new Date().toISOString() }, { headers: { "Cache-Control": "no-store" } }); } catch (e) { return apiErrorResponse(e, "api/records/[rowNumber]"); } }
