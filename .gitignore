@@ -10,3 +10,5 @@ yarn-debug.log*
 pnpm-debug.log*
 .DS_Store
 Thumbs.db
+# Dados comerciais: não versionar planilhas de clientes
+/CERTIFICADOS_UNIFICADOS_2024-2026.xlsx
