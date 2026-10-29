@@ -48,6 +48,26 @@ async function ensureInitialUsers(): Promise<void> {
       },
       { upsert: true },
     );
+
+    // Migra contas antigas que ainda usam a senha padrão, mas somente se
+    // uma senha nova e forte foi fornecida explicitamente no ambiente.
+    const existing = await users.findOne({ username: user.username });
+    if (
+      existing &&
+      existing.passwordHash === passwordHash("12345678", existing.salt)
+    ) {
+      const newSalt = randomBytes(16).toString("hex");
+      await users.updateOne(
+        { username: user.username, passwordHash: existing.passwordHash },
+        {
+          $set: {
+            salt: newSalt,
+            passwordHash: passwordHash(password, newSalt),
+            updatedAt: new Date(),
+          },
+        },
+      );
+    }
   }
 }
 
