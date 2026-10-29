@@ -75,7 +75,6 @@ function hasMoneyValue(cell: WorkbookCell | undefined): boolean {
 function financialTreatment(record: WorkbookRecord, data: WorkbookData): FinancialTreatment {
   const status = normalizedText(displayCell(record.values[headerIndex(data, "Status / Observação")]));
   const year = Number(displayCell(record.values[headerIndex(data, "Ano da planilha")]));
-  const revenue = record.values[headerIndex(data, "Faturamento (R$)")];
   const cost = record.values[headerIndex(data, "Custo (R$)")];
   let base: FinancialTreatment;
 
@@ -92,8 +91,8 @@ function financialTreatment(record: WorkbookRecord, data: WorkbookData): Financi
     base = "review";
   }
 
-  // Vendas históricas ou marcadas como pagas sem faturamento/custo preenchido
-  // ficam pendentes: não é seguro assumir que o valor ausente seja R$ 0,00.
+  // Vendas concluídas sem custo ficam pendentes. O faturamento pode ficar vazio;
+  // nesse caso a venda conta, mas não gera receita nem lucro calculado.
   if (base === "completed" && !hasMoneyValue(cost)) return "review";
   return base;
 }
