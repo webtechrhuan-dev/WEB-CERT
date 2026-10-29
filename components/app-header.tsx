@@ -8,12 +8,7 @@ type AppHeaderProps = {
 
 const menu = [
   { label: "Início", href: "/", icon: "grid" as const, key: "home" },
-  {
-    label: "Consulta",
-    href: "/registros",
-    icon: "spreadsheet" as const,
-    key: "records",
-  },
+  { label: "Gestão de vendas", href: "/editar", icon: "spreadsheet" as const, key: "edit" },
   { label: "Cadastros", href: "/cadastros", icon: "users" as const, key: "register" },
 
   { label: "Relatórios", href: "/relatorios", icon: "chart" as const, key: "reports" },
