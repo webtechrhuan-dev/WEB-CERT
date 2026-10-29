@@ -304,7 +304,9 @@ export function RecordManagement({ mode }: { mode: ManagementMode }) {
       const month = valueAsText(record.values[periodIndexes.month]).toLocaleLowerCase("pt-BR");
       if (year !== filterYear || month !== filterMonth.toLocaleLowerCase("pt-BR")) return false;
       if (!query) return true;
-      return record.values.some((value) => valueAsText(value).toLocaleLowerCase("pt-BR").includes(query));
+      const clientIndex = data.headers.indexOf("Cliente");
+      const clientName = valueAsText(record.values[clientIndex]).toLocaleLowerCase("pt-BR");
+      return clientName.includes(query);
     });
   }, [data, filterYear, filterMonth, search, periodIndexes]);
   const yearIndexForGroup = data?.headers.indexOf("Ano da planilha") ?? -1;
@@ -426,10 +428,10 @@ export function RecordManagement({ mode }: { mode: ManagementMode }) {
           </div>
           {filterYear && filterMonth && (
             <label className="search-field management-search">
-              <span className="search-label">Pesquisar neste período</span>
+              <span className="search-label">Buscar venda pelo nome do cliente</span>
               <span className="search-control">
                 <Icon name="search" className="search-icon" />
-                <input value={search} onChange={(event) => { setSearch(event.target.value); setSelectedRow(null); }} placeholder="Nome do cliente, modelo ou qualquer campo" type="search" />
+                <input value={search} onChange={(event) => { setSearch(event.target.value); setSelectedRow(null); }} placeholder="Digite o nome do cliente..." type="search" />
               </span>
             </label>
           )}
