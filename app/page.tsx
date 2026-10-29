@@ -78,10 +78,12 @@ export default async function Home() {
               em um único lugar.
             </p>
           </div>
-          <div className="dashboard-hero-mark" aria-hidden="true">
-            <span className="hero-mark-grid">
-              <Icon name="grid" />
-            </span>
+          <div className="dashboard-hero-mark">
+            <img
+              className="dashboard-hero-logo"
+              src="/web-tech-logo.webp"
+              alt="Logo da Web Tech"
+            />
           </div>
         </section>
 
