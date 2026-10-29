@@ -15,7 +15,7 @@ const menu = [
     key: "records",
   },
   { label: "Cadastros", href: "/cadastros", icon: "users" as const, key: "register" },
-  { label: "Editar planilha", href: "/editar", icon: "document" as const, key: "edit" },
+
   { label: "Relatórios", href: "/relatorios", icon: "chart" as const, key: "reports" },
 ];
 
