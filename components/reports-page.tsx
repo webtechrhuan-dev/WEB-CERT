@@ -25,7 +25,7 @@ function cellText(value: unknown): string {
 }
 function isoDate(value: string): string {
   const raw = value.trim();
-  let match = /^(\\d{4})-(\\d{2})-(\\d{2})$/.exec(raw);
+  let match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(raw);
   if (match) return raw;
   match = /^(\\d{1,2})[\\/.-](\\d{1,2})[\\/.-](\\d{4})$/.exec(raw);
   if (match) return `${match[3]}-${match[2].padStart(2, "0")}-${match[1].padStart(2, "0")}`;
@@ -146,9 +146,9 @@ export default function ReportsPage() {
   const [selectedLabel, setSelectedLabel] = useState<string | null>(null);
   const [detailSearch, setDetailSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
-  const currentMonthYear = new Intl.DateTimeFormat("en-US", { timeZone: "America/Sao_Paulo", year: "numeric", month: "2-digit" }).format(new Date()).split("/");
-  const [renewalMonth, setRenewalMonth] = useState(currentMonthYear[0] ?? String(new Date().getFullYear()));
-  const [renewalYear, setRenewalYear] = useState(currentMonthYear[1] ?? String(new Date().getMonth() + 1).padStart(2, "0"));
+  const currentMonthYear = new Intl.DateTimeFormat("en-US", { timeZone: "America/Sao_Paulo", year: "numeric", month: "2-digit" }).formatToParts(new Date());
+  const [renewalMonth, setRenewalMonth] = useState(currentMonthYear.find((part) => part.type === "month")?.value ?? String(new Date().getMonth() + 1).padStart(2, "0"));
+  const [renewalYear, setRenewalYear] = useState(currentMonthYear.find((part) => part.type === "year")?.value ?? String(new Date().getFullYear()));
   const renewalRows = useMemo(() => {
     if (!data) return [];
     const clientIndex = data.headers.indexOf("Cliente");
