@@ -294,6 +294,27 @@ export function RecordManagement({ mode }: { mode: ManagementMode }) {
     });
   }, [data, search]);
   const selectedRecord = data?.records.find((record) => record.rowNumber === selectedRow);
+  const yearIndexForGroup = data?.headers.indexOf("Ano da planilha") ?? -1;
+  const monthIndexForGroup = data?.headers.indexOf("Mês da planilha") ?? -1;
+  const groupedRecords = useMemo(() => {
+    const groups = new Map<string, WorkbookRecord[]>();
+    for (const record of records) {
+      const year = valueAsText(record.values[yearIndexForGroup]) || "Sem ano";
+      const month = valueAsText(record.values[monthIndexForGroup]) || "Sem mês";
+      const key = `${year}||${month}`;
+      if (!groups.has(key)) groups.set(key, []);
+      groups.get(key)!.push(record);
+    }
+    const monthOrder = new Map(MONTH_NAMES.map((month, index) => [month.toLocaleLowerCase("pt-BR"), index]));
+    return [...groups.entries()].sort(([a], [b]) => {
+      const [yearA, monthA] = a.split("||");
+      const [yearB, monthB] = b.split("||");
+      const yearDiff = (Number(yearB) || 0) - (Number(yearA) || 0);
+      if (yearDiff) return yearDiff;
+      return (monthOrder.get(monthA.toLocaleLowerCase("pt-BR")) ?? 99) - (monthOrder.get(monthB.toLocaleLowerCase("pt-BR")) ?? 99);
+    });
+  }, [records, yearIndexForGroup, monthIndexForGroup]);
+
 
   function handleSaved(message: string) {
     setSavedMessage(message);
@@ -380,54 +401,57 @@ export function RecordManagement({ mode }: { mode: ManagementMode }) {
               <input value={search} onChange={(event) => { setSearch(event.target.value); setSelectedRow(null); }} placeholder="Nome, modelo, ano ou qualquer campo" type="search" />
             </span>
           </label>
-          <div className="record-picker">
+          <div className="record-picker record-picker--grouped">
             {records.length === 0 ? (
               <p className="empty-state">Nenhum registro corresponde à pesquisa.</p>
             ) : (
-              records.map((record) => {
-                const clientIndex = data.headers.indexOf("Cliente");
-                const modelIndex = data.headers.indexOf("Modelo");
-                const yearIndex = data.headers.indexOf("Ano da planilha");
+              groupedRecords.map(([groupKey, groupRecords]) => {
+                const [groupYear, groupMonth] = groupKey.split("||");
                 return (
-                  <button
-                    aria-pressed={selectedRow === record.rowNumber}
-                    className={`record-picker-row${selectedRow === record.rowNumber ? " is-selected" : ""}`}
-                    key={record.rowNumber}
-                    onClick={() => setSelectedRow(record.rowNumber)}
-                    type="button"
-                  >
-                    <span className="record-picker-number">Linha {record.rowNumber}</span>
-                    <strong>{displayListValue(record.values[clientIndex], "Cliente")}</strong>
-                    <span>{displayListValue(record.values[modelIndex], "Modelo")} · {displayListValue(record.values[yearIndex], "Ano da planilha")}</span>
-                    <Icon name="chevronRight" />
-                  </button>
+                  <section className="record-period-group" key={groupKey}>
+                    <div className="record-period-heading">
+                      <strong>{groupYear}</strong><span>{groupMonth.charAt(0).toLocaleUpperCase("pt-BR") + groupMonth.slice(1)}</span>
+                      <span className="record-count">{groupRecords.length} {groupRecords.length === 1 ? "venda" : "vendas"}</span>
+                    </div>
+                    {groupRecords.map((record) => {
+                      const clientIndex = data.headers.indexOf("Cliente");
+                      const modelIndex = data.headers.indexOf("Modelo");
+                      const yearIndex = data.headers.indexOf("Ano da planilha");
+                      return (
+                        <div className="record-inline-item" key={record.rowNumber}>
+                          <button
+                            aria-expanded={selectedRow === record.rowNumber}
+                            className={`record-picker-row${selectedRow === record.rowNumber ? " is-selected" : ""}`}
+                            onClick={() => setSelectedRow((current) => current === record.rowNumber ? null : record.rowNumber)}
+                            type="button"
+                          >
+                            <span className="record-picker-number">Linha {record.rowNumber}</span>
+                            <strong>{displayListValue(record.values[clientIndex], "Cliente")}</strong>
+                            <span>{displayListValue(record.values[modelIndex], "Modelo")} · {displayListValue(record.values[yearIndex], "Ano da planilha")}</span>
+                            <Icon name="chevronRight" />
+                          </button>
+                          {selectedRow === record.rowNumber && (
+                            <div className="selected-record-form selected-record-form--inline">
+                              <div className="panel-heading">
+                                <div><h2>Editar: {displayListValue(record.values[clientIndex], "Cliente")}</h2><p>Altere os campos necessários e salve. A edição aparece logo abaixo da venda selecionada.</p></div>
+                                <button className="button button--secondary button--small" onClick={() => setSelectedRow(null)} type="button">Fechar</button>
+                              </div>
+                              {canEdit && canPersist ? (
+                                <RecordForm key={`edit-${record.rowNumber}-${data.version}`} mode="edit" record={record} version={data.version ?? ""} onSaved={handleSaved} />
+                              ) : (
+                                <p className="empty-state">{canEdit ? "A edição será habilitada quando a fonte estiver configurada." : "Edição disponível apenas para usuários autorizados como editores."}</p>
+                              )}
+                            </div>
+                          )}
+                        </div>
+                      );
+                    })}
+                  </section>
                 );
               })
             )}
           </div>
-          {selectedRecord && (
-            <div className="selected-record-form">
-              <div className="panel-heading">
-                <div><h2>Editar linha {selectedRecord.rowNumber}</h2><p>Somente os campos alterados serão enviados.</p></div>
-                <button className="button button--secondary button--small" onClick={() => setSelectedRow(null)} type="button">Cancelar</button>
-              </div>
-              {canEdit && canPersist ? (
-                <RecordForm
-                  key={`edit-${selectedRecord.rowNumber}-${data.version}`}
-                  mode="edit"
-                  record={selectedRecord}
-                  version={data.version ?? ""}
-                  onSaved={handleSaved}
-                />
-              ) : (
-                <p className="empty-state">
-                  {canEdit
-                    ? "A edição será habilitada quando a fonte estiver configurada no GitHub."
-                    : "Edição disponível apenas para usuários autorizados como editores."}
-                </p>
-              )}
-            </div>
-          )}
+
         </section>
       )}
     </div>
