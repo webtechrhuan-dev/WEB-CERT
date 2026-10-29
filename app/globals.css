@@ -2218,3 +2218,28 @@ input:focus-visible,
  .record-period-heading { padding:11px 13px; }
  .selected-record-form--inline .panel-heading { padding:14px; }
 }
+
+
+/* Filtros obrigatórios de período na gestão de vendas */
+.period-filter-bar {
+  display: grid;
+  grid-template-columns: minmax(180px, 260px) minmax(180px, 260px) auto;
+  align-items: end;
+  gap: 16px;
+  padding: 22px;
+  border-bottom: 1px solid #e5edf2;
+  background: #fff;
+}
+.period-filter-bar .record-form-field { margin: 0; }
+.period-filter-clear { min-height: 42px; }
+.period-filter-empty {
+  margin: 0;
+  padding: 34px 22px;
+  text-align: center;
+  color: #647b8c;
+  background: #fbfdfe;
+}
+@media (max-width: 640px) {
+  .period-filter-bar { grid-template-columns: 1fr; padding: 16px; gap: 12px; }
+  .period-filter-clear { width: 100%; }
+}
