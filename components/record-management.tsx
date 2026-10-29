@@ -146,8 +146,6 @@ function RecordForm({
     <form className="record-form" onSubmit={submit}>
       <div className="record-form-grid">
         {WORKBOOK_HEADERS.map((header) => {
-          // Campo legado mantido na estrutura de dados, mas removido do formulário.
-          if (header === "Status / Observação") return null;
           const periodField = PERIOD_FIELDS.includes(header as (typeof PERIOD_FIELDS)[number]);
           const yearField = header === "Ano da planilha";
           const monthField = header === "Mês da planilha";
@@ -195,6 +193,14 @@ function RecordForm({
                     color: "var(--input-disabled-color, #6b7280)",
                   }}
                 />
+              ) : header === "Status / Observação" ? (
+                <input
+                  autoComplete="off"
+                  onChange={(event) => setValues((current) => ({ ...current, [header]: event.target.value }))}
+                  placeholder="Ex.: Concluído, Pendente, Cancelado..."
+                  type="text"
+                  value={values[header] ?? ""}
+                />
               ) : header === "Modelo" ? (
                 <select
                   value={values[header] ?? ""}
@@ -236,7 +242,7 @@ function RecordForm({
       </div>
       <p className="form-help">
         Ano e mês podem ser selecionados em cada venda; o período atual aparece como padrão e as opções de ano começam em 2024 e avançam automaticamente com o calendário.
-        A data de vencimento é calculada automaticamente para um ano após a emissão e não pode ser alterada manualmente. Valores monetários aceitam formato brasileiro ou decimal.
+        O status/observação pode ser alterado nesta tela. A data de vencimento é calculada automaticamente para um ano após a emissão e não pode ser alterada manualmente. Valores monetários aceitam formato brasileiro ou decimal.
       </p>
       {error && <p className="form-message form-message--error" role="alert">{error}</p>}
       {conflict && (
