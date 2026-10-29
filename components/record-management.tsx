@@ -96,8 +96,8 @@ function RecordForm({
       }
       onSaved(
         mode === "create"
-          ? "Registro cadastrado e versionado no GitHub."
-          : "Registro atualizado e versionado no GitHub.",
+          ? "Registro cadastrado com sucesso na base de dados."
+          : "Registro atualizado com sucesso na base de dados.",
       );
     } catch (saveError) {
       setError(
@@ -186,7 +186,7 @@ export function RecordManagement({ mode }: { mode: ManagementMode }) {
   const [selectedRow, setSelectedRow] = useState<number | null>(null);
   const [savedMessage, setSavedMessage] = useState<string | null>(null);
   const canEdit = session?.user.role === "editor";
-  const canPersist = data?.source === "github";
+  const canPersist = data?.source === "github" || data?.source === "mongodb";
 
   const records = useMemo(() => {
     if (!data) return [];
@@ -257,7 +257,7 @@ export function RecordManagement({ mode }: { mode: ManagementMode }) {
       {mode === "create" ? (
         <section className="content-panel">
           <div className="panel-heading">
-            <div><h2>Novo registro</h2><p>Os dados serão adicionados à planilha e publicados como uma nova versão no GitHub.</p></div>
+            <div><h2>Novo registro</h2><p>Os dados serão salvos na base de dados conectada ao sistema.</p></div>
             <span className="record-count">{data.count} registros atuais</span>
           </div>
           {canEdit && canPersist ? (
