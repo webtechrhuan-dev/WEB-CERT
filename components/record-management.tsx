@@ -56,6 +56,13 @@ function currentPeriod(): { year: string; month: string } {
   return { year, month: MONTH_NAMES[monthNumber - 1] ?? MONTH_NAMES[0] };
 }
 
+function expiryFromIssueDate(value: string): string {
+  if (!/^\\d{4}-\\d{2}-\\d{2}$/.test(value)) return "";
+  const [year, month, day] = value.split("-").map(Number);
+  const expiryYear = year + 1;
+  const lastDay = new Date(Date.UTC(expiryYear, month, 0)).getUTCDate();
+  return [expiryYear, String(month).padStart(2, "0"), String(Math.min(day, lastDay)).padStart(2, "0")].join("-");
+}
 function formValues(record?: WorkbookRecord): FormValues {
   const values = Object.fromEntries(
     WORKBOOK_HEADERS.map((header, index) => [header, valueAsText(record?.values[index])]),
@@ -140,6 +147,7 @@ function RecordForm({
           const yearField = header === "Ano da planilha";
           const monthField = header === "Mês da planilha";
           const dateField = header === "Data de emissão/renovação";
+          const expiryField = header === "Data de vencimento";
           const moneyField =
             header === "Faturamento (R$)" || header === "Custo (R$)";
           return (
@@ -160,6 +168,15 @@ function RecordForm({
                     ? availableYears().map((year) => <option key={year} value={year}>{year}</option>)
                     : MONTH_NAMES.map((month) => <option key={month} value={month}>{month.charAt(0).toLocaleUpperCase("pt-BR") + month.slice(1)}</option>)}
                 </select>
+              ) : dateField ? (
+                <input autoComplete="off" type="date" value={values[header] ?? ""}
+                  onChange={(event) => {
+                    const issueDate = event.target.value;
+                    setValues((current) => ({ ...current, [header]: issueDate, ["Data de vencimento"]: expiryFromIssueDate(issueDate) }));
+                  }}
+                />
+              ) : expiryField ? (
+                <input type="date" value={values[header] ?? ""} readOnly aria-readonly="true" title="Calculado automaticamente: um ano após a emissão." />
               ) : header === "Modelo" ? (
                 <select
                   value={values[header] ?? ""}
@@ -201,7 +218,7 @@ function RecordForm({
       </div>
       <p className="form-help">
         Ano e mês podem ser selecionados em cada venda; o período atual aparece como padrão e as opções de ano começam em 2024 e avançam automaticamente com o calendário.
-        Campos podem ficar vazios. Datas alteradas devem usar AAAA-MM-DD; valores monetários aceitam formato brasileiro ou decimal.
+        A data de vencimento é calculada automaticamente para um ano após a emissão e não pode ser alterada manualmente. Valores monetários aceitam formato brasileiro ou decimal.
       </p>
       {error && <p className="form-message form-message--error" role="alert">{error}</p>}
       {conflict && (
