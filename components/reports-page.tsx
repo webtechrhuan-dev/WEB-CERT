@@ -155,6 +155,10 @@ export default function ReportsPage() {
   const [selectedLabel, setSelectedLabel] = useState<string | null>(null);
   const [detailSearch, setDetailSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
+  const [chartDateFrom, setChartDateFrom] = useState("");
+  const [chartDateTo, setChartDateTo] = useState("");
+  const [chartModel, setChartModel] = useState("all");
+  const [chartTreatment, setChartTreatment] = useState("all");
   const currentMonthYear = new Intl.DateTimeFormat("en-US", { timeZone: "America/Sao_Paulo", year: "numeric", month: "2-digit" }).formatToParts(new Date());
   const [renewalMonth, setRenewalMonth] = useState(currentMonthYear.find((part) => part.type === "month")?.value ?? String(new Date().getMonth() + 1).padStart(2, "0"));
   const [renewalYear, setRenewalYear] = useState(currentMonthYear.find((part) => part.type === "year")?.value ?? String(new Date().getFullYear()));
@@ -197,9 +201,18 @@ export default function ReportsPage() {
   }, [data, renewalMonth, renewalYear]);
   const summary = useMemo(() => data ? summarizeWorkbook(data, dimension) : null, [data, dimension]);
   const rows = useMemo(() => data ? getWorkbookReportRows(data) : [], [data]);
+  const modelOptions = useMemo(() => [...new Set(rows.map((row) => textValue(row.model)).filter((value) => value !== "Não informado"))].sort((a, b) => a.localeCompare(b, "pt-BR")), [rows]);
+  const filteredRows = useMemo(() => rows.filter((row) => {
+    const date = isoDate(row.date);
+    if (chartDateFrom && (!date || date < chartDateFrom)) return false;
+    if (chartDateTo && (!date || date > chartDateTo)) return false;
+    if (chartModel !== "all" && textValue(row.model) !== chartModel) return false;
+    if (chartTreatment !== "all" && row.treatment !== chartTreatment) return false;
+    return true;
+  }), [rows, chartDateFrom, chartDateTo, chartModel, chartTreatment]);
   const groups = useMemo(() => {
     const map = new Map<string, Group>();
-    rows.forEach((row) => {
+    filteredRows.forEach((row) => {
       const label = groupLabel(row, dimension, granularity);
       const group = map.get(label) ?? { label, count: 0, completedCount: 0, revenue: 0, cost: 0, profit: 0 };
       group.count += 1;
@@ -222,12 +235,12 @@ export default function ReportsPage() {
       }
       return a.label.localeCompare(b.label, "pt-BR", { numeric: true });
     });
-  }, [rows, dimension, granularity]);
+  }, [filteredRows, dimension, granularity]);
   const filteredGroups = useMemo(() => groups.filter((group) => !search.trim() || group.label.toLocaleLowerCase("pt-BR").includes(search.trim().toLocaleLowerCase("pt-BR"))), [groups, search]);
-  const selectedRows = useMemo(() => rows.filter((row) => selectedLabel && groupLabel(row, dimension, granularity) === selectedLabel).filter((row) => statusFilter === "all" || row.treatment === statusFilter).filter((row) => !detailSearch || [row.client, row.contact, row.model, row.status, row.date].join(" ").toLocaleLowerCase("pt-BR").includes(detailSearch.toLocaleLowerCase("pt-BR"))), [rows, selectedLabel, dimension, granularity, statusFilter, detailSearch]);
+  const selectedRows = useMemo(() => filteredRows.filter((row) => selectedLabel && groupLabel(row, dimension, granularity) === selectedLabel).filter((row) => statusFilter === "all" || row.treatment === statusFilter).filter((row) => !detailSearch || [row.client, row.contact, row.model, row.status, row.date].join(" ").toLocaleLowerCase("pt-BR").includes(detailSearch.toLocaleLowerCase("pt-BR"))), [filteredRows, selectedLabel, dimension, granularity, statusFilter, detailSearch]);
   const monthlyChart = useMemo(() => {
     const monthly = new Map<string, Group>();
-    rows.forEach((row) => {
+    filteredRows.forEach((row) => {
       const label = periodLabel(row, "month");
       const group = monthly.get(label) ?? { label, count: 0, completedCount: 0, revenue: 0, cost: 0, profit: 0 };
       group.count += 1;
@@ -239,12 +252,12 @@ export default function ReportsPage() {
       const value = (label: string) => { const match = /^(.*?)\s+(\d{4})$/.exec(label); return match ? Number(match[2]) * 12 + MONTHS.indexOf(match[1].toLocaleLowerCase("pt-BR")) : Number.MAX_SAFE_INTEGER; };
       return value(a.label) - value(b.label);
     });
-  }, [rows]);
+  }, [filteredRows]);
   const modelRanking = useMemo(() => {
     const map = new Map<string, number>();
-    rows.filter((row) => row.completed).forEach((row) => map.set(textValue(row.model), (map.get(textValue(row.model)) ?? 0) + row.revenue));
+    filteredRows.filter((row) => row.completed).forEach((row) => map.set(textValue(row.model), (map.get(textValue(row.model)) ?? 0) + row.revenue));
     return [...map.entries()].map(([label, revenue]) => ({ label, revenue })).sort((a, b) => b.revenue - a.revenue).slice(0, 5);
-  }, [rows]);
+  }, [filteredRows]);
   const dimensionLabels: Record<ReportDimension, string> = { period: "Período", model: "Modelo do certificado", status: "Status / observação" };
 
   return <div className="app-shell">
@@ -266,6 +279,19 @@ export default function ReportsPage() {
           <div style={{ padding: "12px 24px", background: "#f7f9fc", borderBottom: "1px solid #e7edf4", color: "#52647a", fontSize: 13 }}><strong style={{ color: "#10233f" }}>{numbers.format(renewalRows.length)}</strong> {renewalRows.length === 1 ? "cliente com vencimento" : "clientes com vencimento"} em {MONTHS[Number(renewalMonth) - 1]} de {renewalYear}.</div>
           <div style={{ overflowX: "auto" }}><table className="records-table report-table" style={{ width: "100%", minWidth: 760 }}><thead><tr><th>Cliente</th><th>Contato</th><th>Modelo do certificado</th><th>Data de vencimento</th><th>Status / observação</th></tr></thead><tbody>{renewalRows.map((row, index) => <tr key={`${row.client}-${row.expiry}-${index}`}><td style={{ fontWeight: 650, color: "#10233f" }}>{row.client}</td><td>{row.contact || "—"}</td><td>{row.model || "—"}</td><td style={{ whiteSpace: "nowrap", fontWeight: 750, color: "#b45309" }}>{displayDate(row.expiry)}</td><td>{row.status || "—"}</td></tr>)}{!renewalRows.length && <tr><td colSpan={5} style={{ padding: 24, textAlign: "center", color: "#64748b" }}>Nenhum cliente com data de vencimento registrada para este mês. Confira também se os registros possuem o campo “Data de vencimento” preenchido.</td></tr>}</tbody></table></div>
         </section>
+        <section aria-label="Filtros dos gráficos e relatórios" style={{ background: "#f7f9fc", border: "1px solid #dce5ef", borderRadius: 16, padding: 20, display: "grid", gap: 14 }}>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 12, flexWrap: "wrap" }}>
+            <div><h2 style={{ margin: 0, fontSize: 17 }}>Filtros de análise</h2><p style={{ margin: "4px 0 0", fontSize: 12, color: "#64748b" }}>Aplicados aos gráficos, rankings e relatórios detalhados.</p></div>
+            <span style={{ fontSize: 12, color: "#52647a" }}><strong style={{ color: "#10233f" }}>{numbers.format(filteredRows.length)}</strong> de {numbers.format(rows.length)} registros</span>
+          </div>
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))", gap: 12 }}>
+            <label style={{ display: "grid", gap: 6, fontSize: 12, fontWeight: 650, color: "#52647a" }}>Data inicial<input type="date" value={chartDateFrom} max={chartDateTo || undefined} onChange={(e) => setChartDateFrom(e.target.value)} style={{ minHeight: 42, border: "1px solid #cbd7e5", borderRadius: 9, padding: "0 10px", background: "#fff", color: "#10233f" }} /></label>
+            <label style={{ display: "grid", gap: 6, fontSize: 12, fontWeight: 650, color: "#52647a" }}>Data final<input type="date" value={chartDateTo} min={chartDateFrom || undefined} onChange={(e) => setChartDateTo(e.target.value)} style={{ minHeight: 42, border: "1px solid #cbd7e5", borderRadius: 9, padding: "0 10px", background: "#fff", color: "#10233f" }} /></label>
+            <label style={{ display: "grid", gap: 6, fontSize: 12, fontWeight: 650, color: "#52647a" }}>Modelo do certificado<select value={chartModel} onChange={(e) => setChartModel(e.target.value)} style={{ minHeight: 42, border: "1px solid #cbd7e5", borderRadius: 9, padding: "0 10px", background: "#fff", color: "#10233f" }}><option value="all">Todos os modelos</option>{modelOptions.map((model) => <option key={model} value={model}>{model}</option>)}</select></label>
+            <label style={{ display: "grid", gap: 6, fontSize: 12, fontWeight: 650, color: "#52647a" }}>Situação financeira<select value={chartTreatment} onChange={(e) => setChartTreatment(e.target.value)} style={{ minHeight: 42, border: "1px solid #cbd5e5", borderRadius: 9, padding: "0 10px", background: "#fff", color: "#10233f" }}><option value="all">Todas as situações</option><option value="Concluída">Concluídas</option><option value="Não concluída">Não concluídas</option><option value="Revisar">A revisar</option></select></label>
+          </div>
+          <div><button className="button button--secondary button--small" type="button" onClick={() => { setChartDateFrom(""); setChartDateTo(""); setChartModel("all"); setChartTreatment("all"); setSearch(""); }}>Limpar filtros</button></div>
+        </section>
         <section aria-label="Indicadores financeiros" style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(190px, 1fr))", gap: 14 }}>
           {[
             { label: "Registros de clientes", value: numbers.format(summary.count), note: `${numbers.format(summary.completedCount)} contabilizados no financeiro`, color: "#10233f" },
@@ -279,7 +305,7 @@ export default function ReportsPage() {
         </section>
         <section style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(320px, 1fr))", gap: 16 }}>
           <article style={{ background: "#fff", border: "1px solid #dce5ef", borderRadius: 16, padding: 22, minWidth: 0 }}><h2 style={{ margin: "0 0 5px", fontSize: 17 }}>Evolução financeira</h2><p style={{ margin: "0 0 16px", color: "#64748b", fontSize: 13 }}>Faturamento versus custos, agrupados por mês. Mostra até os últimos 12 períodos.</p><BarChart rows={monthlyChart} /></article>
-          <article style={{ background: "#fff", border: "1px solid #dce5ef", borderRadius: 16, padding: 22 }}><h2 style={{ margin: "0 0 5px", fontSize: 17 }}>Situação dos registros</h2><p style={{ margin: "0 0 16px", color: "#64748b", fontSize: 13 }}>Distribuição entre concluídos, não concluídos e itens para revisar.</p><DonutSummary rows={rows} /><div style={{ marginTop: 18, paddingTop: 14, borderTop: "1px solid #e7edf4" }}><h3 style={{ fontSize: 14, margin: "0 0 10px" }}>Modelos com maior faturamento</h3>{modelRanking.length ? modelRanking.map((item, i) => <div key={item.label} style={{ marginTop: 10 }}><div style={{ display: "flex", justifyContent: "space-between", gap: 12, fontSize: 12, marginBottom: 5 }}><span>{i + 1}. {item.label}</span><strong>{currency.format(item.revenue)}</strong></div><div style={{ height: 6, borderRadius: 6, background: "#edf2f7", overflow: "hidden" }}><div style={{ height: "100%", width: `${item.revenue / Math.max(1, modelRanking[0].revenue) * 100}%`, background: "#087f8c", borderRadius: 6 }} /></div></div>) : <p style={{ color: "#64748b", fontSize: 13 }}>Nenhum modelo com faturamento disponível.</p>}</div></article>
+          <article style={{ background: "#fff", border: "1px solid #dce5ef", borderRadius: 16, padding: 22 }}><h2 style={{ margin: "0 0 5px", fontSize: 17 }}>Situação dos registros</h2><p style={{ margin: "0 0 16px", color: "#64748b", fontSize: 13 }}>Distribuição entre concluídos, não concluídos e itens para revisar.</p><DonutSummary rows={filteredRows} /><div style={{ marginTop: 18, paddingTop: 14, borderTop: "1px solid #e7edf4" }}><h3 style={{ fontSize: 14, margin: "0 0 10px" }}>Modelos com maior faturamento</h3>{modelRanking.length ? modelRanking.map((item, i) => <div key={item.label} style={{ marginTop: 10 }}><div style={{ display: "flex", justifyContent: "space-between", gap: 12, fontSize: 12, marginBottom: 5 }}><span>{i + 1}. {item.label}</span><strong>{currency.format(item.revenue)}</strong></div><div style={{ height: 6, borderRadius: 6, background: "#edf2f7", overflow: "hidden" }}><div style={{ height: "100%", width: `${item.revenue / Math.max(1, modelRanking[0].revenue) * 100}%`, background: "#087f8c", borderRadius: 6 }} /></div></div>) : <p style={{ color: "#64748b", fontSize: 13 }}>Nenhum modelo com faturamento disponível.</p>}</div></article>
         </section>
         <section style={{ background: "#fff", border: "1px solid #dce5ef", borderRadius: 16, overflow: "hidden", boxShadow: "0 5px 20px rgba(15,23,42,.04)" }}>
           <div style={{ padding: "22px 24px", display: "flex", alignItems: "end", justifyContent: "space-between", gap: 18, flexWrap: "wrap", borderBottom: "1px solid #e7edf4" }}><div><h2 style={{ margin: 0, fontSize: 18, fontWeight: 750, color: "#10233f" }}>Relatórios detalhados</h2><p style={{ margin: "6px 0 0", fontSize: 13, color: "#64748b" }}>Clique em qualquer linha para abrir os registros que formam aquele total.</p></div><div style={{ display: "flex", gap: 12, alignItems: "end", flexWrap: "wrap" }}><label style={{ display: "grid", gap: 6, minWidth: 160, fontSize: 12, color: "#52647a", fontWeight: 650 }}>Tipo de relatório<select value={dimension} onChange={(e) => { setDimension(e.target.value as ReportDimension); setSelectedLabel(null); setSearch(""); }} style={{ minHeight: 42, border: "1px solid #cbd7e5", borderRadius: 9, padding: "0 12px", background: "#fff", color: "#10233f" }}><option value="period">Por período</option><option value="model">Por modelo</option><option value="status">Por status</option></select></label>{dimension === "period" && <label style={{ display: "grid", gap: 6, minWidth: 150, fontSize: 12, color: "#52647a", fontWeight: 650 }}>Intervalo<select value={granularity} onChange={(e) => { setGranularity(e.target.value as Granularity); setSelectedLabel(null); }} style={{ minHeight: 42, border: "1px solid #cbd7e5", borderRadius: 9, padding: "0 12px", background: "#fff", color: "#10233f" }}><option value="month">Mensal</option><option value="week">Semanal</option><option value="year">Anual</option></select></label>}<label style={{ display: "grid", gap: 6, minWidth: 200, fontSize: 12, color: "#52647a", fontWeight: 650 }}>Pesquisar grupo<input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Digite para pesquisar…" style={{ minHeight: 42, border: "1px solid #cbd7e5", borderRadius: 9, padding: "0 12px", color: "#10233f" }} /></label></div></div>
