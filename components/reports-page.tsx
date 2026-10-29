@@ -168,16 +168,16 @@ export default function ReportsPage() {
     const statusIndex = data.headers.indexOf("Status / Observação");
     if (clientIndex < 0 || (expiryIndex < 0 && issueIndex < 0)) return [];
 
-    // Para prospecção, manter somente o certificado mais recente de cada cliente.
-    // Isso evita listar o certificado antigo vencendo e a renovação posterior como se fossem dois clientes.
-    const latestByClient = new Map<string, { client: string; contact: string; model: string; expiry: string; issue: string; status: string }>();
+    // Filtra primeiro o mês/ano solicitado; deduplica somente dentro desse período.
+    // Uma renovação futura não deve apagar o vencimento anterior do relatório.
+    const byClientForPeriod = new Map<string, { client: string; contact: string; model: string; expiry: string; issue: string; status: string }>();
     data.records.forEach((record) => {
       const client = cellText(record.values[clientIndex]).trim();
       if (!client || /^(total|subtotal|lucro|faturamento total|custo total)$/i.test(client)) return;
       const issue = issueIndex >= 0 ? isoDate(cellText(record.values[issueIndex])) : "";
       const expiry = expiryFromIssueDate(issue) || (expiryIndex >= 0 ? isoDate(cellText(record.values[expiryIndex])) : "");
-      if (!expiry) return;
-      const key = client.normalize("NFD").replace(/[\\u0300-\\u036f]/g, "").toLocaleLowerCase("pt-BR").replace(/[^a-z0-9]/g, "");
+      if (!expiry || expiry.slice(5, 7) !== renewalMonth || expiry.slice(0, 4) !== renewalYear) return;
+      const key = client.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLocaleLowerCase("pt-BR").replace(/[^a-z0-9]/g, "");
       if (!key) return;
       const candidate = {
         client,
@@ -187,14 +187,12 @@ export default function ReportsPage() {
         issue,
         status: statusIndex >= 0 ? cellText(record.values[statusIndex]) : "",
       };
-      const current = latestByClient.get(key);
+      const current = byClientForPeriod.get(key);
       if (!current || candidate.issue > current.issue || (candidate.issue === current.issue && candidate.expiry > current.expiry)) {
-        latestByClient.set(key, candidate);
+        byClientForPeriod.set(key, candidate);
       }
     });
-
-    return [...latestByClient.values()]
-      .filter((row) => row.expiry.slice(5, 7) === renewalMonth && row.expiry.slice(0, 4) === renewalYear)
+    return [...byClientForPeriod.values()]
       .sort((a, b) => a.expiry.localeCompare(b.expiry) || a.client.localeCompare(b.client, "pt-BR"));
   }, [data, renewalMonth, renewalYear]);
   const summary = useMemo(() => data ? summarizeWorkbook(data, dimension) : null, [data, dimension]);
