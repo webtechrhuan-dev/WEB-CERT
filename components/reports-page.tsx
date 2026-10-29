@@ -27,9 +27,18 @@ function isoDate(value: string): string {
   const raw = value.trim();
   let match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(raw);
   if (match) return raw;
-  match = /^(\\d{1,2})[\\/.-](\\d{1,2})[\\/.-](\\d{4})$/.exec(raw);
+  // Aceita datas importadas de planilhas em DD/MM/AAAA, DD-MM-AAAA ou DD.MM.AAAA.
+  match = /^(\d{1,2})[\/.-](\d{1,2})[\/.-](\d{4})$/.exec(raw);
   if (match) return `${match[3]}-${match[2].padStart(2, "0")}-${match[1].padStart(2, "0")}`;
   return "";
+}
+function expiryFromIssueDate(value: string): string {
+  const normalized = isoDate(value);
+  if (!normalized) return "";
+  const [year, month, day] = normalized.split("-").map(Number);
+  const expiryYear = year + 1;
+  const lastDay = new Date(Date.UTC(expiryYear, month, 0)).getUTCDate();
+  return [expiryYear, String(month).padStart(2, "0"), String(Math.min(day, lastDay)).padStart(2, "0")].join("-");
 }
 function displayDate(value: string): string {
   const normalized = isoDate(value);
@@ -155,10 +164,13 @@ export default function ReportsPage() {
     const contactIndex = data.headers.indexOf("Contato");
     const modelIndex = data.headers.indexOf("Modelo");
     const expiryIndex = data.headers.indexOf("Data de vencimento");
+    const issueIndex = data.headers.indexOf("Data de emissão/renovação");
     const statusIndex = data.headers.indexOf("Status / Observação");
-    if ([clientIndex, expiryIndex].some((index) => index < 0)) return [];
+    if (clientIndex < 0 || (expiryIndex < 0 && issueIndex < 0)) return [];
     return data.records.map((record) => {
-      const expiry = isoDate(cellText(record.values[expiryIndex]));
+      const issueDate = issueIndex >= 0 ? cellText(record.values[issueIndex]) : "";
+      // A data de vencimento é recalculada a partir da emissão para também cobrir registros antigos/importados.
+      const expiry = expiryFromIssueDate(issueDate) || (expiryIndex >= 0 ? isoDate(cellText(record.values[expiryIndex])) : "");
       return {
         client: cellText(record.values[clientIndex]) || "Cliente não informado",
         contact: contactIndex >= 0 ? cellText(record.values[contactIndex]) : "",
