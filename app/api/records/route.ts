@@ -34,9 +34,18 @@ export async function POST(request: Request) {
     const body = await request.json();
     const parsed = validateRecordInput(body?.values);
     const values = valuesFromInput(parsed);
-    const period = currentPeriod();
-    values[WORKBOOK_HEADERS.indexOf("Ano da planilha")] = period.year;
-    values[WORKBOOK_HEADERS.indexOf("Mês da planilha")] = period.month;
+    const yearIndex = WORKBOOK_HEADERS.indexOf("Ano da planilha");
+    const monthIndex = WORKBOOK_HEADERS.indexOf("Mês da planilha");
+    const selectedYear = values[yearIndex];
+    const selectedMonth = values[monthIndex];
+    const currentYear = Number(currentPeriod().year);
+    const validYears = Array.from({ length: 11 }, (_, index) => String(currentYear - index));
+    if (typeof selectedYear !== "string" || !validYears.includes(selectedYear)) {
+      throw new Error("INVALID_INPUT");
+    }
+    if (typeof selectedMonth !== "string" || !MONTH_NAMES.includes(selectedMonth)) {
+      throw new Error("INVALID_INPUT");
+    }
     await createCertificate(values);
     return Response.json({ ok: true, headers: WORKBOOK_HEADERS }, { status: 201, headers: { "Cache-Control": "no-store" } });
   } catch (e) {
