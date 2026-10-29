@@ -293,7 +293,6 @@ export function RecordManagement({ mode }: { mode: ManagementMode }) {
       return record.values.some((value) => valueAsText(value).toLocaleLowerCase("pt-BR").includes(query));
     });
   }, [data, search]);
-  const selectedRecord = data?.records.find((record) => record.rowNumber === selectedRow);
   const yearIndexForGroup = data?.headers.indexOf("Ano da planilha") ?? -1;
   const monthIndexForGroup = data?.headers.indexOf("Mês da planilha") ?? -1;
   const groupedRecords = useMemo(() => {
