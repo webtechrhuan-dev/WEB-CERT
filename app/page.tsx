@@ -97,25 +97,18 @@ export default async function Home() {
 
           <div className="module-grid">
             <ModuleCard
-              description="Consulte e pesquise todos os registros carregados do Excel."
-              href="/registros"
+              description="Consulte, pesquise e edite todos os campos das vendas em uma única tabela, incluindo status e observações."
+              href="/editar"
               icon="spreadsheet"
               status="available"
-              title="Consulta de registros"
+              title="Gestão de vendas"
             />
             <ModuleCard
-              description="Inclua um registro com validação de tipos e publicação versionada."
+              description="Inclua um novo registro com validação dos campos."
               href="/cadastros"
               icon="users"
               status="available"
               title="Cadastros"
-            />
-            <ModuleCard
-              description="Localize uma linha, altere campos e detecte conflitos antes de publicar."
-              href="/editar"
-              icon="document"
-              status="available"
-              title="Edição da planilha"
             />
             <ModuleCard
               description="Agrupe registros por período, modelo ou status e consulte os totais financeiros."
