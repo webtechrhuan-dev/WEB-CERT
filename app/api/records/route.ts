@@ -6,6 +6,13 @@ import { validateRecordInput, valuesFromInput } from "@/lib/server/record-valida
 
 export const runtime = "nodejs";
 
+function expiryFromIssueDate(value: unknown): string | null {
+  if (typeof value !== "string" || !/^\\d{4}-\\d{2}-\\d{2}$/.test(value)) return null;
+  const [year, month, day] = value.split("-").map(Number);
+  const expiryYear = year + 1;
+  const lastDay = new Date(Date.UTC(expiryYear, month, 0)).getUTCDate();
+  return [expiryYear, String(month).padStart(2, "0"), String(Math.min(day, lastDay)).padStart(2, "0")].join("-");
+}
 const MONTH_NAMES = ["janeiro", "fevereiro", "março", "abril", "maio", "junho", "julho", "agosto", "setembro", "outubro", "novembro", "dezembro"];
 
 function currentPeriod(): { year: string; month: string } {
@@ -34,6 +41,9 @@ export async function POST(request: Request) {
     const body = await request.json();
     const parsed = validateRecordInput(body?.values);
     const values = valuesFromInput(parsed);
+    const issueIndex = WORKBOOK_HEADERS.indexOf("Data de emissão/renovação");
+    const expiryIndex = WORKBOOK_HEADERS.indexOf("Data de vencimento");
+    values[expiryIndex] = expiryFromIssueDate(values[issueIndex]);
     const yearIndex = WORKBOOK_HEADERS.indexOf("Ano da planilha");
     const monthIndex = WORKBOOK_HEADERS.indexOf("Mês da planilha");
     const selectedYear = values[yearIndex];
