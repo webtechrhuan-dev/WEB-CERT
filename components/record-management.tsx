@@ -91,7 +91,7 @@ function RecordForm({
 
     const changes = Object.fromEntries(
       WORKBOOK_HEADERS
-        .filter((header) => !PERIOD_FIELDS.includes(header as (typeof PERIOD_FIELDS)[number]) && (mode === "create" || values[header] !== initialValues[header]))
+        .filter((header) => mode === "create" || values[header] !== initialValues[header])
         .map((header) => [header, values[header] === "" ? null : values[header]]),
     );
     if (Object.keys(changes).length === 0) {
