@@ -136,3 +136,45 @@ export function summarizeWorkbook(data: WorkbookData, dimension: ReportDimension
     groups: [...groups.values()].map((group) => ({ ...group, revenue: roundMoney(group.revenue), cost: roundMoney(group.cost) })).sort((a, b) => compareGroups(a, b, dimension)),
   };
 }
+
+
+export type DetailedReportRow = {
+  id: string;
+  client: string;
+  contact: string;
+  date: string;
+  year: string;
+  month: string;
+  model: string;
+  status: string;
+  revenue: number;
+  cost: number;
+  completed: boolean;
+  treatment: "Concluída" | "Não concluída" | "Revisar";
+};
+
+export function getWorkbookReportRows(data: WorkbookData): DetailedReportRow[] {
+  const index = (name: string) => headerIndex(data, name);
+  return data.records.filter((record) => isCustomerRecord(record, data)).map((record) => {
+    const value = (name: string) => displayCell(record.values[index(name)]);
+    const treatment = financialTreatment(record, data);
+    const dateCell = record.values[index("Data de emissão/renovação")];
+    let date = value("Data de emissão/renovação");
+    if (typeof dateCell === "object" && dateCell && "kind" in dateCell) date = dateCell.parsed || String(dateCell.raw ?? "");
+    const completed = treatment === "completed";
+    return {
+      id: String(record.rowNumber),
+      client: value("Cliente"),
+      contact: value("Contato"),
+      date,
+      year: value("Ano da planilha"),
+      month: value("Mês da planilha"),
+      model: value("Modelo"),
+      status: value("Status / Observação"),
+      revenue: completed ? numericCell(record.values[index("Faturamento (R$)")]) : 0,
+      cost: completed ? numericCell(record.values[index("Custo (R$)")]) : 0,
+      completed,
+      treatment: completed ? "Concluída" : treatment === "excluded" ? "Não concluída" : "Revisar",
+    };
+  });
+}
