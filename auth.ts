@@ -14,10 +14,10 @@ type UserDocument = {
   updatedAt?: Date;
 };
 
-const initialUsers: Array<{ username: string; displayName: string; role: AppRole }> = [
-  { username: "rhuan", displayName: "Rhuan", role: "admin" },
-  { username: "arthur", displayName: "Arthur", role: "editor" },
-  { username: "wesley", displayName: "Wesley", role: "editor" },
+const initialUsers: Array<{ username: string; displayName: string; role: AppRole; passwordEnv: string }> = [
+  { username: "rhuan", displayName: "Rhuan", role: "admin", passwordEnv: "BOOTSTRAP_RHUAN_PASSWORD" },
+  { username: "arthur", displayName: "Arthur", role: "editor", passwordEnv: "BOOTSTRAP_ARTHUR_PASSWORD" },
+  { username: "wesley", displayName: "Wesley", role: "editor", passwordEnv: "BOOTSTRAP_WESLEY_PASSWORD" },
 ];
 
 function passwordHash(password: string, salt: string): string {
@@ -28,7 +28,12 @@ async function ensureInitialUsers(): Promise<void> {
   const db = await getMongoDb();
   const users = db.collection<UserDocument>("users");
   await users.createIndex({ username: 1 }, { unique: true });
-  for (const user of initialUsers) {
+
+  // Nunca criar contas com senhas padrão conhecidas. Bootstrap só ocorre com
+  // segredos fortes definidos explicitamente no ambiente do servidor.
+  for (const { passwordEnv, ...user } of initialUsers) {
+    const password = process.env[passwordEnv];
+    if (!password || password.length < 16) continue;
     const salt = randomBytes(16).toString("hex");
     await users.updateOne(
       { username: user.username },
@@ -36,7 +41,7 @@ async function ensureInitialUsers(): Promise<void> {
         $setOnInsert: {
           ...user,
           salt,
-          passwordHash: passwordHash("12345678", salt),
+          passwordHash: passwordHash(password, salt),
           createdAt: new Date(),
           updatedAt: new Date(),
         },
@@ -68,6 +73,8 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         const username = String(credentials?.username ?? "").trim().toLowerCase();
         const password = String(credentials?.password ?? "");
         if (!username || !password || username.length > 80 || password.length > 200) return null;
+        // Bloqueia a credencial padrão que já esteve presente no código.
+        if (password === "12345678") return null;
 
         await ensureInitialUsers();
         const db = await getMongoDb();
