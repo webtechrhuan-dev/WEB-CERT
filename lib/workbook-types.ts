@@ -4,6 +4,7 @@ export const WORKBOOK_HEADERS = [
   "Cliente",
   "Contato",
   "Data de emissão/renovação",
+  "Data de vencimento",
   "Modelo",
   "Faturamento (R$)",
   "Custo (R$)",
