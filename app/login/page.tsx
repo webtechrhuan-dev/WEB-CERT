@@ -6,7 +6,7 @@ export default function LoginPage() {
       <section className="login-panel login-panel--branded" aria-labelledby="login-title">
         <img
           className="login-brand-logo"
-          src="/web-tech-logo.svg"
+          src="/web-tech-logo.webp"
           alt="Logo Web Tech"
           width="600"
           height="192"
