@@ -176,7 +176,20 @@ function RecordForm({
                   }}
                 />
               ) : expiryField ? (
-                <input type="date" value={values[header] ?? ""} readOnly aria-readonly="true" title="Calculado automaticamente: um ano após a emissão." />
+                <input
+                  type="date"
+                  value={values[header] ?? ""}
+                  readOnly
+                  disabled={!values["Data de emissão/renovação"]}
+                  aria-readonly="true"
+                  title="Calculado automaticamente: um ano após a emissão."
+                  style={{
+                    opacity: 0.55,
+                    cursor: "not-allowed",
+                    backgroundColor: "var(--input-disabled-bg, #e5e7eb)",
+                    color: "var(--input-disabled-color, #6b7280)",
+                  }}
+                />
               ) : header === "Modelo" ? (
                 <select
                   value={values[header] ?? ""}
