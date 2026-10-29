@@ -6,31 +6,57 @@ import { useSession } from "next-auth/react";
 import { AppHeader } from "@/components/app-header";
 import { Icon } from "@/components/icon";
 import { useWorkbookData } from "@/lib/client/use-workbook-data";
-import { summarizeWorkbook, type ReportDimension } from "@/lib/reporting";
+import { getWorkbookReportRows, summarizeWorkbook, type ReportDimension, type DetailedReportRow } from "@/lib/reporting";
 
-const currency = new Intl.NumberFormat("pt-BR", {
-  style: "currency",
-  currency: "BRL",
-});
+const currency = new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" });
 const numbers = new Intl.NumberFormat("pt-BR");
+type Granularity = "month" | "week" | "year";
+type Group = { label: string; count: number; completedCount: number; revenue: number; cost: number; profit: number };
+const MONTHS = ["janeiro", "fevereiro", "março", "abril", "maio", "junho", "julho", "agosto", "setembro", "outubro", "novembro", "dezembro"];
 
-function ReportError({ message }: { message: string }) {
-  return (
-    <section className="state-panel state-panel--error">
-      <span className="state-icon state-icon--error"><Icon name="alert" /></span>
-      <div className="state-copy">
-        <h2>Não foi possível carregar os relatórios</h2>
-        <p>{message}</p>
-      </div>
-    </section>
-  );
+function textValue(value: string) {
+  return value && value !== "Sem preenchimento" ? value : "Não informado";
 }
-
-function exportCsv(rows: Array<{ label: string; count: number; completedCount: number; revenue: number; cost: number }>) {
+function parsedDate(row: DetailedReportRow): Date | null {
+  const raw = row.date.trim();
+  let match = /^(\d{1,2})[\/.-](\d{1,2})[\/.-](\d{4})$/.exec(raw);
+  if (match) {
+    const d = new Date(Number(match[3]), Number(match[2]) - 1, Number(match[1]));
+    return Number.isNaN(d.getTime()) ? null : d;
+  }
+  match = /^(\d{4})-(\d{2})-(\d{2})/.exec(raw);
+  if (match) {
+    const d = new Date(Number(match[1]), Number(match[2]) - 1, Number(match[3]));
+    return Number.isNaN(d.getTime()) ? null : d;
+  }
+  const parsed = new Date(raw);
+  return raw && !Number.isNaN(parsed.getTime()) ? parsed : null;
+}
+function periodLabel(row: DetailedReportRow, granularity: Granularity): string {
+  const date = parsedDate(row);
+  if (granularity === "year") return date ? String(date.getFullYear()) : textValue(row.year);
+  if (granularity === "week" && date) {
+    const monday = new Date(date);
+    monday.setDate(date.getDate() - ((date.getDay() + 6) % 7));
+    const sunday = new Date(monday);
+    sunday.setDate(monday.getDate() + 6);
+    const fmt = (d: Date) => d.toLocaleDateString("pt-BR");
+    return `${fmt(monday)} – ${fmt(sunday)}`;
+  }
+  if (date) return `${MONTHS[date.getMonth()]} ${date.getFullYear()}`;
+  if (granularity === "week") return "Semana sem data";
+  return `${textValue(row.month)} ${textValue(row.year)}`;
+}
+function groupLabel(row: DetailedReportRow, dimension: ReportDimension, granularity: Granularity) {
+  if (dimension === "period") return periodLabel(row, granularity);
+  if (dimension === "model") return textValue(row.model);
+  return textValue(row.status);
+}
+function exportCsv(rows: Group[]) {
   const quote = (value: string | number) => `"${String(value).replace(/"/g, '""')}"`;
   const content = [
-    ["Grupo", "Registros", "Vendas contabilizadas", "Faturamento (R$)", "Custo (R$)", "Resultado (R$)"],
-    ...rows.map((row) => [row.label, row.count, row.completedCount, row.revenue.toFixed(2), row.cost.toFixed(2), (row.revenue - row.cost).toFixed(2)]),
+    ["Grupo", "Registros", "Vendas concluídas", "Faturamento (R$)", "Custos (R$)", "Resultado (R$)"],
+    ...rows.map((row) => [row.label, row.count, row.completedCount, row.revenue.toFixed(2), row.cost.toFixed(2), row.profit.toFixed(2)]),
   ].map((line) => line.map(quote).join(";")).join("\r\n");
   const blob = new Blob(["\uFEFF", content], { type: "text/csv;charset=utf-8" });
   const url = URL.createObjectURL(blob);
@@ -40,133 +66,123 @@ function exportCsv(rows: Array<{ label: string; count: number; completedCount: n
   anchor.click();
   URL.revokeObjectURL(url);
 }
+function ReportError({ message }: { message: string }) {
+  return <section className="state-panel state-panel--error"><span className="state-icon state-icon--error"><Icon name="alert" /></span><div className="state-copy"><h2>Não foi possível carregar os relatórios</h2><p>{message}</p></div></section>;
+}
+function BarChart({ rows }: { rows: Group[] }) {
+  const visible = rows.slice(-12);
+  const max = Math.max(1, ...visible.map((row) => Math.max(row.revenue, row.cost)));
+  if (!visible.length) return <p style={{ color: "#64748b" }}>Sem dados suficientes para gerar o gráfico.</p>;
+  return <div style={{ overflowX: "auto" }}><svg role="img" aria-label="Gráfico de faturamento e custos por período" viewBox={`0 0 ${Math.max(560, visible.length * 86)} 250`} style={{ width: "100%", minWidth: 560, height: 250 }}>
+    {[0, 1, 2, 3].map((line) => <g key={line}><line x1="42" x2={Math.max(520, visible.length * 86)} y1={24 + line * 55} y2={24 + line * 55} stroke="#e6edf5" /><text x="36" y={28 + line * 55} textAnchor="end" fontSize="9" fill="#64748b">{currency.format(max * (3 - line) / 3).replace(",00", "")}</text></g>)}
+    {visible.map((row, i) => {
+      const x = 54 + i * 86;
+      const revHeight = row.revenue / max * 165;
+      const costHeight = row.cost / max * 165;
+      return <g key={row.label}><rect x={x} y={189 - revHeight} width="23" height={revHeight} rx="3" fill="#087f8c"><title>{row.label}: faturamento {currency.format(row.revenue)}</title></rect><rect x={x + 26} y={189 - costHeight} width="23" height={costHeight} rx="3" fill="#e58b2a"><title>{row.label}: custo {currency.format(row.cost)}</title></rect><text x={x + 25} y="207" textAnchor="middle" fontSize="9" fill="#52647a">{row.label.length > 11 ? row.label.slice(0, 10) + "…" : row.label}</text></g>;
+    })}
+  </svg><div style={{ display: "flex", gap: 18, fontSize: 12, color: "#52647a" }}><span><i style={{ display: "inline-block", width: 10, height: 10, background: "#087f8c", marginRight: 6, borderRadius: 2 }} />Faturamento</span><span><i style={{ display: "inline-block", width: 10, height: 10, background: "#e58b2a", marginRight: 6, borderRadius: 2 }} />Custos</span></div></div>;
+}
+function DonutSummary({ rows }: { rows: DetailedReportRow[] }) {
+  const counts = [
+    { label: "Concluídas", value: rows.filter((row) => row.treatment === "Concluída").length, color: "#087f8c" },
+    { label: "Não concluídas", value: rows.filter((row) => row.treatment === "Não concluída").length, color: "#e58b2a" },
+    { label: "Revisar", value: rows.filter((row) => row.treatment === "Revisar").length, color: "#94a3b8" },
+  ];
+  const total = Math.max(1, counts.reduce((sum, item) => sum + item.value, 0));
+  let offset = 0;
+  const segments = counts.map((item) => {
+    const length = item.value / total * 100;
+    const segment = { ...item, length, offset };
+    offset += length;
+    return segment;
+  });
+  return <div style={{ display: "flex", alignItems: "center", gap: 22, flexWrap: "wrap" }}><svg viewBox="0 0 120 120" width="120" height="120" role="img" aria-label="Distribuição de situação dos registros"><circle cx="60" cy="60" r="42" fill="none" stroke="#edf2f7" strokeWidth="16" />{segments.map((item) => <circle key={item.label} cx="60" cy="60" r="42" fill="none" stroke={item.color} strokeWidth="16" strokeDasharray={`${item.length * 2.64} 264`} strokeDashoffset={-item.offset * 2.64} transform="rotate(-90 60 60)" />)}<text x="60" y="57" textAnchor="middle" fontSize="17" fontWeight="700" fill="#10233f">{rows.length}</text><text x="60" y="72" textAnchor="middle" fontSize="8" fill="#64748b">registros</text></svg><div style={{ display: "grid", gap: 9 }}>{counts.map((item) => <div key={item.label} style={{ display: "flex", justifyContent: "space-between", gap: 24, fontSize: 13 }}><span><i style={{ display: "inline-block", width: 9, height: 9, borderRadius: 3, background: item.color, marginRight: 7 }} />{item.label}</span><strong>{numbers.format(item.value)}</strong></div>)}</div></div>;
+}
 
 export default function ReportsPage() {
   const { data: session, status } = useSession();
   const { data, loading, error, refresh } = useWorkbookData(status === "authenticated");
   const [dimension, setDimension] = useState<ReportDimension>("period");
+  const [granularity, setGranularity] = useState<Granularity>("month");
   const [search, setSearch] = useState("");
-  const summary = useMemo(
-    () => (data ? summarizeWorkbook(data, dimension) : null),
-    [data, dimension],
-  );
-  const filteredGroups = useMemo(() => {
-    const query = search.trim().toLocaleLowerCase("pt-BR");
-    return (summary?.groups ?? []).filter((group) => !query || group.label.toLocaleLowerCase("pt-BR").includes(query));
-  }, [summary, search]);
-  const dimensionLabels: Record<ReportDimension, string> = {
-    period: "Período",
-    model: "Modelo do certificado",
-    status: "Status / observação",
-  };
+  const [selectedLabel, setSelectedLabel] = useState<string | null>(null);
+  const [detailSearch, setDetailSearch] = useState("");
+  const [statusFilter, setStatusFilter] = useState("all");
+  const summary = useMemo(() => data ? summarizeWorkbook(data, dimension) : null, [data, dimension]);
+  const rows = useMemo(() => data ? getWorkbookReportRows(data) : [], [data]);
+  const groups = useMemo(() => {
+    const map = new Map<string, Group>();
+    rows.forEach((row) => {
+      const label = groupLabel(row, dimension, granularity);
+      const group = map.get(label) ?? { label, count: 0, completedCount: 0, revenue: 0, cost: 0, profit: 0 };
+      group.count += 1;
+      if (row.completed) { group.completedCount += 1; group.revenue += row.revenue; group.cost += row.cost; }
+      group.profit = group.revenue - group.cost;
+      map.set(label, group);
+    });
+    return [...map.values()].sort((a, b) => {
+      if (dimension === "period" && granularity === "year") return a.label.localeCompare(b.label, "pt-BR", { numeric: true });
+      if (dimension === "period" && granularity === "month") {
+        const parse = (label: string) => { const m = /^(.*?)\s+(\d{4})$/.exec(label); return m ? Number(m[2]) * 12 + MONTHS.indexOf(m[1].toLocaleLowerCase("pt-BR")) : Number.MAX_SAFE_INTEGER; };
+        return parse(a.label) - parse(b.label);
+      }
+      if (dimension === "period" && granularity === "week") return a.label.localeCompare(b.label, "pt-BR", { numeric: true });
+      return a.label.localeCompare(b.label, "pt-BR", { numeric: true });
+    });
+  }, [rows, dimension, granularity]);
+  const filteredGroups = useMemo(() => groups.filter((group) => !search.trim() || group.label.toLocaleLowerCase("pt-BR").includes(search.trim().toLocaleLowerCase("pt-BR"))), [groups, search]);
+  const selectedRows = useMemo(() => rows.filter((row) => selectedLabel && groupLabel(row, dimension, granularity) === selectedLabel).filter((row) => statusFilter === "all" || row.treatment === statusFilter).filter((row) => !detailSearch || [row.client, row.contact, row.model, row.status, row.date].join(" ").toLocaleLowerCase("pt-BR").includes(detailSearch.toLocaleLowerCase("pt-BR"))), [rows, selectedLabel, dimension, granularity, statusFilter, detailSearch]);
+  const monthlyChart = useMemo(() => {
+    const monthly = new Map<string, Group>();
+    rows.forEach((row) => {
+      const label = periodLabel(row, "month");
+      const group = monthly.get(label) ?? { label, count: 0, completedCount: 0, revenue: 0, cost: 0, profit: 0 };
+      group.count += 1;
+      if (row.completed) { group.completedCount += 1; group.revenue += row.revenue; group.cost += row.cost; }
+      group.profit = group.revenue - group.cost;
+      monthly.set(label, group);
+    });
+    return [...monthly.values()].sort((a, b) => {
+      const value = (label: string) => { const match = /^(.*?)\s+(\d{4})$/.exec(label); return match ? Number(match[2]) * 12 + MONTHS.indexOf(match[1].toLocaleLowerCase("pt-BR")) : Number.MAX_SAFE_INTEGER; };
+      return value(a.label) - value(b.label);
+    });
+  }, [rows]);
+  const modelRanking = useMemo(() => {
+    const map = new Map<string, number>();
+    rows.filter((row) => row.completed).forEach((row) => map.set(textValue(row.model), (map.get(textValue(row.model)) ?? 0) + row.revenue));
+    return [...map.entries()].map(([label, revenue]) => ({ label, revenue })).sort((a, b) => b.revenue - a.revenue).slice(0, 5);
+  }, [rows]);
+  const dimensionLabels: Record<ReportDimension, string> = { period: "Período", model: "Modelo do certificado", status: "Status / observação" };
 
-  return (
-    <div className="app-shell">
-      <AppHeader active="reports" />
-      <main className="workspace module-workspace" style={{ maxWidth: 1500 }}>
-        <div className="breadcrumb" aria-label="Localização">
-          <Link href="/">Início</Link><span aria-hidden="true">/</span><span aria-current="page">Relatórios</span>
-        </div>
-
-        <section className="module-page-heading" style={{ marginBottom: 24 }}>
-          <p className="eyebrow">VISÃO FINANCEIRA</p>
-          <h1>Relatórios</h1>
-          <p>Acompanhe vendas, custos e resultado com base nos registros válidos da planilha.</p>
+  return <div className="app-shell">
+    <AppHeader active="reports" />
+    <main className="workspace module-workspace" style={{ maxWidth: 1500 }}>
+      <div className="breadcrumb" aria-label="Localização"><Link href="/">Início</Link><span aria-hidden="true">/</span><span aria-current="page">Relatórios</span></div>
+      <section className="module-page-heading" style={{ marginBottom: 24 }}><p className="eyebrow">INTELIGÊNCIA COMERCIAL</p><h1>Relatórios e análises</h1><p>Explore faturamento, custos, vendas, modelos e evolução por mês, semana ou ano.</p></section>
+      {status === "loading" || loading ? <section className="state-panel" aria-busy="true"><span className="loading-spinner" /><div className="state-copy"><h2>Conferindo os dados da planilha…</h2><p>Os indicadores serão calculados após o carregamento.</p></div></section> : !session?.user ? <div><ReportError message={error ?? "Entre com sua conta para acessar os dados."} /><Link className="button button--secondary button--small" href="/login">Ir para o acesso</Link></div> : error || !summary ? <div><ReportError message={error ?? "Não foi possível calcular os indicadores."} /><button className="button button--secondary button--small" onClick={() => void refresh()} type="button">Tentar novamente</button></div> : <div style={{ display: "grid", gap: 22 }}>
+        <section style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 16, flexWrap: "wrap" }}><div><h2 style={{ margin: 0, fontSize: 18, fontWeight: 750 }}>Resumo do negócio</h2><p style={{ margin: "5px 0 0", color: "#64748b", fontSize: 13 }}>Os totais financeiros seguem a regra atual de vendas concluídas; registros ambíguos são apresentados para revisão.</p></div><div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}><button className="button button--secondary button--small" type="button" onClick={() => void refresh()} disabled={loading}><Icon name="refresh" /> Atualizar dados</button><button className="button button--primary button--small" type="button" onClick={() => exportCsv(filteredGroups)} disabled={!filteredGroups.length}>Exportar CSV</button></div></section>
+        <section aria-label="Indicadores financeiros" style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(190px, 1fr))", gap: 14 }}>
+          {[
+            { label: "Registros de clientes", value: numbers.format(summary.count), note: `${numbers.format(summary.completedCount)} contabilizados no financeiro`, color: "#10233f" },
+            { label: "Faturamento contabilizado", value: currency.format(summary.revenue), note: "Somente registros classificados como concluídos", color: "#087443" },
+            { label: "Custos contabilizados", value: currency.format(summary.cost), note: "Custos dos registros contabilizados", color: "#b45309" },
+            { label: "Resultado estimado", value: currency.format(summary.profit), note: "Faturamento menos custos", color: summary.profit >= 0 ? "#86efac" : "#fca5a5", dark: true },
+            { label: "Ticket médio", value: currency.format(summary.completedCount ? summary.revenue / summary.completedCount : 0), note: "Faturamento por venda contabilizada", color: "#0f766e" },
+            { label: "Aguardando revisão", value: numbers.format(summary.reviewCount), note: "Status vazio ou não reconhecido", color: "#64748b" },
+          ].map((item) => <article key={item.label} style={{ background: item.dark ? "#10233f" : "#fff", border: `1px solid ${item.dark ? "#10233f" : "#dce5ef"}`, borderRadius: 14, padding: 20, boxShadow: "0 4px 14px rgba(15,23,42,.04)" }}><span style={{ color: item.dark ? "#c8d6e8" : "#52647a", fontSize: 13 }}>{item.label}</span><strong style={{ display: "block", marginTop: 10, fontSize: 25, letterSpacing: "-.04em", color: item.color }}>{item.value}</strong><small style={{ color: item.dark ? "#c8d6e8" : "#64748b" }}>{item.note}</small></article>)}
         </section>
-
-        {status === "loading" || loading ? (
-          <section className="state-panel" aria-busy="true"><span className="loading-spinner" /><div className="state-copy"><h2>Conferindo os dados da planilha…</h2><p>Os indicadores serão calculados após o carregamento.</p></div></section>
-        ) : !session?.user ? (
-          <div><ReportError message={error ?? "Entre com sua conta para acessar os dados."} /><Link className="button button--secondary button--small" href="/login">Ir para o acesso</Link></div>
-        ) : error || !summary ? (
-          <div><ReportError message={error ?? "Não foi possível calcular os indicadores."} /><button className="button button--secondary button--small" onClick={() => void refresh()} type="button">Tentar novamente</button></div>
-        ) : (
-          <div style={{ display: "grid", gap: 22 }}>
-            <section style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 16, flexWrap: "wrap" }}>
-              <div>
-                <h2 style={{ margin: 0, fontSize: 18, fontWeight: 750 }}>Resumo do negócio</h2>
-                <p style={{ margin: "5px 0 0", color: "var(--muted, #64748b)", fontSize: 13 }}>O financeiro considera vendas concluídas. Oportunidades perdidas, agendadas, ofertas e status ambíguos não entram nos totais.</p>
-              </div>
-              <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
-                <button className="button button--secondary button--small" type="button" onClick={() => void refresh()} disabled={loading}><Icon name="refresh" /> Atualizar dados</button>
-                <button className="button button--primary button--small" type="button" onClick={() => exportCsv(filteredGroups)} disabled={!filteredGroups.length}>Exportar CSV</button>
-              </div>
-            </section>
-
-            <section aria-label="Indicadores financeiros" style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(210px, 1fr))", gap: 14 }}>
-              <article style={{ background: "#fff", border: "1px solid #dce5ef", borderRadius: 14, padding: 20, boxShadow: "0 4px 14px rgba(15,23,42,.04)" }}>
-                <span style={{ color: "#52647a", fontSize: 13 }}>Registros de clientes</span>
-                <strong style={{ display: "block", marginTop: 10, fontSize: 30, letterSpacing: "-.04em", color: "#10233f" }}>{numbers.format(summary.count)}</strong>
-                <small style={{ color: "#64748b" }}>{numbers.format(summary.completedCount)} contabilizados no financeiro</small>
-              </article>
-              <article style={{ background: "#fff", border: "1px solid #dce5ef", borderRadius: 14, padding: 20, boxShadow: "0 4px 14px rgba(15,23,42,.04)" }}>
-                <span style={{ color: "#52647a", fontSize: 13 }}>Faturamento informado</span>
-                <strong style={{ display: "block", marginTop: 10, fontSize: 28, letterSpacing: "-.04em", color: "#087443" }}>{currency.format(summary.revenue)}</strong>
-                <small style={{ color: "#64748b" }}>Soma dos valores preenchidos</small>
-              </article>
-              <article style={{ background: "#fff", border: "1px solid #dce5ef", borderRadius: 14, padding: 20, boxShadow: "0 4px 14px rgba(15,23,42,.04)" }}>
-                <span style={{ color: "#52647a", fontSize: 13 }}>Custo informado</span>
-                <strong style={{ display: "block", marginTop: 10, fontSize: 28, letterSpacing: "-.04em", color: "#b45309" }}>{currency.format(summary.cost)}</strong>
-                <small style={{ color: "#64748b" }}>Soma dos custos preenchidos</small>
-              </article>
-              <article style={{ background: "#10233f", border: "1px solid #10233f", borderRadius: 14, padding: 20, boxShadow: "0 4px 14px rgba(15,23,42,.08)" }}>
-                <span style={{ color: "#c8d6e8", fontSize: 13 }}>Resultado estimado</span>
-                <strong style={{ display: "block", marginTop: 10, fontSize: 28, letterSpacing: "-.04em", color: summary.profit >= 0 ? "#86efac" : "#fca5a5" }}>{currency.format(summary.profit)}</strong>
-                <small style={{ color: "#c8d6e8" }}>Faturamento menos custo informado</small>
-              </article>
-            </section>
-
-            <section style={{ background: "#fff", border: "1px solid #dce5ef", borderRadius: 16, overflow: "hidden", boxShadow: "0 5px 20px rgba(15,23,42,.04)" }}>
-              <div style={{ padding: "22px 24px", display: "flex", alignItems: "end", justifyContent: "space-between", gap: 18, flexWrap: "wrap", borderBottom: "1px solid #e7edf4" }}>
-                <div>
-                  <h2 style={{ margin: 0, fontSize: 18, fontWeight: 750, color: "#10233f" }}>Detalhamento</h2>
-                  <p style={{ margin: "6px 0 0", fontSize: 13, color: "#64748b" }}>Agrupe e filtre os resultados. Os totais abaixo acompanham o filtro de pesquisa.</p>
-                </div>
-                <div style={{ display: "flex", gap: 12, alignItems: "end", flexWrap: "wrap" }}>
-                  <label style={{ display: "grid", gap: 6, minWidth: 190, fontSize: 12, color: "#52647a", fontWeight: 650 }}>
-                    Agrupar por
-                    <select value={dimension} onChange={(event) => { setDimension(event.target.value as ReportDimension); setSearch(""); }} style={{ minHeight: 42, border: "1px solid #cbd7e5", borderRadius: 9, padding: "0 12px", background: "#fff", color: "#10233f" }}>
-                      <option value="period">Ano e mês</option><option value="model">Modelo</option><option value="status">Status / observação</option>
-                    </select>
-                  </label>
-                  <label style={{ display: "grid", gap: 6, minWidth: 220, fontSize: 12, color: "#52647a", fontWeight: 650 }}>
-                    Filtrar grupos
-                    <input value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Digite para pesquisar…" style={{ minHeight: 42, border: "1px solid #cbd7e5", borderRadius: 9, padding: "0 12px", color: "#10233f" }} />
-                  </label>
-                </div>
-              </div>
-
-              <div style={{ padding: "12px 24px", display: "flex", justifyContent: "space-between", flexWrap: "wrap", gap: 8, background: "#f7f9fc", borderBottom: "1px solid #e7edf4", color: "#52647a", fontSize: 12 }}>
-                <span><strong style={{ color: "#10233f" }}>{numbers.format(filteredGroups.length)}</strong> grupos exibidos</span>
-                <span><strong style={{ color: "#10233f" }}>{numbers.format(summary.excludedCount)}</strong> excluídos por status · <strong style={{ color: "#10233f" }}>{numbers.format(summary.reviewCount)}</strong> aguardando revisão · <strong style={{ color: "#10233f" }}>{numbers.format(summary.rowsIgnored)}</strong> totalizadores/vazios ignorados</span>
-              </div>
-
-              <div style={{ overflowX: "auto" }}>
-                <table className="records-table report-table" style={{ width: "100%", minWidth: 720 }}>
-                  <thead><tr><th>{dimensionLabels[dimension]}</th><th className="numeric-cell">Registros</th><th className="numeric-cell">Concluídos</th><th className="numeric-cell">Faturamento</th><th className="numeric-cell">Custo</th><th className="numeric-cell">Resultado</th></tr></thead>
-                  <tbody>
-                    {filteredGroups.map((group) => (
-                      <tr key={group.label}>
-                        <td style={{ fontWeight: 650, color: "#10233f" }}>{group.label}</td>
-                        <td className="numeric-cell">{numbers.format(group.count)}</td>
-                        <td className="numeric-cell">{numbers.format(group.completedCount)}</td>
-                        <td className="numeric-cell">{currency.format(group.revenue)}</td>
-                        <td className="numeric-cell">{currency.format(group.cost)}</td>
-                        <td className="numeric-cell" style={{ fontWeight: 650, color: group.revenue - group.cost >= 0 ? "#087443" : "#b91c1c" }}>{currency.format(group.revenue - group.cost)}</td>
-                      </tr>
-                    ))}
-                    {!filteredGroups.length && <tr><td colSpan={6} style={{ padding: 28, textAlign: "center", color: "#64748b" }}>Nenhum grupo corresponde à pesquisa.</td></tr>}
-                  </tbody>
-                  {filteredGroups.length > 0 && <tfoot><tr style={{ background: "#f7f9fc", fontWeight: 750 }}><td>Total dos grupos exibidos</td><td className="numeric-cell">{numbers.format(filteredGroups.reduce((total, group) => total + group.count, 0))}</td><td className="numeric-cell">{numbers.format(filteredGroups.reduce((total, group) => total + group.completedCount, 0))}</td><td className="numeric-cell">{currency.format(filteredGroups.reduce((total, group) => total + group.revenue, 0))}</td><td className="numeric-cell">{currency.format(filteredGroups.reduce((total, group) => total + group.cost, 0))}</td><td className="numeric-cell">{currency.format(filteredGroups.reduce((total, group) => total + group.revenue - group.cost, 0))}</td></tr></tfoot>}
-                </table>
-              </div>
-              <div style={{ padding: "14px 24px", borderTop: "1px solid #e7edf4", color: "#64748b", fontSize: 12, lineHeight: 1.6 }}>
-                Atenção: resultado estimado é uma conta simples de faturamento menos custo preenchido; não representa lucro contábil. Campos vazios não são presumidos como valores reais. Confira os dados de origem se algum total não bater com a planilha.
-              </div>
-            </section>
-          </div>
-        )}
-      </main>
-    </div>
-  );
+        <section style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(320px, 1fr))", gap: 16 }}>
+          <article style={{ background: "#fff", border: "1px solid #dce5ef", borderRadius: 16, padding: 22, minWidth: 0 }}><h2 style={{ margin: "0 0 5px", fontSize: 17 }}>Evolução financeira</h2><p style={{ margin: "0 0 16px", color: "#64748b", fontSize: 13 }}>Faturamento versus custos, agrupados por mês. Mostra até os últimos 12 períodos.</p><BarChart rows={monthlyChart} /></article>
+          <article style={{ background: "#fff", border: "1px solid #dce5ef", borderRadius: 16, padding: 22 }}><h2 style={{ margin: "0 0 5px", fontSize: 17 }}>Situação dos registros</h2><p style={{ margin: "0 0 16px", color: "#64748b", fontSize: 13 }}>Distribuição entre concluídos, não concluídos e itens para revisar.</p><DonutSummary rows={rows} /><div style={{ marginTop: 18, paddingTop: 14, borderTop: "1px solid #e7edf4" }}><h3 style={{ fontSize: 14, margin: "0 0 10px" }}>Modelos com maior faturamento</h3>{modelRanking.length ? modelRanking.map((item, i) => <div key={item.label} style={{ marginTop: 10 }}><div style={{ display: "flex", justifyContent: "space-between", gap: 12, fontSize: 12, marginBottom: 5 }}><span>{i + 1}. {item.label}</span><strong>{currency.format(item.revenue)}</strong></div><div style={{ height: 6, borderRadius: 6, background: "#edf2f7", overflow: "hidden" }}><div style={{ height: "100%", width: `${item.revenue / Math.max(1, modelRanking[0].revenue) * 100}%`, background: "#087f8c", borderRadius: 6 }} /></div></div>) : <p style={{ color: "#64748b", fontSize: 13 }}>Nenhum modelo com faturamento disponível.</p>}</div></article>
+        </section>
+        <section style={{ background: "#fff", border: "1px solid #dce5ef", borderRadius: 16, overflow: "hidden", boxShadow: "0 5px 20px rgba(15,23,42,.04)" }}>
+          <div style={{ padding: "22px 24px", display: "flex", alignItems: "end", justifyContent: "space-between", gap: 18, flexWrap: "wrap", borderBottom: "1px solid #e7edf4" }}><div><h2 style={{ margin: 0, fontSize: 18, fontWeight: 750, color: "#10233f" }}>Relatórios detalhados</h2><p style={{ margin: "6px 0 0", fontSize: 13, color: "#64748b" }}>Clique em qualquer linha para abrir os registros que formam aquele total.</p></div><div style={{ display: "flex", gap: 12, alignItems: "end", flexWrap: "wrap" }}><label style={{ display: "grid", gap: 6, minWidth: 160, fontSize: 12, color: "#52647a", fontWeight: 650 }}>Tipo de relatório<select value={dimension} onChange={(e) => { setDimension(e.target.value as ReportDimension); setSelectedLabel(null); setSearch(""); }} style={{ minHeight: 42, border: "1px solid #cbd7e5", borderRadius: 9, padding: "0 12px", background: "#fff", color: "#10233f" }}><option value="period">Por período</option><option value="model">Por modelo</option><option value="status">Por status</option></select></label>{dimension === "period" && <label style={{ display: "grid", gap: 6, minWidth: 150, fontSize: 12, color: "#52647a", fontWeight: 650 }}>Intervalo<select value={granularity} onChange={(e) => { setGranularity(e.target.value as Granularity); setSelectedLabel(null); }} style={{ minHeight: 42, border: "1px solid #cbd7e5", borderRadius: 9, padding: "0 12px", background: "#fff", color: "#10233f" }}><option value="month">Mensal</option><option value="week">Semanal</option><option value="year">Anual</option></select></label>}<label style={{ display: "grid", gap: 6, minWidth: 200, fontSize: 12, color: "#52647a", fontWeight: 650 }}>Pesquisar grupo<input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Digite para pesquisar…" style={{ minHeight: 42, border: "1px solid #cbd7e5", borderRadius: 9, padding: "0 12px", color: "#10233f" }} /></label></div></div>
+          <div style={{ padding: "12px 24px", display: "flex", justifyContent: "space-between", flexWrap: "wrap", gap: 8, background: "#f7f9fc", borderBottom: "1px solid #e7edf4", color: "#52647a", fontSize: 12 }}><span><strong style={{ color: "#10233f" }}>{filteredGroups.length}</strong> grupos · <strong style={{ color: "#10233f" }}>{rows.length}</strong> registros detalhados</span><span>{numbers.format(summary.excludedCount)} não concluídos · {numbers.format(summary.reviewCount)} para revisar · {numbers.format(summary.rowsIgnored)} linhas vazias/totalizadoras ignoradas</span></div>
+          <div style={{ overflowX: "auto" }}><table className="records-table report-table" style={{ width: "100%", minWidth: 800 }}><thead><tr><th>{dimensionLabels[dimension]}</th><th className="numeric-cell">Registros</th><th className="numeric-cell">Concluídos</th><th className="numeric-cell">Faturamento</th><th className="numeric-cell">Custos</th><th className="numeric-cell">Resultado</th><th>Abrir</th></tr></thead><tbody>{filteredGroups.map((group) => <tr key={group.label} onClick={() => { setSelectedLabel(group.label); setDetailSearch(""); setStatusFilter("all"); }} onKeyDown={(e) => { if (e.key === "Enter") setSelectedLabel(group.label); }} tabIndex={0} role="button" aria-label={`Abrir detalhes de ${group.label}`} style={{ cursor: "pointer" }}><td style={{ fontWeight: 650, color: "#10233f" }}>{group.label}</td><td className="numeric-cell">{numbers.format(group.count)}</td><td className="numeric-cell">{numbers.format(group.completedCount)}</td><td className="numeric-cell">{currency.format(group.revenue)}</td><td className="numeric-cell">{currency.format(group.cost)}</td><td className="numeric-cell" style={{ fontWeight: 650, color: group.profit >= 0 ? "#087443" : "#b91c1c" }}>{currency.format(group.profit)}</td><td><button type="button" className="button button--secondary button--small" onClick={(e) => { e.stopPropagation(); setSelectedLabel(group.label); setDetailSearch(""); setStatusFilter("all"); }}>Ver vendas</button></td></tr>)}{!filteredGroups.length && <tr><td colSpan={7} style={{ padding: 28, textAlign: "center", color: "#64748b" }}>Nenhum grupo corresponde à pesquisa.</td></tr>}</tbody><tfoot>{filteredGroups.length > 0 && <tr style={{ background: "#f7f9fc", fontWeight: 750 }}><td>Total exibido</td><td className="numeric-cell">{numbers.format(filteredGroups.reduce((n, g) => n + g.count, 0))}</td><td className="numeric-cell">{numbers.format(filteredGroups.reduce((n, g) => n + g.completedCount, 0))}</td><td className="numeric-cell">{currency.format(filteredGroups.reduce((n, g) => n + g.revenue, 0))}</td><td className="numeric-cell">{currency.format(filteredGroups.reduce((n, g) => n + g.cost, 0))}</td><td className="numeric-cell">{currency.format(filteredGroups.reduce((n, g) => n + g.profit, 0))}</td><td /></tr>}</tfoot></table></div>
+        </section>
+      </div>}
+    </main>
+    {selectedLabel && <div role="dialog" aria-modal="true" aria-labelledby="detail-title" style={{ position: "fixed", inset: 0, zIndex: 1000, background: "rgba(15,23,42,.48)", display: "flex", justifyContent: "center", alignItems: "center", padding: 18 }} onMouseDown={(e) => { if (e.target === e.currentTarget) setSelectedLabel(null); }}><section style={{ width: "min(1200px, 100%)", maxHeight: "90vh", overflow: "auto", background: "#fff", borderRadius: 16, boxShadow: "0 24px 80px rgba(0,0,0,.25)" }}><header style={{ position: "sticky", top: 0, zIndex: 1, background: "#fff", padding: "20px 24px", borderBottom: "1px solid #e7edf4", display: "flex", justifyContent: "space-between", alignItems: "center", gap: 16 }}><div><p style={{ margin: "0 0 5px", color: "#087f8c", fontSize: 11, fontWeight: 800, letterSpacing: ".12em" }}>DETALHAMENTO DO GRUPO</p><h2 id="detail-title" style={{ margin: 0, fontSize: 22 }}>{selectedLabel}</h2><p style={{ margin: "5px 0 0", color: "#64748b", fontSize: 13 }}>{selectedRows.length} registros encontrados · valores financeiros apenas para vendas concluídas</p></div><button className="button button--secondary button--small" type="button" onClick={() => setSelectedLabel(null)}>Fechar ✕</button></header><div style={{ padding: 24, display: "grid", gap: 16 }}><div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))", gap: 12 }}>{[{ label: "Vendas concluídas", value: numbers.format(selectedRows.filter((r) => r.completed).length) }, { label: "Faturamento", value: currency.format(selectedRows.reduce((n, r) => n + r.revenue, 0)) }, { label: "Custos", value: currency.format(selectedRows.reduce((n, r) => n + r.cost, 0)) }, { label: "Resultado", value: currency.format(selectedRows.reduce((n, r) => n + r.revenue - r.cost, 0)) }].map((item) => <div key={item.label} style={{ background: "#f7f9fc", border: "1px solid #e7edf4", borderRadius: 12, padding: 15 }}><span style={{ color: "#64748b", fontSize: 12 }}>{item.label}</span><strong style={{ display: "block", marginTop: 7, fontSize: 20, color: "#10233f" }}>{item.value}</strong></div>)}</div><div style={{ display: "flex", flexWrap: "wrap", gap: 10 }}><input value={detailSearch} onChange={(e) => setDetailSearch(e.target.value)} placeholder="Pesquisar cliente, contato, modelo ou status…" style={{ minHeight: 40, flex: "1 1 260px", border: "1px solid #cbd7e5", borderRadius: 9, padding: "0 12px" }} /><select value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)} style={{ minHeight: 40, border: "1px solid #cbd7e5", borderRadius: 9, padding: "0 12px" }}><option value="all">Todas as situações</option><option value="Concluída">Concluídas</option><option value="Não concluída">Não concluídas</option><option value="Revisar">A revisar</option></select><button className="button button--secondary button--small" type="button" onClick={() => { const headers = ["Cliente","Contato","Data","Modelo","Status","Situação financeira","Faturamento","Custo"]; const body = selectedRows.map((r) => [r.client,r.contact,r.date,r.model,r.status,r.treatment,r.revenue.toFixed(2),r.cost.toFixed(2)]); const csv = [headers,...body].map((line) => line.map((v) => `"${String(v).replace(/"/g,'""')}"`).join(";")).join("\r\n"); const url = URL.createObjectURL(new Blob(["\uFEFF",csv],{type:"text/csv;charset=utf-8"})); const a = document.createElement("a"); a.href = url; a.download = `detalhamento-${selectedLabel.replace(/[^a-z0-9]+/gi,"-").toLowerCase()}.csv`; a.click(); URL.revokeObjectURL(url); }}>Exportar detalhes CSV</button></div><div style={{ overflowX: "auto" }}><table className="records-table report-table" style={{ width: "100%", minWidth: 900 }}><thead><tr><th>Cliente</th><th>Data emissão/renovação</th><th>Modelo</th><th>Status</th><th>Situação</th><th className="numeric-cell">Faturamento</th><th className="numeric-cell">Custo</th><th className="numeric-cell">Resultado</th></tr></thead><tbody>{selectedRows.map((row) => <tr key={row.id}><td style={{ fontWeight: 650 }}>{row.client}</td><td>{row.date}</td><td>{textValue(row.model)}</td><td>{textValue(row.status)}</td><td><span style={{ display: "inline-block", borderRadius: 20, padding: "4px 8px", fontSize: 11, background: row.treatment === "Concluída" ? "#dcfce7" : row.treatment === "Revisar" ? "#f1f5f9" : "#ffedd5", color: row.treatment === "Concluída" ? "#166534" : row.treatment === "Revisar" ? "#475569" : "#9a3412" }}>{row.treatment}</span></td><td className="numeric-cell">{currency.format(row.revenue)}</td><td className="numeric-cell">{currency.format(row.cost)}</td><td className="numeric-cell">{currency.format(row.revenue - row.cost)}</td></tr>)}{!selectedRows.length && <tr><td colSpan={8} style={{ padding: 24, textAlign: "center", color: "#64748b" }}>Nenhum registro encontrado com esses filtros.</td></tr>}</tbody></table></div></div></section></div>}
+  </div>;
 }
