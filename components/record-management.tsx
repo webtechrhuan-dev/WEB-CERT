@@ -138,29 +138,45 @@ function RecordForm({
           return (
             <label className="record-form-field" key={header}>
               <span>{header}</span>
-              <input
-                autoComplete="off"
-                readOnly={automaticField}
-                aria-readonly={automaticField || undefined}
-                inputMode={moneyField ? "decimal" : undefined}
-                onChange={(event) =>
-                  setValues((current) => ({
-                    ...current,
-                    [header]: event.target.value,
-                  }))
-                }
-                placeholder={
-                  automaticField
-                    ? "Preenchido automaticamente"
-                    : dateField
-                      ? "AAAA-MM-DD"
-                      : moneyField
-                        ? "Ex.: 1.250,00"
-                        : "Opcional"
-                }
-                type="text"
-                value={values[header] ?? ""}
-              />
+              {header === "Modelo" ? (
+                <select
+                  value={values[header] ?? ""}
+                  onChange={(event) =>
+                    setValues((current) => ({
+                      ...current,
+                      [header]: event.target.value,
+                    }))
+                  }
+                >
+                  <option value="">Selecione o modelo</option>
+                  <option value="CNPJ - A1">CNPJ - A1</option>
+                  <option value="CPF - A1">CPF - A1</option>
+                </select>
+              ) : (
+                <input
+                  autoComplete="off"
+                  readOnly={automaticField}
+                  aria-readonly={automaticField || undefined}
+                  inputMode={moneyField ? "decimal" : undefined}
+                  onChange={(event) =>
+                    setValues((current) => ({
+                      ...current,
+                      [header]: event.target.value,
+                    }))
+                  }
+                  placeholder={
+                    automaticField
+                      ? "Preenchido automaticamente"
+                      : dateField
+                        ? "AAAA-MM-DD"
+                        : moneyField
+                          ? "Ex.: 1.250,00"
+                          : "Opcional"
+                  }
+                  type="text"
+                  value={values[header] ?? ""}
+                />
+              )}
             </label>
           );
         })}
