@@ -19,101 +19,149 @@ function ReportError({ message }: { message: string }) {
     <section className="state-panel state-panel--error">
       <span className="state-icon state-icon--error"><Icon name="alert" /></span>
       <div className="state-copy">
-        <h2>Relatório indisponível</h2>
+        <h2>Não foi possível carregar os relatórios</h2>
         <p>{message}</p>
       </div>
     </section>
   );
 }
 
+function exportCsv(rows: Array<{ label: string; count: number; revenue: number; cost: number }>) {
+  const quote = (value: string | number) => `"${String(value).replace(/"/g, '""')}"`;
+  const content = [
+    ["Grupo", "Registros", "Faturamento (R$)", "Custo (R$)", "Resultado (R$)"],
+    ...rows.map((row) => [row.label, row.count, row.revenue.toFixed(2), row.cost.toFixed(2), (row.revenue - row.cost).toFixed(2)]),
+  ].map((line) => line.map(quote).join(";")).join("\r\n");
+  const blob = new Blob(["\uFEFF", content], { type: "text/csv;charset=utf-8" });
+  const url = URL.createObjectURL(blob);
+  const anchor = document.createElement("a");
+  anchor.href = url;
+  anchor.download = "relatorio-certificados.csv";
+  anchor.click();
+  URL.revokeObjectURL(url);
+}
+
 export default function ReportsPage() {
   const { data: session, status } = useSession();
-  const { data, loading, error, refresh } = useWorkbookData(
-    status === "authenticated",
-  );
+  const { data, loading, error, refresh } = useWorkbookData(status === "authenticated");
   const [dimension, setDimension] = useState<ReportDimension>("period");
+  const [search, setSearch] = useState("");
   const summary = useMemo(
     () => (data ? summarizeWorkbook(data, dimension) : null),
     [data, dimension],
   );
+  const filteredGroups = useMemo(() => {
+    const query = search.trim().toLocaleLowerCase("pt-BR");
+    return (summary?.groups ?? []).filter((group) => !query || group.label.toLocaleLowerCase("pt-BR").includes(query));
+  }, [summary, search]);
   const dimensionLabels: Record<ReportDimension, string> = {
-    period: "Ano e mês",
-    model: "Modelo",
+    period: "Período",
+    model: "Modelo do certificado",
     status: "Status / observação",
   };
 
   return (
     <div className="app-shell">
       <AppHeader active="reports" />
-      <main className="workspace module-workspace">
+      <main className="workspace module-workspace" style={{ maxWidth: 1500 }}>
         <div className="breadcrumb" aria-label="Localização">
           <Link href="/">Início</Link><span aria-hidden="true">/</span><span aria-current="page">Relatórios</span>
         </div>
-        <section className="module-page-heading">
-          <p className="eyebrow">ANÁLISE DOS REGISTROS</p>
+
+        <section className="module-page-heading" style={{ marginBottom: 24 }}>
+          <p className="eyebrow">VISÃO FINANCEIRA</p>
           <h1>Relatórios</h1>
-          <p>Resumo calculado sob demanda a partir da versão atual da planilha.</p>
+          <p>Acompanhe vendas, custos e resultado com base nos registros válidos da planilha.</p>
         </section>
+
         {status === "loading" || loading ? (
-          <section className="state-panel" aria-busy="true"><span className="loading-spinner" /><div className="state-copy"><h2>Carregando relatório</h2></div></section>
+          <section className="state-panel" aria-busy="true"><span className="loading-spinner" /><div className="state-copy"><h2>Conferindo os dados da planilha…</h2><p>Os indicadores serão calculados após o carregamento.</p></div></section>
         ) : !session?.user ? (
-          <div>
-            <ReportError message={error ?? "Entre com sua conta corporativa para acessar os dados."} />
-            <Link className="button button--secondary button--small" href="/login">Ir para o acesso</Link>
-          </div>
+          <div><ReportError message={error ?? "Entre com sua conta para acessar os dados."} /><Link className="button button--secondary button--small" href="/login">Ir para o acesso</Link></div>
         ) : error || !summary ? (
-          <div>
-            <ReportError message={error ?? "Não foi possível calcular o relatório."} />
-            <button className="button button--secondary button--small" onClick={() => void refresh()} type="button">Tentar novamente</button>
-          </div>
+          <div><ReportError message={error ?? "Não foi possível calcular os indicadores."} /><button className="button button--secondary button--small" onClick={() => void refresh()} type="button">Tentar novamente</button></div>
         ) : (
-          <div className="reports-content">
-            <section className="report-summary-grid" aria-label="Resumo financeiro e quantidade">
-              <article className="report-summary-card">
-                <span>Registros considerados</span><strong>{numbers.format(summary.count)}</strong>
-                <small>Quantidade real da planilha carregada</small>
+          <div style={{ display: "grid", gap: 22 }}>
+            <section style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 16, flexWrap: "wrap" }}>
+              <div>
+                <h2 style={{ margin: 0, fontSize: 18, fontWeight: 750 }}>Resumo do negócio</h2>
+                <p style={{ margin: "5px 0 0", color: "var(--muted, #64748b)", fontSize: 13 }}>Valores calculados a partir dos registros de clientes; linhas de totalização são ignoradas.</p>
+              </div>
+              <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+                <button className="button button--secondary button--small" type="button" onClick={() => void refresh()} disabled={loading}><Icon name="refresh" /> Atualizar dados</button>
+                <button className="button button--primary button--small" type="button" onClick={() => exportCsv(filteredGroups)} disabled={!filteredGroups.length}>Exportar CSV</button>
+              </div>
+            </section>
+
+            <section aria-label="Indicadores financeiros" style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(210px, 1fr))", gap: 14 }}>
+              <article style={{ background: "#fff", border: "1px solid #dce5ef", borderRadius: 14, padding: 20, boxShadow: "0 4px 14px rgba(15,23,42,.04)" }}>
+                <span style={{ color: "#52647a", fontSize: 13 }}>Vendas / registros válidos</span>
+                <strong style={{ display: "block", marginTop: 10, fontSize: 30, letterSpacing: "-.04em", color: "#10233f" }}>{numbers.format(summary.count)}</strong>
+                <small style={{ color: "#64748b" }}>Linhas consideradas no cálculo</small>
               </article>
-              <article className="report-summary-card">
-                <span>Soma informada de faturamento</span><strong>{currency.format(summary.revenue)}</strong>
-                <small>Soma dos valores monetários preenchidos</small>
+              <article style={{ background: "#fff", border: "1px solid #dce5ef", borderRadius: 14, padding: 20, boxShadow: "0 4px 14px rgba(15,23,42,.04)" }}>
+                <span style={{ color: "#52647a", fontSize: 13 }}>Faturamento informado</span>
+                <strong style={{ display: "block", marginTop: 10, fontSize: 28, letterSpacing: "-.04em", color: "#087443" }}>{currency.format(summary.revenue)}</strong>
+                <small style={{ color: "#64748b" }}>Soma dos valores preenchidos</small>
               </article>
-              <article className="report-summary-card">
-                <span>Soma informada de custo</span><strong>{currency.format(summary.cost)}</strong>
-                <small>Soma dos valores monetários preenchidos</small>
+              <article style={{ background: "#fff", border: "1px solid #dce5ef", borderRadius: 14, padding: 20, boxShadow: "0 4px 14px rgba(15,23,42,.04)" }}>
+                <span style={{ color: "#52647a", fontSize: 13 }}>Custo informado</span>
+                <strong style={{ display: "block", marginTop: 10, fontSize: 28, letterSpacing: "-.04em", color: "#b45309" }}>{currency.format(summary.cost)}</strong>
+                <small style={{ color: "#64748b" }}>Soma dos custos preenchidos</small>
+              </article>
+              <article style={{ background: "#10233f", border: "1px solid #10233f", borderRadius: 14, padding: 20, boxShadow: "0 4px 14px rgba(15,23,42,.08)" }}>
+                <span style={{ color: "#c8d6e8", fontSize: 13 }}>Resultado estimado</span>
+                <strong style={{ display: "block", marginTop: 10, fontSize: 28, letterSpacing: "-.04em", color: summary.profit >= 0 ? "#86efac" : "#fca5a5" }}>{currency.format(summary.profit)}</strong>
+                <small style={{ color: "#c8d6e8" }}>Faturamento menos custo informado</small>
               </article>
             </section>
 
-            <section className="content-panel report-panel">
-              <div className="panel-heading">
-                <div><h2>Distribuição dos registros</h2><p>Valores agregados; nenhuma coluna foi removida ou alterada na origem.</p></div>
-                <label className="report-filter">
-                  <span>Agrupar por</span>
-                  <select value={dimension} onChange={(event) => setDimension(event.target.value as ReportDimension)}>
-                    <option value="period">Ano e mês</option>
-                    <option value="model">Modelo</option>
-                    <option value="status">Status / observação</option>
-                  </select>
-                </label>
+            <section style={{ background: "#fff", border: "1px solid #dce5ef", borderRadius: 16, overflow: "hidden", boxShadow: "0 5px 20px rgba(15,23,42,.04)" }}>
+              <div style={{ padding: "22px 24px", display: "flex", alignItems: "end", justifyContent: "space-between", gap: 18, flexWrap: "wrap", borderBottom: "1px solid #e7edf4" }}>
+                <div>
+                  <h2 style={{ margin: 0, fontSize: 18, fontWeight: 750, color: "#10233f" }}>Detalhamento</h2>
+                  <p style={{ margin: "6px 0 0", fontSize: 13, color: "#64748b" }}>Agrupe e filtre os resultados. Os totais abaixo acompanham o filtro de pesquisa.</p>
+                </div>
+                <div style={{ display: "flex", gap: 12, alignItems: "end", flexWrap: "wrap" }}>
+                  <label style={{ display: "grid", gap: 6, minWidth: 190, fontSize: 12, color: "#52647a", fontWeight: 650 }}>
+                    Agrupar por
+                    <select value={dimension} onChange={(event) => { setDimension(event.target.value as ReportDimension); setSearch(""); }} style={{ minHeight: 42, border: "1px solid #cbd7e5", borderRadius: 9, padding: "0 12px", background: "#fff", color: "#10233f" }}>
+                      <option value="period">Ano e mês</option><option value="model">Modelo</option><option value="status">Status / observação</option>
+                    </select>
+                  </label>
+                  <label style={{ display: "grid", gap: 6, minWidth: 220, fontSize: 12, color: "#52647a", fontWeight: 650 }}>
+                    Filtrar grupos
+                    <input value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Digite para pesquisar…" style={{ minHeight: 42, border: "1px solid #cbd7e5", borderRadius: 9, padding: "0 12px", color: "#10233f" }} />
+                  </label>
+                </div>
               </div>
-              <div className="table-scroll report-table-scroll">
-                <table className="records-table report-table">
-                  <thead><tr><th>{dimensionLabels[dimension]}</th><th className="numeric-cell">Registros</th><th className="numeric-cell">Faturamento</th><th className="numeric-cell">Custo</th></tr></thead>
+
+              <div style={{ padding: "12px 24px", display: "flex", justifyContent: "space-between", flexWrap: "wrap", gap: 8, background: "#f7f9fc", borderBottom: "1px solid #e7edf4", color: "#52647a", fontSize: 12 }}>
+                <span><strong style={{ color: "#10233f" }}>{numbers.format(filteredGroups.length)}</strong> grupos exibidos</span>
+                <span><strong style={{ color: "#10233f" }}>{numbers.format(summary.rowsIgnored)}</strong> linhas vazias ou totalizadoras ignoradas no cálculo</span>
+              </div>
+
+              <div style={{ overflowX: "auto" }}>
+                <table className="records-table report-table" style={{ width: "100%", minWidth: 720 }}>
+                  <thead><tr><th>{dimensionLabels[dimension]}</th><th className="numeric-cell">Registros</th><th className="numeric-cell">Faturamento</th><th className="numeric-cell">Custo</th><th className="numeric-cell">Resultado</th></tr></thead>
                   <tbody>
-                    {summary.groups.map((group) => (
+                    {filteredGroups.map((group) => (
                       <tr key={group.label}>
-                        <td>{group.label}</td>
+                        <td style={{ fontWeight: 650, color: "#10233f" }}>{group.label}</td>
                         <td className="numeric-cell">{numbers.format(group.count)}</td>
                         <td className="numeric-cell">{currency.format(group.revenue)}</td>
                         <td className="numeric-cell">{currency.format(group.cost)}</td>
+                        <td className="numeric-cell" style={{ fontWeight: 650, color: group.revenue - group.cost >= 0 ? "#087443" : "#b91c1c" }}>{currency.format(group.revenue - group.cost)}</td>
                       </tr>
                     ))}
-                    {summary.groups.length === 0 && <tr><td colSpan={4}>A planilha ainda não possui registros para resumir.</td></tr>}
+                    {!filteredGroups.length && <tr><td colSpan={5} style={{ padding: 28, textAlign: "center", color: "#64748b" }}>Nenhum grupo corresponde à pesquisa.</td></tr>}
                   </tbody>
+                  {filteredGroups.length > 0 && <tfoot><tr style={{ background: "#f7f9fc", fontWeight: 750 }}><td>Total dos grupos exibidos</td><td className="numeric-cell">{numbers.format(filteredGroups.reduce((total, group) => total + group.count, 0))}</td><td className="numeric-cell">{currency.format(filteredGroups.reduce((total, group) => total + group.revenue, 0))}</td><td className="numeric-cell">{currency.format(filteredGroups.reduce((total, group) => total + group.cost, 0))}</td><td className="numeric-cell">{currency.format(filteredGroups.reduce((total, group) => total + group.revenue - group.cost, 0))}</td></tr></tfoot>}
                 </table>
               </div>
-              <p className="report-footnote">
-                Campos sem valor não são inferidos. Os totais somam somente valores numéricos preenchidos.
-              </p>
+              <div style={{ padding: "14px 24px", borderTop: "1px solid #e7edf4", color: "#64748b", fontSize: 12, lineHeight: 1.6 }}>
+                Atenção: resultado estimado é uma conta simples de faturamento menos custo preenchido; não representa lucro contábil. Campos vazios não são presumidos como valores reais. Confira os dados de origem se algum total não bater com a planilha.
+              </div>
             </section>
           </div>
         )}
