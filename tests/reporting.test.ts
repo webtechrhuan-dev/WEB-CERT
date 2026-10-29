@@ -18,8 +18,8 @@ describe("relatórios agregados", () => {
     const summary = summarizeWorkbook(sample, "period");
 
     expect(summary.count).toBe(3);
-    expect(summary.revenue).toBe(150);
-    expect(summary.cost).toBe(40);
+    expect(summary.revenue).toBe(100);
+    expect(summary.cost).toBe(25);
     expect(summary.groups).toEqual([
       { label: "Fevereiro 2026", count: 1, revenue: 0, cost: 0, profit: 0, completedCount: 0 },
       { label: "Janeiro 2025", count: 2, revenue: 100, cost: 25, profit: 75, completedCount: 1 },
