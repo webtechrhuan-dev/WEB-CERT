@@ -2202,3 +2202,19 @@ input:focus-visible,
   background: #000;
   object-fit: contain;
 }
+
+
+/* Gestão de vendas agrupada por período, com edição expandida na própria linha */
+.record-picker--grouped { max-height: none; overflow: visible; }
+.record-period-group + .record-period-group { border-top: 8px solid #f3f7f9; }
+.record-period-heading { display:flex; align-items:center; gap:10px; padding:12px 22px; background:#f5f9fb; border-bottom:1px solid #e4edf1; color:#29495c; font-size:12px; }
+.record-period-heading strong { font-size:13px; color:#123d52; }
+.record-period-heading .record-count { margin-left:auto; }
+.record-inline-item { min-width:0; }
+.selected-record-form--inline { margin:0; border-bottom:1px solid #d7e8ee; background:#fbfdfe; box-shadow:inset 3px 0 #08a8c3; }
+.selected-record-form--inline .panel-heading { padding:16px 22px; background:#f8fcfd; }
+.selected-record-form--inline .record-form { padding-top:18px; }
+@media (max-width:520px) {
+ .record-period-heading { padding:11px 13px; }
+ .selected-record-form--inline .panel-heading { padding:14px; }
+}
