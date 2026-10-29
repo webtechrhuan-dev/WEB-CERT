@@ -67,18 +67,35 @@ function isCustomerRecord(record: WorkbookRecord, data: WorkbookData): boolean {
 }
 
 type FinancialTreatment = "completed" | "excluded" | "review";
+
+function hasMoneyValue(cell: WorkbookCell | undefined): boolean {
+  return cell !== null && cell !== undefined && String(cell).trim() !== "";
+}
+
 function financialTreatment(record: WorkbookRecord, data: WorkbookData): FinancialTreatment {
   const status = normalizedText(displayCell(record.values[headerIndex(data, "Status / Observação")]));
   const year = Number(displayCell(record.values[headerIndex(data, "Ano da planilha")]));
-  if (status === "SEM PREENCHIMENTO") {
-    // Os arquivos de 2024/2025 são registros históricos sem campo de status.
-    // Em 2026, status vazio é ambíguo e não deve entrar no financeiro automaticamente.
-    return Number.isFinite(year) && year < 2026 ? "completed" : "review";
+  const revenue = record.values[headerIndex(data, "Faturamento (R$)")];
+  const cost = record.values[headerIndex(data, "Custo (R$)")];
+  let base: FinancialTreatment;
+
+  if (status === "SEM PREENCHIMENTO" || (status === "*" && Number.isFinite(year) && year < 2026)) {
+    // Em 2024/2025 não havia coluna de status comercial; o asterisco era um marcador legado.
+    // Status vazio em 2026 não confirma que houve venda.
+    base = Number.isFinite(year) && year < 2026 ? "completed" : "review";
+  } else if (/^(FEITO E PAGO|CONCLUIDO|CONCLUIDA|PAGO|PAGA|FINALIZADO|FINALIZADA)$/.test(status)) {
+    base = "completed";
+  } else if (/\b(PERDIDO|CANCELADO|CANCELADA|AGENDADO|AGENDADA|OFERTA ENVIADA|ORCAMENTO|PROPOSTA|PENDENTE|EM ABERTO)\b/.test(status)) {
+    base = "excluded";
+  } else {
+    // Status desconhecido não deve ser tratado como venda concluída por suposição.
+    base = "review";
   }
-  if (/^(FEITO E PAGO|CONCLUIDO|CONCLUIDA|PAGO|PAGA|FINALIZADO|FINALIZADA)$/.test(status)) return "completed";
-  if (/\b(PERDIDO|CANCELADO|CANCELADA|AGENDADO|AGENDADA|OFERTA ENVIADA|ORCAMENTO|ORÇAMENTO|PROPOSTA|PENDENTE|EM ABERTO)\b/.test(status)) return "excluded";
-  // Status desconhecido não deve ser tratado como venda concluída por suposição.
-  return "review";
+
+  // Vendas históricas ou marcadas como pagas sem faturamento/custo preenchido
+  // ficam pendentes: não é seguro assumir que o valor ausente seja R$ 0,00.
+  if (base === "completed" && (!hasMoneyValue(revenue) || !hasMoneyValue(cost))) return "review";
+  return base;
 }
 
 function groupLabel(record: WorkbookRecord, data: WorkbookData, dimension: ReportDimension): string {
@@ -151,6 +168,8 @@ export type DetailedReportRow = {
   cost: number;
   completed: boolean;
   treatment: "Concluída" | "Não concluída" | "Revisar";
+  financialIssue: boolean;
+  dateIssue: boolean;
 };
 
 export function getWorkbookReportRows(data: WorkbookData): DetailedReportRow[] {
@@ -162,6 +181,24 @@ export function getWorkbookReportRows(data: WorkbookData): DetailedReportRow[] {
     let date = value("Data de emissão/renovação");
     if (typeof dateCell === "object" && dateCell && "kind" in dateCell) date = dateCell.parsed || String(dateCell.raw ?? "");
     const completed = treatment === "completed";
+    const year = Number(value("Ano da planilha"));
+    const monthMap: Record<string, number> = {
+      JANEIRO: 1, FEVEREIRO: 2, MARCO: 3, ABRIL: 4, MAIO: 5, JUNHO: 6,
+      JULHO: 7, AGOSTO: 8, SETEMBRO: 9, OUTUBRO: 10, NOVEMBRO: 11, DEZEMBRO: 12,
+    };
+    const monthNumber = monthMap[normalizedText(value("Mês da planilha"))];
+    const parsedDate = date ? new Date(date) : null;
+    const validDate = Boolean(parsedDate && !Number.isNaN(parsedDate.getTime()));
+    const dateIssue = !validDate || !Number.isFinite(year) || !monthNumber ||
+      parsedDate!.getFullYear() !== year || parsedDate!.getMonth() + 1 !== monthNumber;
+    const status = normalizedText(value("Status / Observação"));
+    const baseWouldBeCompleted = status === "SEM PREENCHIMENTO" ||
+      (status === "*" && Number.isFinite(year) && year < 2026) ||
+      /^(FEITO E PAGO|CONCLUIDO|CONCLUIDA|PAGO|PAGA|FINALIZADO|FINALIZADA)$/.test(status);
+    const financialIssue = baseWouldBeCompleted && (
+      !hasMoneyValue(record.values[index("Faturamento (R$)")]) ||
+      !hasMoneyValue(record.values[index("Custo (R$)")])
+    );
     return {
       id: String(record.rowNumber),
       client: value("Cliente"),
@@ -175,6 +212,8 @@ export function getWorkbookReportRows(data: WorkbookData): DetailedReportRow[] {
       cost: completed ? numericCell(record.values[index("Custo (R$)")]) : 0,
       completed,
       treatment: completed ? "Concluída" : treatment === "excluded" ? "Não concluída" : "Revisar",
+      financialIssue,
+      dateIssue,
     };
   });
 }
