@@ -37,8 +37,13 @@ function apiErrorMessage(value: unknown): string | null {
     : null;
 }
 
-const AUTO_FIELDS = ["Ano da planilha", "Mês da planilha"] as const;
+const PERIOD_FIELDS = ["Ano da planilha", "Mês da planilha"] as const;
 const MONTH_NAMES = ["janeiro", "fevereiro", "março", "abril", "maio", "junho", "julho", "agosto", "setembro", "outubro", "novembro", "dezembro"];
+
+function availableYears(): string[] {
+  const currentYear = Number(currentPeriod().year);
+  return Array.from({ length: 11 }, (_, index) => String(currentYear - index));
+}
 
 function currentPeriod(): { year: string; month: string } {
   const parts = new Intl.DateTimeFormat("en-US", {
@@ -86,7 +91,7 @@ function RecordForm({
 
     const changes = Object.fromEntries(
       WORKBOOK_HEADERS
-        .filter((header) => !AUTO_FIELDS.includes(header as (typeof AUTO_FIELDS)[number]) && (mode === "create" || values[header] !== initialValues[header]))
+        .filter((header) => mode === "create" || values[header] !== initialValues[header])
         .map((header) => [header, values[header] === "" ? null : values[header]]),
     );
     if (Object.keys(changes).length === 0) {
@@ -131,14 +136,31 @@ function RecordForm({
     <form className="record-form" onSubmit={submit}>
       <div className="record-form-grid">
         {WORKBOOK_HEADERS.map((header) => {
-          const automaticField = AUTO_FIELDS.includes(header as (typeof AUTO_FIELDS)[number]);
+          const periodField = PERIOD_FIELDS.includes(header as (typeof PERIOD_FIELDS)[number]);
+          const yearField = header === "Ano da planilha";
+          const monthField = header === "Mês da planilha";
           const dateField = header === "Data de emissão/renovação";
           const moneyField =
             header === "Faturamento (R$)" || header === "Custo (R$)";
           return (
             <label className="record-form-field" key={header}>
               <span>{header}</span>
-              {header === "Modelo" ? (
+              {periodField ? (
+                <select
+                  value={values[header] ?? ""}
+                  onChange={(event) =>
+                    setValues((current) => ({
+                      ...current,
+                      [header]: event.target.value,
+                    }))
+                  }
+                >
+                  <option value="">{yearField ? "Selecione o ano" : "Selecione o mês"}</option>
+                  {yearField
+                    ? availableYears().map((year) => <option key={year} value={year}>{year}</option>)
+                    : MONTH_NAMES.map((month) => <option key={month} value={month}>{month.charAt(0).toLocaleUpperCase("pt-BR") + month.slice(1)}</option>)}
+                </select>
+              ) : header === "Modelo" ? (
                 <select
                   value={values[header] ?? ""}
                   onChange={(event) =>
@@ -155,9 +177,7 @@ function RecordForm({
               ) : (
                 <input
                   autoComplete="off"
-                  readOnly={automaticField}
-                  aria-readonly={automaticField || undefined}
-                  inputMode={moneyField ? "decimal" : undefined}
+                                    inputMode={moneyField ? "decimal" : undefined}
                   onChange={(event) =>
                     setValues((current) => ({
                       ...current,
@@ -165,13 +185,11 @@ function RecordForm({
                     }))
                   }
                   placeholder={
-                    automaticField
-                      ? "Preenchido automaticamente"
-                      : dateField
-                        ? "AAAA-MM-DD"
-                        : moneyField
-                          ? "Ex.: 1.250,00"
-                          : "Opcional"
+                    dateField
+                      ? "AAAA-MM-DD"
+                      : moneyField
+                        ? "Ex.: 1.250,00"
+                        : "Opcional"
                   }
                   type="text"
                   value={values[header] ?? ""}
@@ -182,7 +200,7 @@ function RecordForm({
         })}
       </div>
       <p className="form-help">
-        Ano e mês são preenchidos automaticamente. Os demais campos são digitados em cada venda.
+        Ano e mês podem ser selecionados em cada venda; o período atual aparece como padrão e as opções de ano avançam automaticamente com o calendário.
         Campos podem ficar vazios. Datas alteradas devem usar AAAA-MM-DD; valores monetários aceitam formato brasileiro ou decimal.
       </p>
       {error && <p className="form-message form-message--error" role="alert">{error}</p>}
