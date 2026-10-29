@@ -26,7 +26,7 @@ function ReportError({ message }: { message: string }) {
   );
 }
 
-function exportCsv(rows: Array<{ label: string; count: number; revenue: number; cost: number }>) {
+function exportCsv(rows: Array<{ label: string; count: number; completedCount: number; revenue: number; cost: number }>) {
   const quote = (value: string | number) => `"${String(value).replace(/"/g, '""')}"`;
   const content = [
     ["Grupo", "Registros", "Vendas contabilizadas", "Faturamento (R$)", "Custo (R$)", "Resultado (R$)"],
