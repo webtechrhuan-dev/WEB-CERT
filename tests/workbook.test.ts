@@ -175,7 +175,9 @@ describe("API de consulta", () => {
 
 describe("alterações em memória", () => {
   it("cadastra uma linha preservando o histórico, cabeçalhos e referência da tabela", async () => {
-    const original = await readWorkbookBufferFromPath();
+    const original = await createWorkbook(WORKBOOK_HEADERS, [
+      [2025, "Março", "Cliente original", "contato", new Date(Date.UTC(2025, 2, 4)), null, "A1", 100, 25, "Ativo"],
+    ]);
     const originalData = await parseWorkbookBuffer(original);
     const output = await createWorkbookRecord(original, {
       "Ano da planilha": "2026",
@@ -199,9 +201,9 @@ describe("alterações em memória", () => {
 
     expect(data.count).toBe(originalData.count + 1);
     expect(data.records.slice(0, originalData.count)).toEqual(originalData.records);
-    expect(data.records.at(-1)?.values[6]).toBe(1234.56);
-    expect(data.records.at(-1)?.values[7]).toBe(45);
-    expect(tableXml).toContain(`ref="A1:I${data.count + 1}"`);
+    expect(data.records.at(-1)?.values[7]).toBe(1234.56);
+    expect(data.records.at(-1)?.values[8]).toBe(45);
+    expect(tableXml).toContain(`ref="A1:J${data.count + 1}"`);
   });
 
   it("edita somente os campos alterados e preserva as demais linhas", async () => {
@@ -219,8 +221,8 @@ describe("alterações em memória", () => {
     expect(updatedData.count).toBe(originalData.count);
     expect(updatedData.records.filter((record) => record.rowNumber !== target.rowNumber))
       .toEqual(originalData.records.filter((record) => record.rowNumber !== target.rowNumber));
-    expect(updatedTarget?.values[8]).toBe("Alteração sintética de teste");
-    expect(updatedTarget?.values.slice(0, 8)).toEqual(target.values.slice(0, 8));
+    expect(updatedTarget?.values[9]).toBe("Alteração sintética de teste");
+    expect(updatedTarget?.values.filter((_, index) => index !== 9)).toEqual(target.values.filter((_, index) => index !== 9));
   });
 
   it("permite limpar um campo sem remover a linha", async () => {
