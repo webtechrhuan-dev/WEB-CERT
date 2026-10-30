@@ -135,6 +135,7 @@ export default async function Home() {
             </span>
           </p>
         </aside>
+              <HelpFaq topic="home" />
       </main>
     </div>
   );
