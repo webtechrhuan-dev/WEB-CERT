@@ -64,16 +64,21 @@ export async function createCertificate(values: WorkbookCell[]): Promise<void> {
   await db.collection(collection).insertOne({ rowNumber, values: normalizeValues(values), createdAt: now, updatedAt: now });
 }
 
-export async function updateCertificate(rowNumber: number, values: WorkbookCell[], _expectedVersion?: string): Promise<boolean> {
+export async function updateCertificate(rowNumber: number, values: WorkbookCell[], expectedVersion?: string): Promise<boolean> {
   const db = await getMongoDb();
   await ensureStorageIndexes();
+  if (!expectedVersion || !Number.isFinite(Date.parse(expectedVersion))) throw new Error("RECORD_CONFLICT");
   values = normalizeValues(values);
+  const expectedUpdatedAt = new Date(expectedVersion);
   const result = await db.collection(collection).findOneAndUpdate(
-    { rowNumber },
+    { rowNumber, updatedAt: expectedUpdatedAt },
     { $set: { values, updatedAt: new Date() } },
     { returnDocument: "after", projection },
   );
-  return Boolean(result);
+  if (result) return true;
+  const exists = await db.collection(collection).findOne({ rowNumber }, { projection: { _id: 1 } });
+  if (!exists) throw new Error("RECORD_NOT_FOUND");
+  throw new Error("RECORD_CONFLICT");
 }
 
 export async function importCertificates(records: WorkbookRecord[]): Promise<number> {
