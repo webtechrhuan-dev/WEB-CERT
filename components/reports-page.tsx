@@ -13,7 +13,7 @@ import { getWorkbookReportRows, summarizeWorkbook, type ReportDimension, type De
 const currency = new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" });
 const numbers = new Intl.NumberFormat("pt-BR");
 type Granularity = "month" | "week" | "year";
-type Group = { label: string; count: number; completedCount: number; revenue: number; cost: number; profit: number };
+type Group = { label: string; count: number; completedCount: number; excludedCount?: number; reviewCount?: number; revenue: number; cost: number; profit: number };
 const MONTHS = ["janeiro", "fevereiro", "março", "abril", "maio", "junho", "julho", "agosto", "setembro", "outubro", "novembro", "dezembro"];
 
 function cellText(value: unknown): string {
@@ -140,8 +140,8 @@ function UnifiedChart({ rows }: { rows: Group[] }) {
   const line = (value: (row: Group) => number) => visible.map((row, i) => `${i ? "L" : "M"} ${x(i)} ${yCount(value(row))}`).join(" ");
   const series = [
     { key: "completed", label: "Concluídas", value: (r: Group) => r.completedCount, color: colors.completed },
-    { key: "excluded", label: "Não concluídas", value: (r: Group) => Math.max(0, r.count - r.completedCount), color: colors.excluded },
-    { key: "review", label: "Em revisão", value: (r: Group) => Math.max(0, r.count - r.completedCount - (r.count - r.completedCount)), color: colors.review },
+    { key: "excluded", label: "Não concluídas", value: (r: Group) => r.excludedCount ?? 0, color: colors.excluded },
+    { key: "review", label: "Em revisão", value: (r: Group) => r.reviewCount ?? 0, color: colors.review },
   ];
   return <div>
     <div style={{ display: "flex", flexWrap: "wrap", gap: "10px 20px", marginBottom: 18, color: "#52647a", fontSize: 12 }}>
@@ -151,7 +151,7 @@ function UnifiedChart({ rows }: { rows: Group[] }) {
       <svg role="img" aria-label="Gráfico combinado de faturamento, custos, resultado e quantidade de registros por período" viewBox={`0 0 ${width} ${height}`} style={{ display:"block", width:"100%", minWidth:Math.min(width,760), height:"auto" }}>
         {[0,1,2,3,4].map((tick) => { const val=maxMoney*tick/4; const y=yMoney(val); return <g key={tick}><line x1={left} x2={width-right} y1={y} y2={y} stroke="#e8eef5" strokeDasharray="4 5"/><text x={left-10} y={y+4} textAnchor="end" fontSize="11" fill="#64748b">{compactMoney(val)}</text><text x={width-right+10} y={y+4} fontSize="11" fill="#64748b">{Math.round(maxCount*tick/4)}</text></g>; })}
         <text x="16" y="18" fontSize="10" fontWeight="700" fill="#64748b">R$</text><text x={width-24} y="18" textAnchor="end" fontSize="10" fontWeight="700" fill="#64748b">REG.</text>
-        {visible.map((row,i)=>{const center=x(i), groupWidth=Math.min(58,plotWidth/visible.length*.68), barWidth=groupWidth/3; const values=[{v:row.revenue,c:colors.revenue},{v:row.cost,c:colors.cost},{v:row.profit,c:colors.profit}]; return <g key={row.label}>{values.map((item,k)=>{const y=yMoney(Math.max(0,item.v)); const base=yMoney(0); return <rect key={k} x={center-groupWidth/2+k*barWidth} y={y} width={barWidth-3} height={Math.max(1,base-y)} rx="3" fill={item.c}><title>{row.label}: {["Faturamento","Custos","Resultado líquido"][k]} {currency.format(item.v)}</title></rect>;})}<text x={center} y={height-48} textAnchor="middle" fontSize="11" fill="#52647a">{row.label.length>15?row.label.slice(0,13)+"…":row.label}</text><text x={center} y={height-29} textAnchor="middle" fontSize="10" fill="#94a3b8">{numbers.format(row.count)} registros</text></g>;})}
+        {visible.map((row,i)=>{const center=x(i), groupWidth=Math.min(58,plotWidth/visible.length*.68), barWidth=groupWidth/3; const values=[{v:row.revenue,c:colors.revenue},{v:row.cost,c:colors.cost},{v:row.profit,c:colors.profit}]; return <g key={row.label}>{values.map((item,k)=>{const y=yMoney(Math.abs(item.v)); const base=yMoney(0); const fill=k===2 && item.v<0 ? "#dc2626" : item.c; return <rect key={k} x={center-groupWidth/2+k*barWidth} y={y} width={barWidth-3} height={Math.max(1,base-y)} rx="3" fill={fill}><title>{row.label}: {["Faturamento","Custos","Resultado líquido"][k]} {currency.format(item.v)}</title></rect>;})}<text x={center} y={height-48} textAnchor="middle" fontSize="11" fill="#52647a">{row.label.length>15?row.label.slice(0,13)+"…":row.label}</text><text x={center} y={height-29} textAnchor="middle" fontSize="10" fill="#94a3b8">{numbers.format(row.count)} registros</text></g>;})}
         {series.map((item) => <g key={item.key}><path d={line(item.value)} fill="none" stroke={item.color} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"/>{visible.map((row,i)=><circle key={row.label} cx={x(i)} cy={yCount(item.value(row))} r="4" fill={item.color} stroke="#fff" strokeWidth="1.5"><title>{row.label}: {item.label} — {numbers.format(item.value(row))}</title></circle>)}</g>)}
       </svg>
     </div>
@@ -239,8 +239,10 @@ export default function ReportsPage() {
     const map = new Map<string, Group>();
     filteredRows.forEach((row) => {
       const label = groupLabel(row, dimension, granularity);
-      const group = map.get(label) ?? { label, count: 0, completedCount: 0, revenue: 0, cost: 0, profit: 0 };
+      const group = map.get(label) ?? { label, count: 0, completedCount: 0, excludedCount: 0, reviewCount: 0, revenue: 0, cost: 0, profit: 0 };
       group.count += 1;
+      if (row.treatment === "Não concluída") group.excludedCount = (group.excludedCount ?? 0) + 1;
+      if (row.treatment === "Revisar") group.reviewCount = (group.reviewCount ?? 0) + 1;
       if (row.completed) { group.completedCount += 1; group.revenue += row.revenue; group.cost += row.cost; }
       if (row.completed) group.profit += row.profit;
       map.set(label, group);
