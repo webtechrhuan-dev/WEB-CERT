@@ -202,7 +202,8 @@ export async function createWorkbookRecord(
   if (!table) {
     throw new WorkbookMutationError("INVALID_WORKBOOK");
   }
-  const lastColumn = worksheet.getColumn(headers.length).letter;\n  const newTableRef = `A1:${lastColumn}${worksheet.rowCount}`;
+  const lastColumn = worksheet.getColumn(headers.length).letter;
+  const newTableRef = `A1:${lastColumn}${worksheet.rowCount}`;
   table.table.tableRef = newTableRef;
   table.table.autoFilterRef = newTableRef;
 
