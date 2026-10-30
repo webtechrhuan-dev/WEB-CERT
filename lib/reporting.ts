@@ -76,9 +76,9 @@ function financialTreatment(record: WorkbookRecord, data: WorkbookData): Financi
   const status = normalizedText(displayCell(record.values[headerIndex(data, "Status / Observação")]));
   const year = Number(displayCell(record.values[headerIndex(data, "Ano da planilha")]));
 
-  // Todos os status comerciais entram nos totais, exceto Cancelado.
+  // Todos os status entram nos totais, exceto Cancelado e não concluído.
   // Registros legados sem status (2024/2025) também entram.
-  if (/^(CANCELADO|CANCELADA)$/.test(status)) return "excluded";
+  if (/^(CANCELADO|CANCELADA|NAO CONCLUIDO|NAO CONCLUIDA)$/.test(status)) return "excluded";
   if (status === "SEM PREENCHIMENTO" && (!Number.isFinite(year) || year >= 2026)) return "review";
   return "completed";
 }
@@ -182,7 +182,7 @@ export function getWorkbookReportRows(data: WorkbookData): DetailedReportRow[] {
     const dateIssue = !validDate || !Number.isFinite(year) || !monthNumber ||
       parsedDate!.getFullYear() !== year || parsedDate!.getMonth() + 1 !== monthNumber;
     const status = normalizedText(value("Status / Observação"));
-    const baseWouldBeCompleted = !/^(CANCELADO|CANCELADA)$/.test(status) &&
+    const baseWouldBeCompleted = !/^(CANCELADO|CANCELADA|NAO CONCLUIDO|NAO CONCLUIDA)$/.test(status) &&
       !(status === "SEM PREENCHIMENTO" && (!Number.isFinite(year) || year >= 2026));
     const hasRevenue = hasMoneyValue(record.values[index("Faturamento (R$)")]);
     const hasCost = hasMoneyValue(record.values[index("Custo (R$)")]);
