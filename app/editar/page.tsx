@@ -1,6 +1,7 @@
 import { AppHeader } from "@/components/app-header";
 import { requirePageSession } from "@/lib/server/require-page-session";
 import { RecordManagement } from "@/components/record-management";
+import { HelpFaq } from "@/components/help-faq";
 
 export default function WorkbookEditPage() {
   return (
@@ -14,6 +15,7 @@ export default function WorkbookEditPage() {
           <p>Consulte, pesquise e edite os dados da venda, incluindo o status, em um único lugar.</p>
         </section>
         <RecordManagement mode="edit" />
+        <HelpFaq topic="vendas" />
       </main>
     </div>
   );
