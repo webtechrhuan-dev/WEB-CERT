@@ -4,6 +4,7 @@ import { useMemo, useState, type FormEvent } from "react";
 import Link from "next/link";
 import { useSession } from "next-auth/react";
 import { Icon } from "@/components/icon";
+import { saleStatusClass, saleStatusLabel } from "@/lib/sale-status";
 import { useWorkbookData } from "@/lib/client/use-workbook-data";
 import { WORKBOOK_HEADERS } from "@/lib/workbook-types";
 import type { WorkbookCell, WorkbookRecord } from "@/lib/workbook-types";
@@ -485,17 +486,20 @@ export function RecordManagement({ mode }: { mode: ManagementMode }) {
                       const clientIndex = data.headers.indexOf("Cliente");
                       const modelIndex = data.headers.indexOf("Modelo");
                       const yearIndex = data.headers.indexOf("Ano da planilha");
+                      const statusIndex = data.headers.indexOf("Status / Observação");
+                      const saleStatus = displayListValue(record.values[statusIndex], "Status / Observação");
                       return (
-                        <div className="record-inline-item" key={record.rowNumber}>
+                        <div className={`record-inline-item ${saleStatusClass(saleStatus)}`} key={record.rowNumber}>
                           <button
                             aria-expanded={selectedRow === record.rowNumber}
-                            className={`record-picker-row${selectedRow === record.rowNumber ? " is-selected" : ""}`}
+                            className={`record-picker-row${selectedRow === record.rowNumber ? " is-selected" : ""} ${saleStatusClass(saleStatus)}`}
                             onClick={() => setSelectedRow((current) => current === record.rowNumber ? null : record.rowNumber)}
                             type="button"
                           >
                             <span className="record-picker-number">Linha {record.rowNumber}</span>
                             <strong>{displayListValue(record.values[clientIndex], "Cliente")}</strong>
                             <span>{displayListValue(record.values[modelIndex], "Modelo")} · {displayListValue(record.values[yearIndex], "Ano da planilha")}</span>
+                            <span className={`sale-status-badge ${saleStatusClass(saleStatus)}`}>{saleStatusLabel(saleStatus)}</span>
                             <Icon name="chevronRight" />
                           </button>
                           {selectedRow === record.rowNumber && (
