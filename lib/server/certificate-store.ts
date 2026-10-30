@@ -102,10 +102,19 @@ export async function updateCertificate(rowNumber: number, values: WorkbookCell[
 
 export async function importCertificates(records: WorkbookRecord[]): Promise<number> {
   const db = await getMongoDb();
+  const seen = new Set<number>();
+  for (const record of records) {
+    if (!Number.isSafeInteger(record.rowNumber) || record.rowNumber < 2 || seen.has(record.rowNumber)) {
+      throw new Error("INVALID_IMPORT_RECORD");
+    }
+    seen.add(record.rowNumber);
+  }
+  // Valida a unicidade antes de gravar para evitar importações parciais por
+  // colisão de rowNumber e só então aplica as operações em lote.
+  await ensureStorageIndexes();
   const now = new Date();
   const operations = records.map((record) => ({ updateOne: { filter: { rowNumber: record.rowNumber }, update: { $set: { values: normalizeValues(record.values), updatedAt: now }, $setOnInsert: { rowNumber: record.rowNumber, createdAt: now }, $inc: { version: 1 } }, upsert: true } }));
   if (operations.length) await db.collection(collection).bulkWrite(operations);
-  await ensureStorageIndexes();
   const highest = records.reduce((max, record) => Math.max(max, record.rowNumber), 1);
   await db.collection<{ _id: string; value: number }>(counters).updateOne({ _id: counterId }, { $max: { value: highest } }, { upsert: true });
   return operations.length;
