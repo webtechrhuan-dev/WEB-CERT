@@ -130,10 +130,11 @@ function UnifiedChart({ rows }: { rows: Group[] }) {
   const left = 76, right = 70, top = 30, bottom = 82;
   const plotWidth = width - left - right;
   const plotHeight = height - top - bottom;
-  const maxMoney = Math.max(1, ...visible.flatMap((r) => [r.revenue, r.cost, Math.abs(r.profit)])) * 1.15;
+  const minMoney = Math.min(0, ...visible.map((r) => r.profit)) * 1.15;
+  const maxMoney = Math.max(1, ...visible.flatMap((r) => [r.revenue, r.cost, r.profit])) * 1.15;
   const maxCount = Math.max(1, ...visible.map((r) => r.count)) * 1.2;
   const x = (i: number) => left + (i + .5) * plotWidth / visible.length;
-  const yMoney = (v: number) => top + plotHeight - (Math.max(0, v) / maxMoney) * plotHeight;
+  const yMoney = (v: number) => top + ((maxMoney - v) / (maxMoney - minMoney || 1)) * plotHeight;
   const yCount = (v: number) => top + plotHeight - (v / maxCount) * plotHeight;
   const colors = { revenue: "#087f8c", cost: "#e58b2a", profit: "#2563eb", completed: "#16a34a", excluded: "#dc7b22", review: "#8b5cf6" };
   const compactMoney = (v: number) => new Intl.NumberFormat("pt-BR", { notation: "compact", maximumFractionDigits: 1 }).format(v);
@@ -151,7 +152,7 @@ function UnifiedChart({ rows }: { rows: Group[] }) {
       <svg role="img" aria-label="Gráfico combinado de faturamento, custos, resultado e quantidade de registros por período" viewBox={`0 0 ${width} ${height}`} style={{ display:"block", width:"100%", minWidth:Math.min(width,760), height:"auto" }}>
         {[0,1,2,3,4].map((tick) => { const val=maxMoney*tick/4; const y=yMoney(val); return <g key={tick}><line x1={left} x2={width-right} y1={y} y2={y} stroke="#e8eef5" strokeDasharray="4 5"/><text x={left-10} y={y+4} textAnchor="end" fontSize="11" fill="#64748b">{compactMoney(val)}</text><text x={width-right+10} y={y+4} fontSize="11" fill="#64748b">{Math.round(maxCount*tick/4)}</text></g>; })}
         <text x="16" y="18" fontSize="10" fontWeight="700" fill="#64748b">R$</text><text x={width-24} y="18" textAnchor="end" fontSize="10" fontWeight="700" fill="#64748b">REG.</text>
-        {visible.map((row,i)=>{const center=x(i), groupWidth=Math.min(58,plotWidth/visible.length*.68), barWidth=groupWidth/3; const values=[{v:row.revenue,c:colors.revenue},{v:row.cost,c:colors.cost},{v:row.profit,c:colors.profit}]; return <g key={row.label}>{values.map((item,k)=>{const y=yMoney(Math.abs(item.v)); const base=yMoney(0); const fill=k===2 && item.v<0 ? "#dc2626" : item.c; return <rect key={k} x={center-groupWidth/2+k*barWidth} y={y} width={barWidth-3} height={Math.max(1,base-y)} rx="3" fill={fill}><title>{row.label}: {["Faturamento","Custos","Resultado líquido"][k]} {currency.format(item.v)}</title></rect>;})}<text x={center} y={height-48} textAnchor="middle" fontSize="11" fill="#52647a">{row.label.length>15?row.label.slice(0,13)+"…":row.label}</text><text x={center} y={height-29} textAnchor="middle" fontSize="10" fill="#94a3b8">{numbers.format(row.count)} registros</text></g>;})}
+        {visible.map((row,i)=>{const center=x(i), groupWidth=Math.min(58,plotWidth/visible.length*.68), barWidth=groupWidth/3; const values=[{v:row.revenue,c:colors.revenue},{v:row.cost,c:colors.cost},{v:row.profit,c:colors.profit}]; return <g key={row.label}>{values.map((item,k)=>{const valueY=yMoney(item.v); const base=yMoney(0); const fill=k===2 && item.v<0 ? "#dc2626" : item.c; return <rect key={k} x={center-groupWidth/2+k*barWidth} y={Math.min(valueY,base)} width={barWidth-3} height={Math.max(1,Math.abs(base-valueY))} rx="3" fill={fill}><title>{row.label}: {["Faturamento","Custos","Resultado líquido"][k]} {currency.format(item.v)}</title></rect>;})}<text x={center} y={height-48} textAnchor="middle" fontSize="11" fill="#52647a">{row.label.length>15?row.label.slice(0,13)+"…":row.label}</text><text x={center} y={height-29} textAnchor="middle" fontSize="10" fill="#94a3b8">{numbers.format(row.count)} registros</text></g>;})}
         {series.map((item) => <g key={item.key}><path d={line(item.value)} fill="none" stroke={item.color} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"/>{visible.map((row,i)=><circle key={row.label} cx={x(i)} cy={yCount(item.value(row))} r="4" fill={item.color} stroke="#fff" strokeWidth="1.5"><title>{row.label}: {item.label} — {numbers.format(item.value(row))}</title></circle>)}</g>)}
       </svg>
     </div>
@@ -268,7 +269,7 @@ export default function ReportsPage() {
   const monthlyChart = useMemo(() => {
     const monthly = new Map<string, Group>();
     filteredRows.forEach((row) => {
-      const label = periodLabel(row, "month");
+      const label = periodLabel(row, granularity);
       const group = monthly.get(label) ?? { label, count: 0, completedCount: 0, excludedCount: 0, reviewCount: 0, revenue: 0, cost: 0, profit: 0 };
       group.count += 1;
       if (row.treatment === "Não concluída") group.excludedCount = (group.excludedCount ?? 0) + 1;
@@ -281,7 +282,8 @@ export default function ReportsPage() {
       const value = (label: string) => { const match = /^(.*?)\s+(\d{4})$/.exec(label); return match ? Number(match[2]) * 12 + MONTHS.indexOf(match[1].toLocaleLowerCase("pt-BR")) : Number.MAX_SAFE_INTEGER; };
       return value(a.label) - value(b.label);
     });
-  }, [filteredRows]);
+  }, [filteredRows, granularity]);
+  const modelRanking = useMemo(() => { const totals = new Map<string, number>(); filteredRows.filter((row) => row.completed).forEach((row) => totals.set(textValue(row.model), (totals.get(textValue(row.model)) ?? 0) + row.revenue)); return [...totals.entries()].map(([label, revenue]) => ({ label, revenue })).sort((a,b) => b.revenue-a.revenue).slice(0,5); }, [filteredRows]);
   const dimensionLabels: Record<ReportDimension, string> = { period: "Período", model: "Modelo do certificado", status: "Status / observação" };
 
   return <div className="app-shell">
@@ -324,7 +326,7 @@ export default function ReportsPage() {
             { label: "Valor líquido estimado", value: currency.format(filteredSummary.profit), note: "Faturamento bruto menos custos dos registros contabilizados", color: filteredSummary.profit >= 0 ? "#86efac" : "#fca5a5", dark: true },
             { label: "Ticket médio", value: currency.format(filteredSummary.completedCount ? filteredSummary.revenue / filteredSummary.completedCount : 0), note: "Faturamento por registro contabilizado", color: "#0f766e" },
             { label: "Aguardando revisão", value: numbers.format(filteredSummary.reviewCount), note: "Status ou valores financeiros incompletos", color: "#64748b" },
-            { label: "Datas divergentes/ausentes", value: numbers.format(rows.filter((row) => row.dateIssue).length), note: "Data vazia ou fora do mês/ano da pasta", color: "#b45309" },
+            { label: "Datas divergentes/ausentes", value: numbers.format(filteredRows.filter((row) => row.dateIssue).length), note: "Data vazia ou fora do mês/ano da pasta", color: "#b45309" },
           ].map((item) => <article key={item.label} style={{ background: item.dark ? "#10233f" : "#fff", border: `1px solid ${item.dark ? "#10233f" : "#dce5ef"}`, borderRadius: 14, padding: 20, boxShadow: "0 4px 14px rgba(15,23,42,.04)" }}><span style={{ color: item.dark ? "#c8d6e8" : "#52647a", fontSize: 13 }}>{item.label}</span><strong style={{ display: "block", marginTop: 10, fontSize: 25, letterSpacing: "-.04em", color: item.color }}>{item.value}</strong><small style={{ color: item.dark ? "#c8d6e8" : "#64748b" }}>{item.note}</small></article>)}
         </section>
         <section aria-labelledby="unified-chart-title" style={{ background:"#fff", border:"1px solid #dce5ef", borderRadius:18, padding:"clamp(18px,2.5vw,28px)", boxShadow:"0 8px 28px rgba(15,23,42,.05)", minWidth:0 }}>
@@ -332,7 +334,19 @@ export default function ReportsPage() {
             <div><p className="eyebrow" style={{margin:"0 0 6px"}}>VISÃO CONSOLIDADA</p><h2 id="unified-chart-title" style={{margin:0,fontSize:20,color:"#10233f"}}>Desempenho financeiro e comercial</h2><p style={{margin:"6px 0 0",fontSize:13,color:"#64748b"}}>Faturamento, custos, resultado líquido e volume de registros na mesma linha do tempo.</p></div>
             <span style={{fontSize:12,color:"#64748b",background:"#f1f5f9",borderRadius:20,padding:"7px 11px"}}>{numbers.format(filteredRows.length)} registros no filtro</span>
           </div>
+          <div style={{display:"flex",alignItems:"center",gap:10,flexWrap:"wrap",marginBottom:16}}>
+            <label htmlFor="unified-chart-period" style={{fontSize:12,fontWeight:700,color:"#52647a"}}>Agrupar por</label>
+            <select id="unified-chart-period" value={granularity} onChange={(event)=>setGranularity(event.target.value as Granularity)} style={{minHeight:36,border:"1px solid #cbd7e5",borderRadius:8,padding:"0 10px",background:"#fff",color:"#10233f"}}>
+              <option value="month">Mês</option><option value="week">Semana</option><option value="year">Ano</option>
+            </select>
+          </div>
           <UnifiedChart rows={monthlyChart}/>
+          {modelRanking.length > 0 && <div style={{marginTop:22,paddingTop:18,borderTop:"1px solid #e7edf4"}}>
+            <h3 style={{margin:"0 0 12px",fontSize:14,color:"#10233f"}}>Modelos com maior faturamento</h3>
+            <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(180px,1fr))",gap:10}}>
+              {modelRanking.map((item,index)=><div key={item.label} style={{display:"flex",justifyContent:"space-between",alignItems:"center",gap:10,background:"#f8fafc",borderRadius:9,padding:"10px 12px"}}><span style={{fontSize:12,color:"#52647a"}}>{index+1}. {item.label}</span><strong style={{fontSize:12,color:"#10233f",whiteSpace:"nowrap"}}>{currency.format(item.revenue)}</strong></div>)}
+            </div>
+          </div>}
         </section>
         <section style={{ background: "#fff", border: "1px solid #dce5ef", borderRadius: 16, overflow: "hidden", boxShadow: "0 5px 20px rgba(15,23,42,.04)" }}>
           <div style={{ padding: "22px 24px", display: "flex", alignItems: "end", justifyContent: "space-between", gap: 18, flexWrap: "wrap", borderBottom: "1px solid #e7edf4" }}><div><h2 style={{ margin: 0, fontSize: 18, fontWeight: 750, color: "#10233f" }}>Relatórios detalhados</h2><p style={{ margin: "6px 0 0", fontSize: 13, color: "#64748b" }}>Clique em qualquer linha para abrir os registros que formam aquele total.</p></div><div style={{ display: "flex", gap: 12, alignItems: "end", flexWrap: "wrap" }}><label style={{ display: "grid", gap: 6, minWidth: 160, fontSize: 12, color: "#52647a", fontWeight: 650 }}>Tipo de relatório<select value={dimension} onChange={(e) => { setDimension(e.target.value as ReportDimension); setSelectedLabel(null); setSearch(""); }} style={{ minHeight: 42, border: "1px solid #cbd7e5", borderRadius: 9, padding: "0 12px", background: "#fff", color: "#10233f" }}><option value="period">Por período</option><option value="model">Por modelo</option><option value="status">Por status</option></select></label>{dimension === "period" && <label style={{ display: "grid", gap: 6, minWidth: 150, fontSize: 12, color: "#52647a", fontWeight: 650 }}>Intervalo<select value={granularity} onChange={(e) => { setGranularity(e.target.value as Granularity); setSelectedLabel(null); }} style={{ minHeight: 42, border: "1px solid #cbd7e5", borderRadius: 9, padding: "0 12px", background: "#fff", color: "#10233f" }}><option value="month">Mensal</option><option value="week">Semanal</option><option value="year">Anual</option></select></label>}<label style={{ display: "grid", gap: 6, minWidth: 200, fontSize: 12, color: "#52647a", fontWeight: 650 }}>Pesquisar grupo<input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Digite para pesquisar…" style={{ minHeight: 42, border: "1px solid #cbd7e5", borderRadius: 9, padding: "0 12px", color: "#10233f" }} /></label></div></div>
