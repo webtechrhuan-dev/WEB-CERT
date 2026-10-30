@@ -207,7 +207,9 @@ describe("alterações em memória", () => {
   });
 
   it("edita somente os campos alterados e preserva as demais linhas", async () => {
-    const original = await readWorkbookBufferFromPath();
+    const original = await createWorkbook(WORKBOOK_HEADERS, [
+      [2025, "Março", "Cliente original", "contato", new Date(Date.UTC(2025, 2, 4)), null, "A1", 100, 25, "Ativo"],
+    ]);
     const originalData = await parseWorkbookBuffer(original);
     const target = originalData.records[0];
     const updated = await updateWorkbookRecord(original, target.rowNumber, {
@@ -226,7 +228,9 @@ describe("alterações em memória", () => {
   });
 
   it("permite limpar um campo sem remover a linha", async () => {
-    const original = await readWorkbookBufferFromPath();
+    const original = await createWorkbook(WORKBOOK_HEADERS, [
+      [2025, "Março", "Cliente original", "contato", new Date(Date.UTC(2025, 2, 4)), null, "A1", 100, 25, "Ativo"],
+    ]);
     const originalData = await parseWorkbookBuffer(original);
     const target = originalData.records[0];
     const columnIndex = target.values.findIndex((value) => value !== null);
@@ -244,7 +248,9 @@ describe("alterações em memória", () => {
   });
 
   it("rejeita datas inválidas sem modificar a fonte", async () => {
-    const original = await readWorkbookBufferFromPath();
+    const original = await createWorkbook(WORKBOOK_HEADERS, [
+      [2025, "Março", "Cliente original", "contato", new Date(Date.UTC(2025, 2, 4)), null, "A1", 100, 25, "Ativo"],
+    ]);
 
     await expect(
       createWorkbookRecord(original, {
