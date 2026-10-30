@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { AppSessionProvider } from "@/components/session-provider";
+import { KeyboardShortcuts } from "@/components/keyboard-shortcuts";
 import "./globals.css";
 
 export const metadata: Metadata = {
@@ -15,7 +16,7 @@ export default function RootLayout({
   return (
     <html lang="pt-BR">
       <body>
-        <AppSessionProvider>{children}</AppSessionProvider>
+        <AppSessionProvider><KeyboardShortcuts />{children}</AppSessionProvider>
       </body>
     </html>
   );
