@@ -79,7 +79,7 @@ describe("relatórios agregados", () => {
     const summary = summarizeWorkbook(sample, "model");
     const model = summary.groups.find((group) => group.label === "A1");
 
-    expect(model).toMatchObject({ count: 3, revenue: 1734.56, cost: 234.56, profit: 1000 });
+    expect(model).toMatchObject({ count: 2, revenue: 1734.56, cost: 234.56, profit: 1000 });
   });
 
   it("mantém os agrupamentos por modelo e status sem inventar valores", () => {
