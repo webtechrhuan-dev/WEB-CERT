@@ -2509,3 +2509,30 @@ table tbody tr:hover, .record-row:hover, .sale-row:hover {
 .wc-faq-item.is-open .wc-faq-chevron{background:#dff3f6;transform:rotate(180deg)}
 .wc-faq-answer{padding:0 48px 16px 15px;color:#52677d;font-size:13px;line-height:1.7;animation:wc-fade-up .22s ease both}
 @media(max-width:640px){.wc-faq{padding:17px;margin-top:24px}.wc-faq-heading{align-items:flex-start}.wc-faq-question{font-size:13px}}
+
+
+/* Ajuda contextual em botão flutuante e janela modal */
+.wc-help-trigger{position:fixed;z-index:35;top:118px;right:max(28px,calc((100vw - 1540px)/2));display:grid;width:46px;height:46px;place-items:center;border:1px solid #c8dce8;border-radius:14px;background:linear-gradient(145deg,#fff,#f1f8fb);color:#087c9f;box-shadow:0 5px 16px rgb(10 38 60 / 13%),inset 0 1px 0 #fff;cursor:pointer;transition:transform .22s ease,box-shadow .22s ease,background .22s ease}
+.wc-help-trigger span{display:grid;width:27px;height:27px;place-items:center;border:2px solid currentColor;border-radius:50%;font-size:19px;font-weight:750;line-height:1}
+.wc-help-trigger:hover{transform:translateY(-3px) scale(1.04);box-shadow:0 10px 24px rgb(10 38 60 / 19%);background:#fff}
+.wc-help-backdrop{position:fixed;z-index:100;inset:0;display:grid;place-items:center;padding:22px;background:rgb(7 21 34 / 48%);backdrop-filter:blur(3px);animation:wc-help-fade .2s ease both}
+.wc-help-dialog{width:min(560px,100%);max-height:min( min(720px, calc(100dvh - 44px)), 90vh);display:flex;flex-direction:column;overflow:hidden;border:1px solid #d9e4ed;border-radius:17px;background:#fff;box-shadow:0 24px 70px rgb(3 18 32 / 28%);animation:wc-help-pop .26s cubic-bezier(.2,.8,.2,1) both}
+.wc-help-dialog-header{display:flex;align-items:center;gap:15px;padding:22px 22px 19px;border-bottom:1px solid #e7edf2;background:linear-gradient(120deg,#fff,#f7fbfd)}
+.wc-help-dialog-symbol{display:grid;width:42px;height:42px;flex:none;place-items:center;border:2px solid #0b7898;border-radius:50%;color:#0b7898;font-size:25px;font-weight:700}
+.wc-help-dialog-header h2{margin:1px 0 4px;color:#20364a;font-size:21px;font-weight:700}
+.wc-help-dialog-header p:last-child{margin:0;color:#708294;font-size:12px;line-height:1.5}
+.wc-help-dialog-header .eyebrow{margin:0;color:#0786a2;font-size:9px;font-weight:800;letter-spacing:.13em}
+.wc-help-close{width:36px;height:36px;flex:none;margin-left:auto;border:0;border-radius:9px;background:transparent;color:#36536a;font-size:27px;line-height:1;cursor:pointer;transition:background .2s ease,transform .2s ease}
+.wc-help-close:hover{transform:rotate(90deg);background:#eaf3f6}
+.wc-help-dialog-body{overflow:auto;padding:15px 20px}
+.wc-help-item{margin:0 0 8px;overflow:hidden;border:1px solid #e3eaf0;border-radius:10px;background:#fff;transition:border-color .2s ease,box-shadow .2s ease}
+.wc-help-item.is-open{border-color:#b8dce5;box-shadow:0 4px 14px rgb(10 38 60 / 6%)}
+.wc-help-question{display:flex;width:100%;min-height:48px;align-items:center;justify-content:space-between;gap:15px;padding:11px 13px;border:0;background:transparent;color:#263e52;text-align:left;font-size:13px;font-weight:650;cursor:pointer}
+.wc-help-plus{display:grid;width:25px;height:25px;flex:none;place-items:center;border-radius:8px;background:#edf7f9;color:#087c9f;font-size:19px;transition:transform .2s ease}
+.wc-help-item.is-open .wc-help-plus{background:#dff3f6}
+.wc-help-answer{margin:0;padding:0 42px 14px 13px;color:#5d7183;font-size:12px;line-height:1.7;animation:wc-help-fade .2s ease both}
+.wc-help-footer{padding:12px 21px;border-top:1px solid #edf1f4;background:#fafcfd;color:#81909d;font-size:10px}
+@keyframes wc-help-fade{from{opacity:0}to{opacity:1}}
+@keyframes wc-help-pop{from{opacity:0;transform:translateY(12px) scale(.97)}to{opacity:1;transform:translateY(0) scale(1)}}
+@media(max-width:640px){.wc-help-trigger{top:auto;right:17px;bottom:20px;width:48px;height:48px;border-radius:50%}.wc-help-backdrop{padding:12px}.wc-help-dialog{max-height:calc(100dvh - 24px)}.wc-help-dialog-header{padding:17px}.wc-help-dialog-body{padding:12px}}
+@media(prefers-reduced-motion:reduce){.wc-help-trigger,.wc-help-backdrop,.wc-help-dialog,.wc-help-answer{animation:none;transition:none}}
