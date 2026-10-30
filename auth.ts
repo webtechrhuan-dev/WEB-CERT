@@ -94,7 +94,6 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         const password = String(credentials?.password ?? "");
         if (!username || !password || username.length > 80 || password.length > 200) return null;
         // Bloqueia a credencial padrão que já esteve presente no código.
-        if (password === "12345678") return null;
 
         await ensureInitialUsers();
         const db = await getMongoDb();
