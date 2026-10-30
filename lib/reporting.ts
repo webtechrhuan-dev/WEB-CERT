@@ -75,26 +75,12 @@ function hasMoneyValue(cell: WorkbookCell | undefined): boolean {
 function financialTreatment(record: WorkbookRecord, data: WorkbookData): FinancialTreatment {
   const status = normalizedText(displayCell(record.values[headerIndex(data, "Status / Observação")]));
   const year = Number(displayCell(record.values[headerIndex(data, "Ano da planilha")]));
-  const cost = record.values[headerIndex(data, "Custo (R$)")];
-  let base: FinancialTreatment;
 
-  if (status === "SEM PREENCHIMENTO" || (status === "*" && Number.isFinite(year) && year < 2026)) {
-    // Em 2024/2025 não havia coluna de status comercial; o asterisco era um marcador legado.
-    // Status vazio em 2026 não confirma que houve venda.
-    base = Number.isFinite(year) && year < 2026 ? "completed" : "review";
-  } else if (/^(FEITO E PAGO|CONCLUIDO|CONCLUIDA|PAGO|PAGA|FINALIZADO|FINALIZADA)$/.test(status)) {
-    base = "completed";
-  } else if (/\b(PERDIDO|CANCELADO|CANCELADA|AGENDADO|AGENDADA|OFERTA ENVIADA|ORCAMENTO|PROPOSTA|PENDENTE|EM ABERTO)\b/.test(status)) {
-    base = "excluded";
-  } else {
-    // Status desconhecido não deve ser tratado como venda concluída por suposição.
-    base = "review";
-  }
-
-  // Vendas concluídas sem custo ficam pendentes. O faturamento pode ficar vazio;
-  // nesse caso a venda conta, mas não gera receita nem lucro calculado.
-  if (base === "completed" && !hasMoneyValue(cost)) return "review";
-  return base;
+  // Todos os status comerciais entram nos totais, exceto Cancelado.
+  // Registros legados sem status (2024/2025) também entram.
+  if (/^(CANCELADO|CANCELADA)$/.test(status)) return "excluded";
+  if (status === "SEM PREENCHIMENTO" && (!Number.isFinite(year) || year >= 2026)) return "review";
+  return "completed";
 }
 
 function groupLabel(record: WorkbookRecord, data: WorkbookData, dimension: ReportDimension): string {
@@ -196,9 +182,8 @@ export function getWorkbookReportRows(data: WorkbookData): DetailedReportRow[] {
     const dateIssue = !validDate || !Number.isFinite(year) || !monthNumber ||
       parsedDate!.getFullYear() !== year || parsedDate!.getMonth() + 1 !== monthNumber;
     const status = normalizedText(value("Status / Observação"));
-    const baseWouldBeCompleted = status === "SEM PREENCHIMENTO" ||
-      (status === "*" && Number.isFinite(year) && year < 2026) ||
-      /^(FEITO E PAGO|CONCLUIDO|CONCLUIDA|PAGO|PAGA|FINALIZADO|FINALIZADA)$/.test(status);
+    const baseWouldBeCompleted = !/^(CANCELADO|CANCELADA)$/.test(status) &&
+      !(status === "SEM PREENCHIMENTO" && (!Number.isFinite(year) || year >= 2026));
     const hasRevenue = hasMoneyValue(record.values[index("Faturamento (R$)")]);
     const hasCost = hasMoneyValue(record.values[index("Custo (R$)")]);
     const financialIssue = baseWouldBeCompleted && (!hasRevenue || !hasCost);
