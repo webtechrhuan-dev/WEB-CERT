@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useMemo, useState } from "react";
+import { useMemo, useState, type CSSProperties } from "react";
 import { useSession } from "next-auth/react";
 import { AppHeader } from "@/components/app-header";
 import { Icon } from "@/components/icon";
@@ -123,40 +123,97 @@ function ReportError({ message }: { message: string }) {
   return <section className="state-panel state-panel--error"><span className="state-icon state-icon--error"><Icon name="alert" /></span><div className="state-copy"><h2>Não foi possível carregar os relatórios</h2><p>{message}</p></div></section>;
 }
 function UnifiedChart({ rows }: { rows: Group[] }) {
+  const [hidden, setHidden] = useState<string[]>([]);
   const visible = rows;
-  if (!visible.length) return <div style={{ padding: 36, textAlign: "center", color: "#64748b" }}>Sem dados suficientes para gerar o gráfico neste filtro.</div>;
-  const width = Math.max(760, visible.length * 104 + 100);
-  const height = 360;
-  const left = 76, right = 70, top = 30, bottom = 82;
+  if (!visible.length) return <div className="unified-chart-empty">Sem dados suficientes para gerar o gráfico neste filtro.</div>;
+
+  const width = Math.max(820, visible.length * 112 + 116);
+  const height = 390;
+  const left = 82, right = 76, top = 34, bottom = 88;
   const plotWidth = width - left - right;
   const plotHeight = height - top - bottom;
-  const minMoney = Math.min(0, ...visible.map((r) => r.profit)) * 1.15;
-  const maxMoney = Math.max(1, ...visible.flatMap((r) => [r.revenue, r.cost, r.profit])) * 1.15;
-  const maxCount = Math.max(1, ...visible.map((r) => r.count)) * 1.2;
-  const x = (i: number) => left + (i + .5) * plotWidth / visible.length;
-  const yMoney = (v: number) => top + ((maxMoney - v) / (maxMoney - minMoney || 1)) * plotHeight;
-  const yCount = (v: number) => top + plotHeight - (v / maxCount) * plotHeight;
-  const colors = { revenue: "#087f8c", cost: "#e58b2a", profit: "#2563eb", completed: "#16a34a", excluded: "#dc7b22", review: "#8b5cf6" };
-  const compactMoney = (v: number) => new Intl.NumberFormat("pt-BR", { notation: "compact", maximumFractionDigits: 1 }).format(v);
-  const line = (value: (row: Group) => number) => visible.map((row, i) => `${i ? "L" : "M"} ${x(i)} ${yCount(value(row))}`).join(" ");
+  const minMoney = Math.min(0, ...visible.map((row) => row.profit)) * 1.16;
+  const maxMoney = Math.max(1, ...visible.flatMap((row) => [row.revenue, row.cost, row.profit])) * 1.16;
+  const maxCount = Math.max(1, ...visible.map((row) => row.count)) * 1.2;
+  const x = (index: number) => left + (index + 0.5) * plotWidth / visible.length;
+  const yMoney = (value: number) => top + ((maxMoney - value) / (maxMoney - minMoney || 1)) * plotHeight;
+  const yCount = (value: number) => top + plotHeight - (value / maxCount) * plotHeight;
+  const colors = { revenue: "#0e9aa7", cost: "#f0a34a", profit: "#4778e8", completed: "#16a477", excluded: "#e58b42", review: "#8b6be8" };
+  const compactMoney = (value: number) => new Intl.NumberFormat("pt-BR", { notation: "compact", maximumFractionDigits: 1 }).format(value);
   const series = [
-    { key: "completed", label: "Concluídas", value: (r: Group) => r.completedCount, color: colors.completed },
-    { key: "excluded", label: "Não concluídas", value: (r: Group) => r.excludedCount ?? 0, color: colors.excluded },
-    { key: "review", label: "Em revisão", value: (r: Group) => r.reviewCount ?? 0, color: colors.review },
+    { key: "completed", label: "Concluídas", value: (row: Group) => row.completedCount, color: colors.completed },
+    { key: "excluded", label: "Não concluídas", value: (row: Group) => row.excludedCount ?? 0, color: colors.excluded },
+    { key: "review", label: "Em revisão", value: (row: Group) => row.reviewCount ?? 0, color: colors.review },
   ];
-  return <div>
-    <div style={{ display: "flex", flexWrap: "wrap", gap: "10px 20px", marginBottom: 18, color: "#52647a", fontSize: 12 }}>
-      {([{label:"Faturamento",color:colors.revenue},{label:"Custos",color:colors.cost},{label:"Resultado líquido",color:colors.profit},...series] as {label:string;color:string}[]).map((item) => <span key={item.label} style={{ display:"inline-flex", alignItems:"center", gap:7 }}><i style={{ width: item.label === "Faturamento" || item.label === "Custos" || item.label === "Resultado líquido" ? 10 : 18, height: 3, borderRadius: 3, background:item.color, display:"inline-block" }} />{item.label}</span>)}
+  const financial = [
+    { key: "revenue", label: "Faturamento", value: (row: Group) => row.revenue, color: colors.revenue, gradient: "chartRevenue" },
+    { key: "cost", label: "Custos", value: (row: Group) => row.cost, color: colors.cost, gradient: "chartCost" },
+    { key: "profit", label: "Resultado líquido", value: (row: Group) => row.profit, color: colors.profit, gradient: "chartProfit" },
+  ];
+  const isVisible = (key: string) => !hidden.includes(key);
+  const toggle = (key: string) => setHidden((current) => current.includes(key) ? current.filter((item) => item !== key) : [...current, key]);
+  const linePath = (value: (row: Group) => number) => visible.map((row, index) => (index ? "L" : "M") + " " + x(index) + " " + yCount(value(row))).join(" ");
+
+  return <div className="unified-chart">
+    <div className="unified-chart-legend" aria-label="Legenda interativa do gráfico">
+      {financial.map((item) => <button key={item.key} type="button" className={"chart-legend-item" + (isVisible(item.key) ? "" : " is-muted")} aria-pressed={isVisible(item.key)} onClick={() => toggle(item.key)}>
+        <span className="chart-legend-mark chart-legend-mark--bar" style={{ "--legend-color": item.color } as CSSProperties} />
+        <span>{item.label}</span>
+      </button>)}
+      <span className="chart-legend-divider" aria-hidden="true" />
+      {series.map((item) => <button key={item.key} type="button" className={"chart-legend-item" + (isVisible(item.key) ? "" : " is-muted")} aria-pressed={isVisible(item.key)} onClick={() => toggle(item.key)}>
+        <span className="chart-legend-mark chart-legend-mark--line" style={{ "--legend-color": item.color } as CSSProperties} />
+        <span>{item.label}</span>
+      </button>)}
     </div>
-    <div style={{ overflowX: "auto", border: "1px solid #e7edf4", borderRadius: 12 }}>
-      <svg role="img" aria-label="Gráfico combinado de faturamento, custos, resultado e quantidade de registros por período" viewBox={`0 0 ${width} ${height}`} style={{ display:"block", width:`${width}px`, minWidth:`${width}px`, maxWidth:"none", height:"auto" }}>
-        {[0,1,2,3,4].map((tick) => { const val=minMoney+(maxMoney-minMoney)*tick/4; const y=yMoney(val); return <g key={tick}><line x1={left} x2={width-right} y1={y} y2={y} stroke={Math.abs(val)<0.0001 ? "#94a3b8" : "#e8eef5"} strokeDasharray={Math.abs(val)<0.0001 ? undefined : "4 5"}/><text x={left-10} y={y+4} textAnchor="end" fontSize="11" fill="#64748b">{compactMoney(val)}</text><text x={width-right+10} y={y+4} fontSize="11" fill="#64748b">{Math.round(maxCount*tick/4)}</text></g>; })}
-        <text x="16" y="18" fontSize="10" fontWeight="700" fill="#64748b">R$</text><text x={width-24} y="18" textAnchor="end" fontSize="10" fontWeight="700" fill="#64748b">REG.</text>
-        {visible.map((row,i)=>{const center=x(i), groupWidth=Math.min(58,plotWidth/visible.length*.68), barWidth=groupWidth/3; const values=[{v:row.revenue,c:colors.revenue},{v:row.cost,c:colors.cost},{v:row.profit,c:colors.profit}]; return <g key={row.label}>{values.map((item,k)=>{const valueY=yMoney(item.v); const base=yMoney(0); const fill=k===2 && item.v<0 ? "#dc2626" : item.c; return <rect key={k} x={center-groupWidth/2+k*barWidth} y={Math.min(valueY,base)} width={barWidth-3} height={Math.max(1,Math.abs(base-valueY))} rx="3" fill={fill}><title>{row.label}: {["Faturamento","Custos","Resultado líquido"][k]} {currency.format(item.v)}</title></rect>;})}<text x={center} y={height-48} textAnchor="middle" fontSize="11" fill="#52647a">{row.label.length>15?row.label.slice(0,13)+"…":row.label}</text><text x={center} y={height-29} textAnchor="middle" fontSize="10" fill="#94a3b8">{numbers.format(row.count)} registros</text></g>;})}
-        {series.map((item) => <g key={item.key}><path d={line(item.value)} fill="none" stroke={item.color} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"/>{visible.map((row,i)=><circle key={row.label} cx={x(i)} cy={yCount(item.value(row))} r="4" fill={item.color} stroke="#fff" strokeWidth="1.5"><title>{row.label}: {item.label} — {numbers.format(item.value(row))}</title></circle>)}</g>)}
+    <div className="unified-chart-scroll" role="region" aria-label="Área do gráfico; role horizontalmente para ver todo o histórico" tabIndex={0}>
+      <svg role="img" aria-label="Gráfico combinado de faturamento, custos, resultado e quantidade de registros por período" viewBox={"0 0 " + width + " " + height} className="unified-chart-svg" style={{ width: width + "px", minWidth: width + "px" }}>
+        <defs>
+          <linearGradient id="chartRevenue" x1="0" x2="0" y1="0" y2="1"><stop offset="0%" stopColor={colors.revenue} stopOpacity=".96"/><stop offset="100%" stopColor={colors.revenue} stopOpacity=".62"/></linearGradient>
+          <linearGradient id="chartCost" x1="0" x2="0" y1="0" y2="1"><stop offset="0%" stopColor={colors.cost} stopOpacity=".96"/><stop offset="100%" stopColor={colors.cost} stopOpacity=".62"/></linearGradient>
+          <linearGradient id="chartProfit" x1="0" x2="0" y1="0" y2="1"><stop offset="0%" stopColor={colors.profit} stopOpacity=".96"/><stop offset="100%" stopColor={colors.profit} stopOpacity=".62"/></linearGradient>
+          <filter id="chartPointShadow" x="-80%" y="-80%" width="260%" height="260%"><feDropShadow dx="0" dy="2" stdDeviation="2" floodColor="#0f172a" floodOpacity=".18"/></filter>
+        </defs>
+        <rect x={left} y={top} width={plotWidth} height={plotHeight} rx="12" fill="#f8fafc"/>
+        {[0, 1, 2, 3, 4].map((tick) => {
+          const value = minMoney + (maxMoney - minMoney) * tick / 4;
+          const y = yMoney(value);
+          return <g key={tick}>
+            <line x1={left} x2={width - right} y1={y} y2={y} stroke={Math.abs(value) < 0.0001 ? "#94a3b8" : "#e3eaf2"} strokeWidth={Math.abs(value) < 0.0001 ? 1.6 : 1} strokeDasharray={Math.abs(value) < 0.0001 ? undefined : "3 6"}/>
+            <text x={left - 12} y={y + 4} textAnchor="end" className="chart-axis-label">{compactMoney(value)}</text>
+            <text x={width - right + 12} y={y + 4} className="chart-axis-label">{Math.round(maxCount * tick / 4)}</text>
+          </g>;
+        })}
+        <text x="16" y="19" className="chart-axis-caption">VALOR (R$)</text>
+        <text x={width - 12} y="19" textAnchor="end" className="chart-axis-caption">REGISTROS</text>
+        {visible.map((row, index) => {
+          const center = x(index);
+          const groupWidth = Math.min(66, plotWidth / visible.length * .72);
+          const barWidth = groupWidth / 3;
+          const base = yMoney(0);
+          return <g key={row.label}>
+            {financial.map((item, itemIndex) => {
+              if (!isVisible(item.key)) return null;
+              const value = item.value(row);
+              const valueY = yMoney(value);
+              const fill = item.key === "profit" && value < 0 ? "#df5b65" : "url(#" + item.gradient + ")";
+              return <rect key={item.key} x={center - groupWidth / 2 + itemIndex * barWidth} y={Math.min(valueY, base)} width={Math.max(2, barWidth - 4)} height={Math.max(1.5, Math.abs(base - valueY))} rx="4" fill={fill} className="chart-bar">
+                <title>{row.label}: {item.label} — {currency.format(value)}</title>
+              </rect>;
+            })}
+            <text x={center} y={height - 48} textAnchor="middle" className="chart-category-label">{row.label.length > 15 ? row.label.slice(0, 13) + "…" : row.label}</text>
+            <text x={center} y={height - 27} textAnchor="middle" className="chart-category-count">{numbers.format(row.count)} registros</text>
+          </g>;
+        })}
+        {series.map((item) => isVisible(item.key) && <g key={item.key}>
+          <path d={linePath(item.value)} fill="none" stroke={item.color} strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" className="chart-series-line"/>
+          {visible.map((row, index) => <circle key={row.label} cx={x(index)} cy={yCount(item.value(row))} r="5" fill={item.color} stroke="#fff" strokeWidth="2" filter="url(#chartPointShadow)">
+            <title>{row.label}: {item.label} — {numbers.format(item.value(row))} registros</title>
+          </circle>)}
+        </g>)}
       </svg>
     </div>
-    <p style={{ margin:"10px 2px 0", color:"#64748b", fontSize:12 }}>Barras usam a escala financeira (R$); linhas usam a escala de quantidade, indicada à direita. Passe o cursor sobre os elementos para consultar os valores.</p>
+    <div className="unified-chart-footnote"><span className="chart-footnote-dot" /> Barras representam valores financeiros; linhas representam quantidade de registros. Clique nos itens da legenda para ocultar ou exibir séries.</div>
   </div>;
 }
 
