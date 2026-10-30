@@ -58,7 +58,7 @@ export function HelpFaq({ topic }: { topic: Topic }) {
   return (
     <section className="wc-faq" aria-labelledby={`faq-${topic}`}>
       <div className="wc-faq-heading">
-        <span className="wc-faq-icon"><Icon name="help" /></span>
+        <span className="wc-faq-icon"><Icon name="alert" /></span>
         <div><p className="eyebrow">SUPORTE RÁPIDO</p><h2 id={`faq-${topic}`}>{data.title}</h2><p>{data.intro}</p></div>
       </div>
       <div className="wc-faq-list">
