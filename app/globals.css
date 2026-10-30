@@ -2605,3 +2605,12 @@ table tbody tr:hover, .record-row:hover, .sale-row:hover {
 .wc-mark-info{border:2px solid #0b4778;border-radius:50%;color:#0b4778;font-family:Georgia,serif}
 @media(max-width:640px){.wc-legend-trigger{top:auto!important;right:16px!important;bottom:78px!important;width:50px;height:50px;border-radius:50%}}
 @media(prefers-reduced-motion:reduce){.wc-legend-trigger{transition:none!important}}
+
+
+/* Container único garante que os dois controles flutuantes apareçam juntos em qualquer tela */
+.wc-floating-tools{position:fixed!important;top:110px!important;right:clamp(18px,3.2vw,46px)!important;z-index:10020!important;display:flex!important;flex-direction:column!important;align-items:center!important;gap:12px!important;width:50px!important;height:auto!important;visibility:visible!important;opacity:1!important;pointer-events:auto!important}
+.wc-floating-tools .wc-help-trigger,.wc-floating-tools .wc-legend-trigger{position:relative!important;inset:auto!important;display:grid!important;visibility:visible!important;opacity:1!important;flex:none!important;width:48px!important;height:48px!important;margin:0!important;transform:none}
+.wc-floating-tools .wc-help-trigger{z-index:auto!important}
+.wc-floating-tools .wc-legend-trigger{z-index:auto!important;top:auto!important;right:auto!important}
+.wc-floating-tools .wc-help-trigger:hover,.wc-floating-tools .wc-legend-trigger:hover{transform:translateY(-2px)}
+@media(max-width:640px){.wc-floating-tools{top:auto!important;right:16px!important;bottom:18px!important;gap:10px!important}.wc-floating-tools .wc-help-trigger,.wc-floating-tools .wc-legend-trigger{width:50px!important;height:50px!important;border-radius:50%!important}}
