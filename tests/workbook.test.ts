@@ -20,8 +20,15 @@ async function createWorkbook(
 ): Promise<Buffer> {
   const workbook = new ExcelJS.Workbook();
   const worksheet = workbook.addWorksheet("Todos os dados");
-  worksheet.addRow([...headers]);
-  rows.forEach((row) => worksheet.addRow(row));
+  worksheet.addTable({
+    name: "Certificates",
+    ref: "A1",
+    headerRow: true,
+    columns: headers.map((name) => ({ name })),
+    rows: rows.map((row) =>
+      Array.from({ length: headers.length }, (_, index) => row[index] ?? null),
+    ),
+  });
   return Buffer.from(await workbook.xlsx.writeBuffer());
 }
 
