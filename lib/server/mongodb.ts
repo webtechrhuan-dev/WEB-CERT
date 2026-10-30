@@ -13,7 +13,7 @@ declare global {
 
 function getClientPromise(): Promise<MongoClient> {
   if (!global.__mongoClientPromise) {
-    const client = new MongoClient(uri);
+    const client = new MongoClient(uri!);
     global.__mongoClientPromise = client.connect().catch(async (error) => {
       global.__mongoClientPromise = undefined;
       await client.close().catch(() => undefined);
