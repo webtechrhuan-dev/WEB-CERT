@@ -509,7 +509,7 @@ export function RecordManagement({ mode }: { mode: ManagementMode }) {
                                 <button className="button button--secondary button--small" onClick={() => setSelectedRow(null)} type="button">Fechar</button>
                               </div>
                               {canEdit && canPersist ? (
-                                <RecordForm key={`edit-${record.rowNumber}-${data.version}`} mode="edit" record={record} version={data.version ?? ""} onSaved={handleSaved} />
+                                <RecordForm key={`edit-${record.rowNumber}-${data.version}`} mode="edit" record={record} version={record.version ?? ""} onSaved={handleSaved} />
                               ) : (
                                 <p className="empty-state">{canEdit ? "A edição será habilitada quando a fonte estiver configurada." : "Edição disponível apenas para usuários autorizados como editores."}</p>
                               )}
