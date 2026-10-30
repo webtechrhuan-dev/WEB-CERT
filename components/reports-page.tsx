@@ -60,6 +60,11 @@ function exportRenewals(rows: { client: string; contact: string; model: string; 
 function textValue(value: string) {
   return value && value !== "Sem preenchimento" ? value : "Não informado";
 }
+function canonicalMonth(value: string): string {
+  const normalized = value.trim().normalize("NFD").replace(/[\\u0300-\\u036f]/g, "").toLocaleLowerCase("pt-BR");
+  const month = MONTHS.find((item) => item.normalize("NFD").replace(/[\\u0300-\\u036f]/g, "") === normalized);
+  return month ?? value.trim().replace(/\\s+/g, " ").toLocaleLowerCase("pt-BR");
+}
 function parsedDate(row: DetailedReportRow): Date | null {
   const raw = row.date.trim();
   let match = /^(\d{1,2})[\/.-](\d{1,2})[\/.-](\d{4})$/.exec(raw);
@@ -80,7 +85,7 @@ function periodLabel(row: DetailedReportRow, granularity: Granularity): string {
   // Mês/ano seguem a competência da pasta anual; a data pode ser de renovação antiga.
   if (granularity === "year") return textValue(row.year) !== "Não informado" ? row.year : date ? String(date.getFullYear()) : "Ano não informado";
   if (granularity === "month") {
-    if (textValue(row.month) !== "Não informado" && textValue(row.year) !== "Não informado") return `${row.month} ${row.year}`;
+    if (textValue(row.month) !== "Não informado" && textValue(row.year) !== "Não informado") return `${canonicalMonth(row.month)} ${row.year.trim()}`;
     return date ? `${MONTHS[date.getMonth()]} ${date.getFullYear()}` : "Período não informado";
   }
   if (date) {
