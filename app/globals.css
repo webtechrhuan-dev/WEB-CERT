@@ -2536,3 +2536,35 @@ table tbody tr:hover, .record-row:hover, .sale-row:hover {
 @keyframes wc-help-pop{from{opacity:0;transform:translateY(12px) scale(.97)}to{opacity:1;transform:translateY(0) scale(1)}}
 @media(max-width:640px){.wc-help-trigger{top:auto;right:17px;bottom:20px;width:48px;height:48px;border-radius:50%}.wc-help-backdrop{padding:12px}.wc-help-dialog{max-height:calc(100dvh - 24px)}.wc-help-dialog-header{padding:17px}.wc-help-dialog-body{padding:12px}}
 @media(prefers-reduced-motion:reduce){.wc-help-trigger,.wc-help-backdrop,.wc-help-dialog,.wc-help-answer{animation:none;transition:none}}
+
+
+/* Refinamento visual e correção de camadas/posicionamento do modal de ajuda */
+.wc-help-trigger{position:fixed!important;top:112px!important;right:clamp(18px,3.2vw,46px)!important;z-index:9998!important;width:48px;height:48px;border-radius:15px;background:#fff;color:#087c9f;box-shadow:0 7px 22px rgb(12 38 58 / 16%),0 1px 3px rgb(12 38 58 / 8%);isolation:isolate}
+.wc-help-trigger:focus-visible,.wc-help-close:focus-visible,.wc-help-question:focus-visible{outline:3px solid rgb(8 150 190 / 35%);outline-offset:3px}
+.wc-help-backdrop{z-index:9999!important;padding:clamp(12px,3vh,28px);background:rgb(9 24 39 / 43%);backdrop-filter:blur(1px);-webkit-backdrop-filter:blur(1px)}
+.wc-help-dialog{width:min(600px,100%);max-height:min( min(680px, 82dvh), calc(100vh - 32px));border:1px solid rgb(220 231 239 / 95%);border-radius:20px;box-shadow:0 30px 90px rgb(3 18 32 / 32%),0 5px 18px rgb(3 18 32 / 12%);min-height:0}
+.wc-help-dialog-header{position:relative;flex:none;gap:16px;padding:23px 24px 20px;background:linear-gradient(135deg,#fff 0%,#f5fbfd 100%)}
+.wc-help-dialog-symbol{width:46px;height:46px;background:#f0fbfd;box-shadow:inset 0 0 0 4px rgb(8 124 159 / 6%)}
+.wc-help-dialog-header>div{min-width:0;flex:1}
+.wc-help-dialog-header h2{font-size:clamp(18px,2.2vw,22px);line-height:1.25;letter-spacing:-.025em}
+.wc-help-dialog-header p:last-child{font-size:12px}
+.wc-help-close{display:grid;place-items:center;width:38px;height:38px;border:1px solid transparent;font-size:25px}
+.wc-help-close:hover{border-color:#e3edf2;background:#edf6f8}
+.wc-help-dialog-body{min-height:0;overscroll-behavior:contain;padding:16px 20px 18px;scrollbar-width:thin;scrollbar-color:#c8d8e2 transparent}
+.wc-help-item{margin-bottom:9px;border-radius:12px}
+.wc-help-item:last-child{margin-bottom:0}
+.wc-help-question{min-height:50px;padding:12px 14px;font-size:13px;line-height:1.45}
+.wc-help-plus{width:27px;height:27px;font-weight:700}
+.wc-help-item.is-open{background:linear-gradient(180deg,#fff 0%,#fbfeff 100%);border-color:#a9dce8;box-shadow:0 5px 18px rgb(10 95 125 / 8%)}
+.wc-help-answer{padding:0 48px 16px 14px;font-size:12.5px;line-height:1.75;color:#536b7f}
+.wc-help-footer{flex:none;padding:13px 22px;color:#74889a;font-size:10.5px;background:#f8fbfc}
+@media(max-width:640px){
+ .wc-help-trigger{top:auto!important;right:16px!important;bottom:18px!important;width:50px;height:50px;border-radius:50%}
+ .wc-help-dialog{max-height:calc(100dvh - 24px);border-radius:16px}
+ .wc-help-dialog-header{gap:12px;padding:17px 16px}
+ .wc-help-dialog-symbol{width:40px;height:40px}
+ .wc-help-dialog-body{padding:12px}
+ .wc-help-question{font-size:12.5px}
+ .wc-help-answer{padding-right:14px}
+}
+@media(prefers-reduced-motion:reduce){.wc-help-trigger,.wc-help-backdrop,.wc-help-dialog,.wc-help-answer,.wc-help-item,.wc-help-close{animation:none!important;transition:none!important}}
