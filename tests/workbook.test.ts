@@ -3,7 +3,6 @@ import JSZip from "jszip";
 import { describe, expect, it, vi } from "vitest";
 import {
   parseWorkbookBuffer,
-  readWorkbookBufferFromPath,
   readWorkbookFromPath,
   WORKBOOK_HEADERS,
   WorkbookReadError,
@@ -77,7 +76,7 @@ describe("leitura da planilha", () => {
 
   it("preserva células vazias como null e ignora linhas sem dados", async () => {
     const buffer = await createWorkbook(WORKBOOK_HEADERS, [
-      [2025, "Março", null, null, null, null, null, null, null],
+      [2025, "Março", null, null, null, null, null, null, null, null],
       [null, null, null, null, null, null, null, null, null],
     ]);
 
