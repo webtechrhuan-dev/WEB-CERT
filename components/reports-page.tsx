@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useMemo, useState } from "react";
+import { useMemo, useState, type CSSProperties } from "react";
 import { useSession } from "next-auth/react";
 import { AppHeader } from "@/components/app-header";
 import { Icon } from "@/components/icon";
@@ -157,12 +157,12 @@ function UnifiedChart({ rows }: { rows: Group[] }) {
   return <div className="unified-chart">
     <div className="unified-chart-legend" aria-label="Legenda interativa do gráfico">
       {financial.map((item) => <button key={item.key} type="button" className={"chart-legend-item" + (isVisible(item.key) ? "" : " is-muted")} aria-pressed={isVisible(item.key)} onClick={() => toggle(item.key)}>
-        <span className="chart-legend-mark chart-legend-mark--bar" style={{ "--legend-color": item.color } as React.CSSProperties} />
+        <span className="chart-legend-mark chart-legend-mark--bar" style={{ "--legend-color": item.color } as CSSProperties} />
         <span>{item.label}</span>
       </button>)}
       <span className="chart-legend-divider" aria-hidden="true" />
       {series.map((item) => <button key={item.key} type="button" className={"chart-legend-item" + (isVisible(item.key) ? "" : " is-muted")} aria-pressed={isVisible(item.key)} onClick={() => toggle(item.key)}>
-        <span className="chart-legend-mark chart-legend-mark--line" style={{ "--legend-color": item.color } as React.CSSProperties} />
+        <span className="chart-legend-mark chart-legend-mark--line" style={{ "--legend-color": item.color } as CSSProperties} />
         <span>{item.label}</span>
       </button>)}
     </div>
