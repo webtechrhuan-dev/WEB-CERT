@@ -82,10 +82,12 @@ export function HelpFaq({ topic }: { topic: Topic }) {
   }, [open]);
   if (!mounted) return null;
   return createPortal(<>
-    <button ref={triggerRef} type="button" className="wc-help-trigger" aria-label="Abrir ajuda desta tela" title="Ajuda desta tela" onClick={() => { setExpanded(0); setOpen(true); }}>
-      <span aria-hidden="true">?</span>
-    </button>
-    <button ref={legendTriggerRef} type="button" className="wc-legend-trigger" aria-label="Abrir atalhos e legendas desta tela" title="Atalhos e legendas" onClick={() => setLegendOpen(true)}><span aria-hidden="true">i</span></button>
+    <div className="wc-floating-tools" aria-label="Ferramentas de ajuda">
+      <button ref={triggerRef} type="button" className="wc-help-trigger" aria-label="Abrir ajuda desta tela" title="Ajuda desta tela" onClick={() => { setExpanded(0); setOpen(true); }}>
+        <span aria-hidden="true">?</span>
+      </button>
+      <button ref={legendTriggerRef} type="button" className="wc-legend-trigger" aria-label="Abrir atalhos e legendas desta tela" title="Atalhos e legendas" onClick={() => setLegendOpen(true)}><span aria-hidden="true">i</span></button>
+    </div>
     {legendOpen && <div className="wc-help-backdrop wc-legend-backdrop" onMouseDown={(event) => { if (event.target === event.currentTarget) setLegendOpen(false); }}>
       <section className="wc-help-dialog wc-legend-dialog" role="dialog" aria-modal="true" aria-labelledby="wc-legend-title">
         <header className="wc-help-dialog-header"><span className="wc-help-dialog-symbol wc-legend-symbol" aria-hidden="true">i</span><div><p className="eyebrow">CONSULTA RÁPIDA</p><h2 id="wc-legend-title">Atalhos e legendas</h2><p>Comandos e indicadores desta tela.</p></div><button type="button" className="wc-help-close" aria-label="Fechar atalhos e legendas" onClick={() => setLegendOpen(false)}>×</button></header>
