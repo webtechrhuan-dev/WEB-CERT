@@ -1,6 +1,7 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 
 type Topic = "home" | "cadastros" | "vendas" | "relatorios";
 type Item = { question: string; answer: string };
@@ -35,16 +36,33 @@ const CONTENT: Record<Topic, { title: string; intro: string; items: Item[] }> = 
 
 export function HelpFaq({ topic }: { topic: Topic }) {
   const [open, setOpen] = useState(false);
-  const [expanded, setExpanded] = useState<number | null>(0);
+  const [mounted, setMounted] = useState(false);
+  const [expanded, setExpanded] = useState<number | null>(null);
+  const triggerRef = useRef<HTMLButtonElement>(null);
+  const closeRef = useRef<HTMLButtonElement>(null);
+  useEffect(() => setMounted(true), []);
   const data = CONTENT[topic];
   useEffect(() => {
     if (!open) return;
-    const onKey = (event: KeyboardEvent) => { if (event.key === "Escape") setOpen(false); };
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    closeRef.current?.focus();
+    const onKey = (event: KeyboardEvent) => {
+      if (event.key === "Escape") { setOpen(false); return; }
+      if (event.key !== "Tab") return;
+      const dialog = document.querySelector<HTMLElement>(".wc-help-dialog");
+      const focusable = dialog?.querySelectorAll<HTMLElement>('button:not([disabled]), [href], input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])');
+      if (!focusable?.length) return;
+      const first = focusable[0], last = focusable[focusable.length - 1];
+      if (event.shiftKey && document.activeElement === first) { event.preventDefault(); last.focus(); }
+      else if (!event.shiftKey && document.activeElement === last) { event.preventDefault(); first.focus(); }
+    };
     window.addEventListener("keydown", onKey);
-    return () => window.removeEventListener("keydown", onKey);
+    return () => { document.body.style.overflow = previousOverflow; window.removeEventListener("keydown", onKey); triggerRef.current?.focus(); };
   }, [open]);
-  return <>
-    <button type="button" className="wc-help-trigger" aria-label="Abrir ajuda desta tela" title="Ajuda desta tela" onClick={() => { setExpanded(0); setOpen(true); }}>
+  if (!mounted) return null;
+  return createPortal(<>
+    <button ref={triggerRef} type="button" className="wc-help-trigger" aria-label="Abrir ajuda desta tela" title="Ajuda desta tela" onClick={() => { setExpanded(0); setOpen(true); }}>
       <span aria-hidden="true">?</span>
     </button>
     {open && <div className="wc-help-backdrop" onMouseDown={(event) => { if (event.target === event.currentTarget) setOpen(false); }}>
@@ -52,7 +70,7 @@ export function HelpFaq({ topic }: { topic: Topic }) {
         <header className="wc-help-dialog-header">
           <span className="wc-help-dialog-symbol" aria-hidden="true">?</span>
           <div><p className="eyebrow">CENTRAL DE AJUDA</p><h2 id="wc-help-title">{data.title}</h2><p>{data.intro}</p></div>
-          <button type="button" className="wc-help-close" aria-label="Fechar ajuda" onClick={() => setOpen(false)}>×</button>
+          <button ref={closeRef} type="button" className="wc-help-close" aria-label="Fechar ajuda" onClick={() => setOpen(false)}>×</button>
         </header>
         <div className="wc-help-dialog-body">
           {data.items.map((item, index) => {
@@ -68,5 +86,5 @@ export function HelpFaq({ topic }: { topic: Topic }) {
         <footer className="wc-help-footer">As orientações são específicas desta tela.</footer>
       </section>
     </div>}
-  </>;
+  </>, document.body);
 }
