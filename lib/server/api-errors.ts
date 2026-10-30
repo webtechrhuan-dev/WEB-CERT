@@ -118,7 +118,14 @@ export function apiErrorResponse(error: unknown, route: string): Response {
     );
   }
 
-  if (error instanceof Error && error.message === "RECORD_CONFLICT") {\n    return errorResponse("RECORD_CONFLICT", "Este registro foi alterado por outra pessoa. Atualize os dados antes de salvar novamente.", 409);\n  }\n  if (error instanceof Error && error.message === "RECORD_NOT_FOUND") {\n    return errorResponse("RECORD_NOT_FOUND", "O registro não foi encontrado na base atual.", 404);\n  }\n\n  console.error(`[${route}] Falha inesperada`);
+  if (error instanceof Error && error.message === "RECORD_CONFLICT") {
+    return errorResponse("RECORD_CONFLICT", "Este registro foi alterado por outra pessoa. Atualize os dados antes de salvar novamente.", 409);
+  }
+  if (error instanceof Error && error.message === "RECORD_NOT_FOUND") {
+    return errorResponse("RECORD_NOT_FOUND", "O registro não foi encontrado na base atual.", 404);
+  }
+
+  console.error(`[${route}] Falha inesperada`);
   return errorResponse(
     "INTERNAL_ERROR",
     "Ocorreu um erro inesperado. Tente novamente.",
