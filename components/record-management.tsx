@@ -41,6 +41,22 @@ const PERIOD_FIELDS = ["Ano da planilha", "Mês da planilha"] as const;
 const MONTH_NAMES = ["janeiro", "fevereiro", "março", "abril", "maio", "junho", "julho", "agosto", "setembro", "outubro", "novembro", "dezembro"];
 const STATUS_OPTIONS = ["Cancelado", "não concluido", "Emitido", "Pendente instalar", "Instalado", "Concluido"] as const;
 
+function normalizeStatus(value: string): string {
+  const normalized = value
+    .trim()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/\s+/g, " ")
+    .toLocaleLowerCase("pt-BR");
+  const match = STATUS_OPTIONS.find((option) =>
+    option.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLocaleLowerCase("pt-BR") === normalized
+  );
+  if (match) return match;
+  if (normalized === "concluido" || normalized === "concluida") return "Concluido";
+  if (normalized === "nao concluido" || normalized === "nao concluida") return "não concluido";
+  return "";
+}
+
 function normalizeMonth(value: string): string {
   const normalized = value
     .trim()
@@ -207,7 +223,7 @@ function RecordForm({
                 />
               ) : header === "Status / Observação" ? (
                 <select
-                  value={STATUS_OPTIONS.includes(values[header] as (typeof STATUS_OPTIONS)[number]) ? values[header] : ""}
+                  value={normalizeStatus(values[header] ?? "")}
                   onChange={(event) => setValues((current) => ({ ...current, [header]: event.target.value }))}
                 >
                   <option value="">Selecione o status</option>
