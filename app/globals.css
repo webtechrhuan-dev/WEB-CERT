@@ -2614,3 +2614,31 @@ table tbody tr:hover, .record-row:hover, .sale-row:hover {
 .wc-floating-tools .wc-legend-trigger{z-index:auto!important;top:auto!important;right:auto!important}
 .wc-floating-tools .wc-help-trigger:hover,.wc-floating-tools .wc-legend-trigger:hover{transform:translateY(-2px)}
 @media(max-width:640px){.wc-floating-tools{top:auto!important;right:16px!important;bottom:18px!important;gap:10px!important}.wc-floating-tools .wc-help-trigger,.wc-floating-tools .wc-legend-trigger{width:50px!important;height:50px!important;border-radius:50%!important}}
+
+
+/* Refinamento visual exclusivo do botão (i) */
+.wc-floating-tools .wc-legend-trigger{
+  width:46px!important;height:46px!important;
+  border:1px solid #c8dce8!important;border-radius:14px!important;
+  background:linear-gradient(145deg,#ffffff 0%,#f1f8fb 100%)!important;
+  color:#087c9f!important;
+  box-shadow:0 5px 16px rgb(10 38 60 / 13%),inset 0 1px 0 #fff!important;
+  transition:transform .22s cubic-bezier(.2,.8,.2,1),box-shadow .22s ease,border-color .22s ease,background .22s ease!important;
+}
+.wc-floating-tools .wc-legend-trigger span{
+  width:27px!important;height:27px!important;
+  border:2px solid currentColor!important;border-radius:50%!important;
+  background:transparent!important;color:inherit!important;
+  font-family:Arial,sans-serif!important;font-size:17px!important;
+  font-weight:750!important;font-style:normal!important;line-height:1!important;
+  box-shadow:none!important;
+}
+.wc-floating-tools .wc-legend-trigger:hover{
+  transform:translateY(-3px) scale(1.04)!important;
+  border-color:#82bfd0!important;background:#fff!important;
+  box-shadow:0 10px 24px rgb(10 38 60 / 19%),0 0 0 4px rgb(8 124 159 / 7%)!important;
+}
+.wc-floating-tools .wc-legend-trigger:active{transform:translateY(-1px) scale(.97)!important}
+.wc-floating-tools .wc-legend-trigger:focus-visible{outline:3px solid rgb(8 150 190 / 30%)!important;outline-offset:3px!important}
+@media(max-width:640px){.wc-floating-tools .wc-legend-trigger{width:46px!important;height:46px!important;border-radius:14px!important}}
+@media(prefers-reduced-motion:reduce){.wc-floating-tools .wc-legend-trigger{transition:none!important}}
