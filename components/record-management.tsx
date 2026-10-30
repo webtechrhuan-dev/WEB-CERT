@@ -39,6 +39,7 @@ function apiErrorMessage(value: unknown): string | null {
 
 const PERIOD_FIELDS = ["Ano da planilha", "Mês da planilha"] as const;
 const MONTH_NAMES = ["janeiro", "fevereiro", "março", "abril", "maio", "junho", "julho", "agosto", "setembro", "outubro", "novembro", "dezembro"];
+const STATUS_OPTIONS = ["Cancelado", "não concluido", "Emitido", "Pendente instalar", "Instalado", "Concluido"] as const;
 
 function normalizeMonth(value: string): string {
   const normalized = value
@@ -84,9 +85,7 @@ function formValues(record?: WorkbookRecord): FormValues {
     const period = currentPeriod();
     values["Ano da planilha"] = period.year;
     values["Mês da planilha"] = period.month;
-    // Todo registro cadastrado nesta tela representa uma venda já fechada.
-    // Mantém o campo legado preenchido internamente para compatibilidade com os relatórios.
-    values["Status / Observação"] = "Concluído";
+    values["Status / Observação"] = "";
   }
   return values;
 }
@@ -207,13 +206,15 @@ function RecordForm({
                   }}
                 />
               ) : header === "Status / Observação" ? (
-                <input
-                  autoComplete="off"
+                <select
+                  value={STATUS_OPTIONS.includes(values[header] as (typeof STATUS_OPTIONS)[number]) ? values[header] : ""}
                   onChange={(event) => setValues((current) => ({ ...current, [header]: event.target.value }))}
-                  placeholder="Ex.: Concluído, Pendente, Cancelado..."
-                  type="text"
-                  value={values[header] ?? ""}
-                />
+                >
+                  <option value="">Selecione o status</option>
+                  {STATUS_OPTIONS.map((statusOption) => (
+                    <option key={statusOption} value={statusOption}>{statusOption}</option>
+                  ))}
+                </select>
               ) : header === "Modelo" ? (
                 <select
                   value={values[header] ?? ""}
@@ -255,7 +256,7 @@ function RecordForm({
       </div>
       <p className="form-help">
         Ano e mês podem ser selecionados em cada venda; o período atual aparece como padrão e as opções de ano começam em 2024 e avançam automaticamente com o calendário.
-        O status/observação pode ser alterado nesta tela. A data de vencimento é calculada automaticamente para um ano após a emissão e não pode ser alterada manualmente. Valores monetários aceitam formato brasileiro ou decimal.
+        O status deve ser selecionado entre as opções disponíveis. A data de vencimento é calculada automaticamente para um ano após a emissão e não pode ser alterada manualmente. Valores monetários aceitam formato brasileiro ou decimal.
       </p>
       {error && <p className="form-message form-message--error" role="alert">{error}</p>}
       {conflict && (
