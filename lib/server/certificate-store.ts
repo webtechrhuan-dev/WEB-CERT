@@ -20,7 +20,8 @@ function normalizeValues(input: WorkbookCell[]): WorkbookCell[] {
   values[5] = expiryFromIssueDate(values[4]);
   return values;
 }
-// A versão precisa acompanhar a leitura: sem ela, todas as edições pareceriam\n// pertencer à revisão zero e o controle otimista de concorrência seria perdido.\nconst projection = { _id: 1, rowNumber: 1, values: 1, version: 1, createdAt: 1, updatedAt: 1 };
+// A versão precisa acompanhar a leitura para preservar o controle otimista de concorrência.
+const projection = { _id: 1, rowNumber: 1, values: 1, version: 1, createdAt: 1, updatedAt: 1 };
 
 async function ensureStorageIndexes(): Promise<void> {
   const db = await getMongoDb();
