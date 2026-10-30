@@ -489,10 +489,10 @@ export function RecordManagement({ mode }: { mode: ManagementMode }) {
                       const statusIndex = data.headers.indexOf("Status / Observação");
                       const saleStatus = displayListValue(record.values[statusIndex], "Status / Observação");
                       return (
-                        <div className={`record-inline-item ${saleStatusClass(saleStatus)}`} key={record.rowNumber}>
+                        <div className="record-inline-item" key={record.rowNumber}>
                           <button
                             aria-expanded={selectedRow === record.rowNumber}
-                            className={`record-picker-row${selectedRow === record.rowNumber ? " is-selected" : ""} ${saleStatusClass(saleStatus)}`}
+                            className={`record-picker-row${selectedRow === record.rowNumber ? " is-selected" : ""}`}
                             onClick={() => setSelectedRow((current) => current === record.rowNumber ? null : record.rowNumber)}
                             type="button"
                           >
