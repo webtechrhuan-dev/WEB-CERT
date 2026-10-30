@@ -149,7 +149,7 @@ function UnifiedChart({ rows }: { rows: Group[] }) {
       {([{label:"Faturamento",color:colors.revenue},{label:"Custos",color:colors.cost},{label:"Resultado líquido",color:colors.profit},...series] as {label:string;color:string}[]).map((item) => <span key={item.label} style={{ display:"inline-flex", alignItems:"center", gap:7 }}><i style={{ width: item.label === "Faturamento" || item.label === "Custos" || item.label === "Resultado líquido" ? 10 : 18, height: 3, borderRadius: 3, background:item.color, display:"inline-block" }} />{item.label}</span>)}
     </div>
     <div style={{ overflowX: "auto", border: "1px solid #e7edf4", borderRadius: 12 }}>
-      <svg role="img" aria-label="Gráfico combinado de faturamento, custos, resultado e quantidade de registros por período" viewBox={`0 0 ${width} ${height}`} style={{ display:"block", width:"100%", minWidth:Math.min(width,760), height:"auto" }}>
+      <svg role="img" aria-label="Gráfico combinado de faturamento, custos, resultado e quantidade de registros por período" viewBox={`0 0 ${width} ${height}`} style={{ display:"block", width:`${width}px`, minWidth:`${width}px`, maxWidth:"none", height:"auto" }}>
         {[0,1,2,3,4].map((tick) => { const val=minMoney+(maxMoney-minMoney)*tick/4; const y=yMoney(val); return <g key={tick}><line x1={left} x2={width-right} y1={y} y2={y} stroke={Math.abs(val)<0.0001 ? "#94a3b8" : "#e8eef5"} strokeDasharray={Math.abs(val)<0.0001 ? undefined : "4 5"}/><text x={left-10} y={y+4} textAnchor="end" fontSize="11" fill="#64748b">{compactMoney(val)}</text><text x={width-right+10} y={y+4} fontSize="11" fill="#64748b">{Math.round(maxCount*tick/4)}</text></g>; })}
         <text x="16" y="18" fontSize="10" fontWeight="700" fill="#64748b">R$</text><text x={width-24} y="18" textAnchor="end" fontSize="10" fontWeight="700" fill="#64748b">REG.</text>
         {visible.map((row,i)=>{const center=x(i), groupWidth=Math.min(58,plotWidth/visible.length*.68), barWidth=groupWidth/3; const values=[{v:row.revenue,c:colors.revenue},{v:row.cost,c:colors.cost},{v:row.profit,c:colors.profit}]; return <g key={row.label}>{values.map((item,k)=>{const valueY=yMoney(item.v); const base=yMoney(0); const fill=k===2 && item.v<0 ? "#dc2626" : item.c; return <rect key={k} x={center-groupWidth/2+k*barWidth} y={Math.min(valueY,base)} width={barWidth-3} height={Math.max(1,Math.abs(base-valueY))} rx="3" fill={fill}><title>{row.label}: {["Faturamento","Custos","Resultado líquido"][k]} {currency.format(item.v)}</title></rect>;})}<text x={center} y={height-48} textAnchor="middle" fontSize="11" fill="#52647a">{row.label.length>15?row.label.slice(0,13)+"…":row.label}</text><text x={center} y={height-29} textAnchor="middle" fontSize="10" fill="#94a3b8">{numbers.format(row.count)} registros</text></g>;})}
@@ -173,6 +173,7 @@ export default function ReportsPage() {
   const [chartDateTo, setChartDateTo] = useState("");
   const [chartModel, setChartModel] = useState("all");
   const [chartTreatment, setChartTreatment] = useState("all");
+  const [chartGranularity, setChartGranularity] = useState<Granularity>("month");
   const currentMonthYear = new Intl.DateTimeFormat("en-US", { timeZone: "America/Sao_Paulo", year: "numeric", month: "2-digit" }).formatToParts(new Date());
   const [renewalMonth, setRenewalMonth] = useState(currentMonthYear.find((part) => part.type === "month")?.value ?? String(new Date().getMonth() + 1).padStart(2, "0"));
   const [renewalYear, setRenewalYear] = useState(currentMonthYear.find((part) => part.type === "year")?.value ?? String(new Date().getFullYear()));
@@ -269,7 +270,7 @@ export default function ReportsPage() {
   const monthlyChart = useMemo(() => {
     const monthly = new Map<string, Group>();
     filteredRows.forEach((row) => {
-      const label = periodLabel(row, granularity);
+      const label = periodLabel(row, chartGranularity);
       const group = monthly.get(label) ?? { label, count: 0, completedCount: 0, excludedCount: 0, reviewCount: 0, revenue: 0, cost: 0, profit: 0 };
       group.count += 1;
       if (row.treatment === "Não concluída") group.excludedCount = (group.excludedCount ?? 0) + 1;
@@ -280,14 +281,14 @@ export default function ReportsPage() {
     });
     return [...monthly.values()].sort((a, b) => {
       const value = (label: string) => {
-        if (granularity === "year") return /^\d{4}$/.test(label) ? Number(label) : Number.MAX_SAFE_INTEGER;
-        if (granularity === "week") { const match = /^(\d{2})\/(\d{2})\/(\d{4})/.exec(label); return match ? new Date(Number(match[3]), Number(match[2]) - 1, Number(match[1])).getTime() : Number.MAX_SAFE_INTEGER; }
+        if (chartGranularity === "year") return /^\d{4}$/.test(label) ? Number(label) : Number.MAX_SAFE_INTEGER;
+        if (chartGranularity === "week") { const match = /^(\d{2})\/(\d{2})\/(\d{4})/.exec(label); return match ? new Date(Number(match[3]), Number(match[2]) - 1, Number(match[1])).getTime() : Number.MAX_SAFE_INTEGER; }
         const match = /^(.*?)\s+(\d{4})$/.exec(label);
         return match ? Number(match[2]) * 12 + MONTHS.indexOf(match[1].toLocaleLowerCase("pt-BR")) : Number.MAX_SAFE_INTEGER;
       };
       return value(a.label) - value(b.label);
     });
-  }, [filteredRows, granularity]);
+  }, [filteredRows, chartGranularity]);
   const modelRanking = useMemo(() => { const totals = new Map<string, number>(); filteredRows.filter((row) => row.completed).forEach((row) => totals.set(textValue(row.model), (totals.get(textValue(row.model)) ?? 0) + row.revenue)); return [...totals.entries()].map(([label, revenue]) => ({ label, revenue })).sort((a,b) => b.revenue-a.revenue).slice(0,5); }, [filteredRows]);
   const dimensionLabels: Record<ReportDimension, string> = { period: "Período", model: "Modelo do certificado", status: "Status / observação" };
 
@@ -341,7 +342,7 @@ export default function ReportsPage() {
           </div>
           <div style={{display:"flex",alignItems:"center",gap:10,flexWrap:"wrap",marginBottom:16}}>
             <label htmlFor="unified-chart-period" style={{fontSize:12,fontWeight:700,color:"#52647a"}}>Agrupar por</label>
-            <select id="unified-chart-period" value={granularity} onChange={(event)=>setGranularity(event.target.value as Granularity)} style={{minHeight:36,border:"1px solid #cbd7e5",borderRadius:8,padding:"0 10px",background:"#fff",color:"#10233f"}}>
+            <select id="unified-chart-period" value={chartGranularity} onChange={(event)=>setChartGranularity(event.target.value as Granularity)} style={{minHeight:36,border:"1px solid #cbd7e5",borderRadius:8,padding:"0 10px",background:"#fff",color:"#10233f"}}>
               <option value="month">Mês</option><option value="week">Semana</option><option value="year">Ano</option>
             </select>
           </div>
