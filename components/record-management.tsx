@@ -315,7 +315,7 @@ export function RecordManagement({ mode }: { mode: ManagementMode }) {
   const [filterMonth, setFilterMonth] = useState("");
   const [selectedRow, setSelectedRow] = useState<number | null>(null);
   const [savedMessage, setSavedMessage] = useState<string | null>(null);
-  const canEdit = session?.user.role === "editor" || session?.user.role === "admin";
+  const canEdit = session?.user.isAdmin === true || session?.user.role === "editor";
   const canPersist = data?.source === "github" || data?.source === "mongodb";
 
   const periodIndexes = useMemo(() => ({
