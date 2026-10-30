@@ -28,7 +28,7 @@ function makeDatabase(initial: StoredRecord[]) {
       return document ? { _id: "record", ...document } : null;
     }),
     findOneAndUpdate: vi.fn(async (
-      filter: { rowNumber: number; version?: number; $or?: Array<Record<string, unknown>> },
+      filter: { rowNumber: number; version?: number; $or?: Array<{ version?: number | { $exists: boolean } }> },
       update: { $set: { values: WorkbookCell[]; updatedAt: Date; version: number } },
     ) => {
       const document = documents.find((item) => item.rowNumber === filter.rowNumber);
@@ -38,8 +38,7 @@ function makeDatabase(initial: StoredRecord[]) {
         : Boolean(filter.$or?.some((condition) =>
             condition.version === 0
               ? document.version === 0
-              : Boolean(condition.version && "$exists" in condition.version &&
-                  document.version === undefined),
+              : Boolean(typeof condition.version === "object" && condition.version.$exists === false && document.version === undefined),
           ));
       if (!matchesVersion) return null;
       document.values = [...update.$set.values];
