@@ -319,11 +319,11 @@ export default function ReportsPage() {
         </section>
         <section aria-label="Indicadores financeiros" style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(190px, 1fr))", gap: 14 }}>
           {[
-            { label: "Registros de clientes", value: numbers.format(filteredSummary.count), note: `${numbers.format(filteredSummary.completedCount)} incluídos no financeiro (exceto cancelados)`, color: "#10233f" },
-            { label: "Faturamento contabilizado", value: currency.format(filteredSummary.revenue), note: "Inclui todos os status, exceto Cancelado", color: "#087443" },
+            { label: "Registros de clientes", value: numbers.format(filteredSummary.count), note: `${numbers.format(filteredSummary.completedCount)} incluídos no financeiro (exceto cancelados e não concluídos)`, color: "#10233f" },
+            { label: "Faturamento contabilizado", value: currency.format(filteredSummary.revenue), note: "Inclui todos os status, exceto Cancelado e não concluído", color: "#087443" },
             { label: "Custos contabilizados", value: currency.format(filteredSummary.cost), note: "Custos dos registros contabilizados", color: "#b45309" },
-            { label: "Valor líquido estimado", value: currency.format(filteredSummary.profit), note: "Faturamento bruto menos custos dos registros não cancelados", color: filteredSummary.profit >= 0 ? "#86efac" : "#fca5a5", dark: true },
-            { label: "Ticket médio", value: currency.format(filteredSummary.completedCount ? filteredSummary.revenue / filteredSummary.completedCount : 0), note: "Faturamento por registro não cancelado", color: "#0f766e" },
+            { label: "Valor líquido estimado", value: currency.format(filteredSummary.profit), note: "Faturamento bruto menos custos dos registros contabilizados", color: filteredSummary.profit >= 0 ? "#86efac" : "#fca5a5", dark: true },
+            { label: "Ticket médio", value: currency.format(filteredSummary.completedCount ? filteredSummary.revenue / filteredSummary.completedCount : 0), note: "Faturamento por registro contabilizado", color: "#0f766e" },
             { label: "Aguardando revisão", value: numbers.format(filteredSummary.reviewCount), note: "Status ou valores financeiros incompletos", color: "#64748b" },
             { label: "Datas divergentes/ausentes", value: numbers.format(rows.filter((row) => row.dateIssue).length), note: "Data vazia ou fora do mês/ano da pasta", color: "#b45309" },
           ].map((item) => <article key={item.label} style={{ background: item.dark ? "#10233f" : "#fff", border: `1px solid ${item.dark ? "#10233f" : "#dce5ef"}`, borderRadius: 14, padding: 20, boxShadow: "0 4px 14px rgba(15,23,42,.04)" }}><span style={{ color: item.dark ? "#c8d6e8" : "#52647a", fontSize: 13 }}>{item.label}</span><strong style={{ display: "block", marginTop: 10, fontSize: 25, letterSpacing: "-.04em", color: item.color }}>{item.value}</strong><small style={{ color: item.dark ? "#c8d6e8" : "#64748b" }}>{item.note}</small></article>)}
