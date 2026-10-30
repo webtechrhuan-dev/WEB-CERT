@@ -51,8 +51,8 @@ function displayDate(value: string): string {
 function exportRenewals(rows: { client: string; contact: string; model: string; expiry: string; status: string }[], month: string, year: string) {
   const quote = (value: string) => `"${String(value).replace(/"/g, '""')}"`;
   const content = [["Cliente", "Contato", "Modelo do certificado", "Data de vencimento", "Status / observação"], ...rows.map((row) => [row.client, row.contact, row.model, displayDate(row.expiry), row.status])]
-    .map((line) => line.map(quote).join(";")).join("\\r\\n");
-  const url = URL.createObjectURL(new Blob(["\\uFEFF", content], { type: "text/csv;charset=utf-8" }));
+    .map((line) => line.map(quote).join(";")).join("\r\n");
+  const url = URL.createObjectURL(new Blob(["\uFEFF", content], { type: "text/csv;charset=utf-8" }));
   const anchor = document.createElement("a");
   anchor.href = url;
   anchor.download = `prospeccao-renovacoes-${month}-${year}.csv`;
@@ -63,9 +63,9 @@ function textValue(value: string) {
   return value && value !== "Sem preenchimento" ? value : "Não informado";
 }
 function canonicalMonth(value: string): string {
-  const normalized = value.trim().normalize("NFD").replace(/[\\u0300-\\u036f]/g, "").toLocaleLowerCase("pt-BR");
-  const month = MONTHS.find((item) => item.normalize("NFD").replace(/[\\u0300-\\u036f]/g, "") === normalized);
-  return month ?? value.trim().replace(/\\s+/g, " ").toLocaleLowerCase("pt-BR");
+  const normalized = value.trim().normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLocaleLowerCase("pt-BR");
+  const month = MONTHS.find((item) => item.normalize("NFD").replace(/[\u0300-\u036f]/g, "") === normalized);
+  return month ?? value.trim().replace(/\s+/g, " ").toLocaleLowerCase("pt-BR");
 }
 function parsedDate(row: DetailedReportRow): Date | null {
   const raw = row.date.trim();

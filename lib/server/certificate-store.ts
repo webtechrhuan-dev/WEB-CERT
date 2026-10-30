@@ -1,9 +1,10 @@
 import "server-only";
-import { ObjectId } from "mongodb";
 import { getMongoDb } from "./mongodb";
 import type { WorkbookCell, WorkbookData, WorkbookRecord } from "@/lib/workbook-types";
 
 const collection = "certificates";
+const counters = "counters";
+const counterId = "certificate-row-number";
 const HEADERS = ["Ano da planilha","Mês da planilha","Cliente","Contato","Data de emissão/renovação","Data de vencimento","Modelo","Faturamento (R$)","Custo (R$)","Status / Observação"];
 
 function expiryFromIssueDate(value: unknown): string | null {
@@ -19,35 +20,108 @@ function normalizeValues(input: WorkbookCell[]): WorkbookCell[] {
   values[5] = expiryFromIssueDate(values[4]);
   return values;
 }
-const projection = { _id: 1, rowNumber: 1, values: 1, createdAt: 1, updatedAt: 1 };
+// A versão precisa acompanhar a leitura para preservar o controle otimista de concorrência.
+const projection = { _id: 1, rowNumber: 1, values: 1, version: 1, createdAt: 1, updatedAt: 1 };
+
+async function ensureStorageIndexes(): Promise<void> {
+  const db = await getMongoDb();
+  // A restrição única impede que duas requisições gravem a mesma linha.
+  await db.collection(collection).createIndex({ rowNumber: 1 }, { unique: true });
+}
+
+async function nextRowNumber(): Promise<number> {
+  const db = await getMongoDb();
+  const rows = db.collection(collection);
+  // Inicialização idempotente: concorrentes disputam o mesmo upsert; somente
+  // uma inserção inicializa o contador e todos incrementam atomicamente depois.
+  const highest = await rows.findOne({}, { sort: { rowNumber: -1 }, projection: { rowNumber: 1 } });
+  const counterCollection = db.collection<{ _id: string; value: number }>(counters);
+  try {
+    await counterCollection.updateOne(
+      { _id: counterId },
+      { $max: { value: Math.max(1, Number(highest?.rowNumber) || 1) } },
+      { upsert: true },
+    );
+  } catch (error) {
+    const duplicateCounterInsert =
+      typeof error === "object" &&
+      error !== null &&
+      "code" in error &&
+      error.code === 11000;
+    if (!duplicateCounterInsert) throw error;
+    // Outra requisição inicializou o contador primeiro; continue para o incremento atômico.
+  }
+  const result = await counterCollection.findOneAndUpdate(
+    { _id: counterId },
+    { $inc: { value: 1 } },
+    { returnDocument: "after" },
+  );
+  if (!result || !Number.isSafeInteger(result.value)) throw new Error("COUNTER_ALLOCATION_FAILED");
+  return result.value;
+}
 
 export async function readCertificateData(): Promise<WorkbookData> {
   const db = await getMongoDb();
+  await ensureStorageIndexes();
   const rows = await db.collection(collection).find({}, { projection }).sort({ rowNumber: 1 }).toArray();
-  const records: WorkbookRecord[] = rows.map((row) => ({ rowNumber: row.rowNumber, values: normalizeValues(row.values as WorkbookCell[]) }));
+  const records: WorkbookRecord[] = rows.map((row) => ({ rowNumber: row.rowNumber, values: normalizeValues(row.values as WorkbookCell[]), version: String(Number.isSafeInteger(row.version) ? row.version : 0) }));
   return { headers: HEADERS, count: records.length, records, source: "mongodb", version: new Date().toISOString() };
 }
 
 export async function createCertificate(values: WorkbookCell[]): Promise<void> {
   const db = await getMongoDb();
-  values = normalizeValues(values);
-  const last = await db.collection(collection).findOne({}, { sort: { rowNumber: -1 }, projection: { rowNumber: 1 } });
+  await ensureStorageIndexes();
+  const rowNumber = await nextRowNumber();
   const now = new Date();
-  await db.collection(collection).insertOne({ rowNumber: (last?.rowNumber ?? 1) + 1, values, createdAt: now, updatedAt: now });
+  await db.collection(collection).insertOne({ rowNumber, values: normalizeValues(values), createdAt: now, updatedAt: now, version: 1 });
 }
 
 export async function updateCertificate(rowNumber: number, values: WorkbookCell[], expectedVersion?: string): Promise<boolean> {
   const db = await getMongoDb();
+  await ensureStorageIndexes();
+  const expectedRevision = Number(expectedVersion);
+  if (
+    !expectedVersion ||
+    !Number.isSafeInteger(expectedRevision) ||
+    expectedRevision < 0
+  ) throw new Error("RECORD_CONFLICT");
   values = normalizeValues(values);
-  const result = await db.collection(collection).findOneAndUpdate({ rowNumber }, { $set: { values, updatedAt: new Date() } }, { returnDocument: "after", projection });
-  return Boolean(result);
+  const filter = expectedRevision === 0
+    ? { rowNumber, $or: [{ version: 0 }, { version: { $exists: false } }] }
+    : { rowNumber, version: expectedRevision };
+  const result = await db.collection(collection).findOneAndUpdate(
+    filter,
+    { $set: { values, updatedAt: new Date(), version: expectedRevision + 1 } },
+    { returnDocument: "after", projection },
+  );
+  if (result) return true;
+  const exists = await db.collection(collection).findOne({ rowNumber }, { projection: { _id: 1 } });
+  if (!exists) throw new Error("RECORD_NOT_FOUND");
+  throw new Error("RECORD_CONFLICT");
 }
 
 export async function importCertificates(records: WorkbookRecord[]): Promise<number> {
   const db = await getMongoDb();
+  const seen = new Set<number>();
+  for (const record of records) {
+    if (!Number.isSafeInteger(record.rowNumber) || record.rowNumber < 2 || seen.has(record.rowNumber)) {
+      throw new Error("INVALID_IMPORT_RECORD");
+    }
+    seen.add(record.rowNumber);
+  }
+  // Valida a unicidade antes de gravar para evitar importações parciais por
+  // colisão de rowNumber e só então aplica as operações em lote.
+  await ensureStorageIndexes();
   const now = new Date();
-  const operations = records.map((record) => ({ updateOne: { filter: { rowNumber: record.rowNumber }, update: { $set: { values: record.values, updatedAt: now }, $setOnInsert: { rowNumber: record.rowNumber, createdAt: now } }, upsert: true } }));
+  const operations = records.map((record) => ({ updateOne: { filter: { rowNumber: record.rowNumber }, update: { $set: { values: normalizeValues(record.values), updatedAt: now }, $setOnInsert: { rowNumber: record.rowNumber, createdAt: now }, $inc: { version: 1 } }, upsert: true } }));
   if (operations.length) await db.collection(collection).bulkWrite(operations);
-  await db.collection(collection).createIndex({ rowNumber: 1 }, { unique: true });
+  // Reconcilia o contador com o maior rowNumber persistido, não apenas com o
+  // maior número do lote: a base pode conter registros legados fora do lote.
+  const highest = await db.collection(collection).findOne({}, { sort: { rowNumber: -1 }, projection: { rowNumber: 1 } });
+  await db.collection<{ _id: string; value: number }>(counters).updateOne(
+    { _id: counterId },
+    { $max: { value: Math.max(1, Number(highest?.rowNumber) || 1) } },
+    { upsert: true },
+  );
   return operations.length;
 }

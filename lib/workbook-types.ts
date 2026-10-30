@@ -23,6 +23,7 @@ export type WorkbookCell = string | number | boolean | WorkbookDateCell | null;
 export type WorkbookRecord = {
   rowNumber: number;
   values: WorkbookCell[];
+  version?: string;
 };
 
 export type WorkbookData = {

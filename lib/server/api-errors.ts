@@ -118,6 +118,13 @@ export function apiErrorResponse(error: unknown, route: string): Response {
     );
   }
 
+  if (error instanceof Error && error.message === "RECORD_CONFLICT") {
+    return errorResponse("RECORD_CONFLICT", "Este registro foi alterado por outra pessoa. Atualize os dados antes de salvar novamente.", 409);
+  }
+  if (error instanceof Error && error.message === "RECORD_NOT_FOUND") {
+    return errorResponse("RECORD_NOT_FOUND", "O registro não foi encontrado na base atual.", 404);
+  }
+
   console.error(`[${route}] Falha inesperada`);
   return errorResponse(
     "INTERNAL_ERROR",

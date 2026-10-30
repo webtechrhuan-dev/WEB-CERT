@@ -3,7 +3,6 @@ import JSZip from "jszip";
 import { describe, expect, it, vi } from "vitest";
 import {
   parseWorkbookBuffer,
-  readWorkbookBufferFromPath,
   readWorkbookFromPath,
   WORKBOOK_HEADERS,
   WorkbookReadError,
@@ -21,22 +20,35 @@ async function createWorkbook(
 ): Promise<Buffer> {
   const workbook = new ExcelJS.Workbook();
   const worksheet = workbook.addWorksheet("Todos os dados");
-  worksheet.addRow([...headers]);
-  rows.forEach((row) => worksheet.addRow(row));
+  worksheet.addTable({
+    name: "Certificates",
+    ref: "A1",
+    headerRow: true,
+    columns: headers.map((name) => ({ name })),
+    rows: rows.map((row) =>
+      Array.from({ length: headers.length }, (_, index) => row[index] ?? null),
+    ),
+  });
   return Buffer.from(await workbook.xlsx.writeBuffer());
 }
 
 describe("leitura da planilha", () => {
-  it("lê a planilha real disponível localmente e preserva seus cabeçalhos e contagem", async () => {
-    const data = await readWorkbookFromPath();
+  it("lê um workbook sintético com os dez campos do cadastro", async () => {
+    const buffer = await createWorkbook(WORKBOOK_HEADERS, [
+      [2025, "Março", "Cliente teste", "contato", new Date(Date.UTC(2025, 2, 4)), null, "A1", 100, 25, "Ativo"],
+    ]);
+    const data = await parseWorkbookBuffer(buffer);
 
     expect(data.headers).toEqual(WORKBOOK_HEADERS);
-    expect(data.count).toBe(170);
+    expect(data.count).toBe(1);
+    expect(data.records[0].values[2]).toBe("Cliente teste");
+    expect(data.records[0].values[6]).toBe("A1");
+    expect(data.records[0].values[9]).toBe("Ativo");
   });
 
   it("lê registros de um workbook válido", async () => {
     const buffer = await createWorkbook(WORKBOOK_HEADERS, [
-      [2025, "Março", "Cliente teste", null, new Date(Date.UTC(2025, 2, 4)), "A1", 100, 25, null],
+      [2025, "Março", "Cliente teste", "contato", new Date(Date.UTC(2025, 2, 4)), null, "A1", 100, 25, "Ativo"],
     ]);
 
     const data = await parseWorkbookBuffer(buffer);
@@ -71,7 +83,7 @@ describe("leitura da planilha", () => {
 
   it("preserva células vazias como null e ignora linhas sem dados", async () => {
     const buffer = await createWorkbook(WORKBOOK_HEADERS, [
-      [2025, "Março", null, null, null, null, null, null, null],
+      [2025, "Março", null, null, null, null, null, null, null, null],
       [null, null, null, null, null, null, null, null, null],
     ]);
 
@@ -84,10 +96,10 @@ describe("leitura da planilha", () => {
 
   it("distingue datas Excel, datas textuais válidas e texto que não representa uma data válida", async () => {
     const buffer = await createWorkbook(WORKBOOK_HEADERS, [
-      [2025, "Março", null, null, new Date(Date.UTC(2025, 2, 4)), null, null, null, null],
-      [2025, "Março", null, null, "4/3/2025", null, null, null, null],
-      [2025, "Março", null, null, "31/2/2025", null, null, null, null],
-      [2025, "Março", null, null, "texto não reconhecido", null, null, null, null],
+      [2025, "Março", null, null, new Date(Date.UTC(2025, 2, 4)), null, null, null, null, null],
+      [2025, "Março", null, null, "4/3/2025", null, null, null, null, null],
+      [2025, "Março", null, null, "31/2/2025", null, null, null, null, null],
+      [2025, "Março", null, null, "texto não reconhecido", null, null, null, null, null],
     ]);
 
     const data = await parseWorkbookBuffer(buffer);
@@ -175,7 +187,9 @@ describe("API de consulta", () => {
 
 describe("alterações em memória", () => {
   it("cadastra uma linha preservando o histórico, cabeçalhos e referência da tabela", async () => {
-    const original = await readWorkbookBufferFromPath();
+    const original = await createWorkbook(WORKBOOK_HEADERS, [
+      [2025, "Março", "Cliente original", "contato", new Date(Date.UTC(2025, 2, 4)), null, "A1", 100, 25, "Ativo"],
+    ]);
     const originalData = await parseWorkbookBuffer(original);
     const output = await createWorkbookRecord(original, {
       "Ano da planilha": "2026",
@@ -199,13 +213,15 @@ describe("alterações em memória", () => {
 
     expect(data.count).toBe(originalData.count + 1);
     expect(data.records.slice(0, originalData.count)).toEqual(originalData.records);
-    expect(data.records.at(-1)?.values[6]).toBe(1234.56);
-    expect(data.records.at(-1)?.values[7]).toBe(45);
-    expect(tableXml).toContain(`ref="A1:I${data.count + 1}"`);
+    expect(data.records.at(-1)?.values[7]).toBe(1234.56);
+    expect(data.records.at(-1)?.values[8]).toBe(45);
+    expect(tableXml).toContain(`ref="A1:J${data.count + 1}"`);
   });
 
   it("edita somente os campos alterados e preserva as demais linhas", async () => {
-    const original = await readWorkbookBufferFromPath();
+    const original = await createWorkbook(WORKBOOK_HEADERS, [
+      [2025, "Março", "Cliente original", "contato", new Date(Date.UTC(2025, 2, 4)), null, "A1", 100, 25, "Ativo"],
+    ]);
     const originalData = await parseWorkbookBuffer(original);
     const target = originalData.records[0];
     const updated = await updateWorkbookRecord(original, target.rowNumber, {
@@ -219,12 +235,14 @@ describe("alterações em memória", () => {
     expect(updatedData.count).toBe(originalData.count);
     expect(updatedData.records.filter((record) => record.rowNumber !== target.rowNumber))
       .toEqual(originalData.records.filter((record) => record.rowNumber !== target.rowNumber));
-    expect(updatedTarget?.values[8]).toBe("Alteração sintética de teste");
-    expect(updatedTarget?.values.slice(0, 8)).toEqual(target.values.slice(0, 8));
+    expect(updatedTarget?.values[9]).toBe("Alteração sintética de teste");
+    expect(updatedTarget?.values.filter((_, index) => index !== 9)).toEqual(target.values.filter((_, index) => index !== 9));
   });
 
   it("permite limpar um campo sem remover a linha", async () => {
-    const original = await readWorkbookBufferFromPath();
+    const original = await createWorkbook(WORKBOOK_HEADERS, [
+      [2025, "Março", "Cliente original", "contato", new Date(Date.UTC(2025, 2, 4)), null, "A1", 100, 25, "Ativo"],
+    ]);
     const originalData = await parseWorkbookBuffer(original);
     const target = originalData.records[0];
     const columnIndex = target.values.findIndex((value) => value !== null);
@@ -242,7 +260,9 @@ describe("alterações em memória", () => {
   });
 
   it("rejeita datas inválidas sem modificar a fonte", async () => {
-    const original = await readWorkbookBufferFromPath();
+    const original = await createWorkbook(WORKBOOK_HEADERS, [
+      [2025, "Março", "Cliente original", "contato", new Date(Date.UTC(2025, 2, 4)), null, "A1", 100, 25, "Ativo"],
+    ]);
 
     await expect(
       createWorkbookRecord(original, {

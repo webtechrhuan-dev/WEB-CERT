@@ -3,7 +3,8 @@ import { requirePageSession } from "@/lib/server/require-page-session";
 import { RecordManagement } from "@/components/record-management";
 import { HelpFaq } from "@/components/help-faq";
 
-export default function RegistrationPage() {
+export default async function RegistrationPage() {
+  await requirePageSession();
   return (
     <div className="app-shell">
       <AppHeader active="register" />
