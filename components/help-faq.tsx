@@ -47,7 +47,12 @@ export function HelpFaq({ topic }: { topic: Topic }) {
   const [expanded, setExpanded] = useState<number | null>(null);
   const triggerRef = useRef<HTMLButtonElement>(null);
   const closeRef = useRef<HTMLButtonElement>(null);
-  useEffect(() => setMounted(true), []);\n  useEffect(() => {\n    const openHelp = () => { setExpanded(0); setOpen(true); };\n    window.addEventListener("webcert:open-help", openHelp);\n    return () => window.removeEventListener("webcert:open-help", openHelp);\n  }, []);
+  useEffect(() => setMounted(true), []);
+  useEffect(() => {
+    const openHelp = () => { setExpanded(0); setOpen(true); };
+    window.addEventListener("webcert:open-help", openHelp);
+    return () => window.removeEventListener("webcert:open-help", openHelp);
+  }, []);
   const data = CONTENT[topic];
   useEffect(() => {
     if (!open) return;
@@ -90,7 +95,12 @@ export function HelpFaq({ topic }: { topic: Topic }) {
             </article>;
           })}
         </div>
-        <section className="wc-help-shortcuts" aria-label="Atalhos de teclado">\n          <div className="wc-help-shortcuts-heading"><div><p className="eyebrow">PRODUTIVIDADE</p><h3>Atalhos desta tela</h3></div><span aria-hidden="true">⌨</span></div>\n          <div className="wc-help-shortcuts-list">{SHORTCUTS[topic].map((shortcut) => <div className="wc-help-shortcut" key={shortcut.key}><kbd>{shortcut.key}</kbd><span>{shortcut.label}</span></div>)}</div>\n          <p className="wc-help-shortcuts-note">Os atalhos não são executados enquanto você digita em campos. F3 e F10 nativos do navegador são preservados; use Alt + F3 e Alt + F10 no sistema.</p>\n        </section>\n        <footer className="wc-help-footer">As orientações e os atalhos são específicos desta tela.</footer>
+        <section className="wc-help-shortcuts" aria-label="Atalhos de teclado">
+          <div className="wc-help-shortcuts-heading"><div><p className="eyebrow">PRODUTIVIDADE</p><h3>Atalhos desta tela</h3></div><span aria-hidden="true">⌨</span></div>
+          <div className="wc-help-shortcuts-list">{SHORTCUTS[topic].map((shortcut) => <div className="wc-help-shortcut" key={shortcut.key}><kbd>{shortcut.key}</kbd><span>{shortcut.label}</span></div>)}</div>
+          <p className="wc-help-shortcuts-note">Os atalhos não são executados enquanto você digita em campos. F3 e F10 nativos do navegador são preservados; use Alt + F3 e Alt + F10 no sistema.</p>
+        </section>
+        <footer className="wc-help-footer">As orientações e os atalhos são específicos desta tela.</footer>
       </section>
     </div>}
   </>, document.body);
