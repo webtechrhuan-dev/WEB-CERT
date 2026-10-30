@@ -42,10 +42,10 @@ const CONTENT: Record<Topic, { title: string; intro: string; items: Item[] }> = 
 };
 
 export function HelpFaq({ topic }: { topic: Topic }) {
-  const [open, setOpen] = useState(false);
+  const [open, setOpen] = useState(false);\n  const [legendOpen, setLegendOpen] = useState(false);
   const [mounted, setMounted] = useState(false);
   const [expanded, setExpanded] = useState<number | null>(null);
-  const triggerRef = useRef<HTMLButtonElement>(null);
+  const triggerRef = useRef<HTMLButtonElement>(null);\n  const legendTriggerRef = useRef<HTMLButtonElement>(null);
   const closeRef = useRef<HTMLButtonElement>(null);
   useEffect(() => setMounted(true), []);
   useEffect(() => {
@@ -77,7 +77,7 @@ export function HelpFaq({ topic }: { topic: Topic }) {
     <button ref={triggerRef} type="button" className="wc-help-trigger" aria-label="Abrir ajuda desta tela" title="Ajuda desta tela" onClick={() => { setExpanded(0); setOpen(true); }}>
       <span aria-hidden="true">?</span>
     </button>
-    {open && <div className="wc-help-backdrop" onMouseDown={(event) => { if (event.target === event.currentTarget) setOpen(false); }}>
+    <button ref={legendTriggerRef} type="button" className="wc-legend-trigger" aria-label="Abrir atalhos e legendas desta tela" title="Atalhos e legendas" onClick={() => setLegendOpen(true)}><span aria-hidden="true">i</span></button>\n    {legendOpen && <div className="wc-help-backdrop wc-legend-backdrop" onMouseDown={(event) => { if (event.target === event.currentTarget) setLegendOpen(false); }}>\n      <section className="wc-help-dialog wc-legend-dialog" role="dialog" aria-modal="true" aria-labelledby="wc-legend-title">\n        <header className="wc-help-dialog-header"><span className="wc-help-dialog-symbol wc-legend-symbol" aria-hidden="true">i</span><div><p className="eyebrow">CONSULTA RÁPIDA</p><h2 id="wc-legend-title">Atalhos e legendas</h2><p>Comandos e indicadores desta tela.</p></div><button type="button" className="wc-help-close" aria-label="Fechar atalhos e legendas" onClick={() => setLegendOpen(false)}>×</button></header>\n        <div className="wc-help-dialog-body"><section className="wc-help-shortcuts wc-legend-shortcuts"><div className="wc-help-shortcuts-heading"><div><p className="eyebrow">PRODUTIVIDADE</p><h3>Atalhos desta tela</h3></div><span aria-hidden="true">⌨</span></div><div className="wc-help-shortcuts-list">{SHORTCUTS[topic].map((shortcut) => <div className="wc-help-shortcut" key={shortcut.key}><kbd>{shortcut.key}</kbd><span>{shortcut.label}</span></div>)}</div><p className="wc-help-shortcuts-note">Atalhos de navegação não são executados enquanto você digita em campos. Ctrl + S salva o formulário quando houver um formulário disponível.</p></section>\n          <section className="wc-help-legend-list" aria-label="Legenda dos elementos"><h3>Legenda dos elementos</h3><div className="wc-help-legend-row"><span className="wc-help-legend-mark wc-mark-required">*</span><span><strong>Campo obrigatório</strong><small>Precisa ser preenchido para concluir o cadastro.</small></span></div><div className="wc-help-legend-row"><span className="wc-help-legend-mark wc-mark-focus"></span><span><strong>Campo em destaque</strong><small>Indica foco ou seleção atual na interface.</small></span></div><div className="wc-help-legend-row"><span className="wc-help-legend-mark wc-mark-help">?</span><span><strong>Central de ajuda</strong><small>Abre explicações e orientações sobre esta tela.</small></span></div><div className="wc-help-legend-row"><span className="wc-help-legend-mark wc-mark-info">i</span><span><strong>Atalhos e legendas</strong><small>Mostra os comandos e o significado dos indicadores.</small></span></div></section>\n        </div><footer className="wc-help-footer">As informações são específicas da tela atualmente aberta.</footer>\n      </section>\n    </div>}\n    {open && <div className="wc-help-backdrop" onMouseDown={(event) => { if (event.target === event.currentTarget) setOpen(false); }}>
       <section className="wc-help-dialog" role="dialog" aria-modal="true" aria-labelledby="wc-help-title">
         <header className="wc-help-dialog-header">
           <span className="wc-help-dialog-symbol" aria-hidden="true">?</span>
