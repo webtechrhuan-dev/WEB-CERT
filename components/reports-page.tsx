@@ -279,7 +279,12 @@ export default function ReportsPage() {
       monthly.set(label, group);
     });
     return [...monthly.values()].sort((a, b) => {
-      const value = (label: string) => { const match = /^(.*?)\s+(\d{4})$/.exec(label); return match ? Number(match[2]) * 12 + MONTHS.indexOf(match[1].toLocaleLowerCase("pt-BR")) : Number.MAX_SAFE_INTEGER; };
+      const value = (label: string) => {
+        if (granularity === "year") return /^\d{4}$/.test(label) ? Number(label) : Number.MAX_SAFE_INTEGER;
+        if (granularity === "week") { const match = /^(\d{2})\/(\d{2})\/(\d{4})/.exec(label); return match ? new Date(Number(match[3]), Number(match[2]) - 1, Number(match[1])).getTime() : Number.MAX_SAFE_INTEGER; }
+        const match = /^(.*?)\s+(\d{4})$/.exec(label);
+        return match ? Number(match[2]) * 12 + MONTHS.indexOf(match[1].toLocaleLowerCase("pt-BR")) : Number.MAX_SAFE_INTEGER;
+      };
       return value(a.label) - value(b.label);
     });
   }, [filteredRows, granularity]);
