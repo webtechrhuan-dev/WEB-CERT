@@ -52,7 +52,7 @@ export async function readCertificateData(): Promise<WorkbookData> {
   const db = await getMongoDb();
   await ensureStorageIndexes();
   const rows = await db.collection(collection).find({}, { projection }).sort({ rowNumber: 1 }).toArray();
-  const records: WorkbookRecord[] = rows.map((row) => ({ rowNumber: row.rowNumber, values: normalizeValues(row.values as WorkbookCell[]) }));
+  const records: WorkbookRecord[] = rows.map((row) => ({ rowNumber: row.rowNumber, values: normalizeValues(row.values as WorkbookCell[]), version: row.updatedAt instanceof Date ? row.updatedAt.toISOString() : new Date(row.updatedAt).toISOString() }));
   return { headers: HEADERS, count: records.length, records, source: "mongodb", version: new Date().toISOString() };
 }
 
