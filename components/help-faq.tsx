@@ -5,6 +5,13 @@ import { createPortal } from "react-dom";
 
 type Topic = "home" | "cadastros" | "vendas" | "relatorios";
 type Item = { question: string; answer: string };
+type Shortcut = { key: string; label: string };
+const SHORTCUTS: Record<Topic, Shortcut[]> = {
+  home: [{key:"Insert",label:"Abrir novo cadastro"},{key:"F8",label:"Abrir relatórios"},{key:"F9",label:"Abrir gestão de vendas"},{key:"Alt + F10",label:"Abrir cadastros"},{key:"Alt + F3",label:"Ir para pesquisa (quando disponível)"},{key:"Ctrl + S",label:"Salvar formulário aberto"},{key:"Esc",label:"Fechar janela ou diálogo"}],
+  cadastros: [{key:"Insert",label:"Abrir a tela de novo cadastro"},{key:"Ctrl + S",label:"Salvar cadastro"},{key:"F8",label:"Abrir relatórios"},{key:"F9",label:"Abrir gestão de vendas"},{key:"Esc",label:"Fechar janela ou diálogo"}],
+  vendas: [{key:"F2",label:"Selecionar/abrir a primeira venda ou a venda selecionada"},{key:"Alt + F3",label:"Focar a pesquisa de cliente"},{key:"F4",label:"Focar o campo de status na edição aberta"},{key:"Insert",label:"Abrir novo cadastro"},{key:"Ctrl + S",label:"Salvar edição"},{key:"F8",label:"Abrir relatórios"},{key:"Esc",label:"Fechar janela ou diálogo"}],
+  relatorios: [{key:"F9",label:"Abrir gestão de vendas"},{key:"Insert",label:"Abrir novo cadastro"},{key:"Alt + F10",label:"Abrir cadastros"},{key:"Esc",label:"Fechar janela ou diálogo"}]
+};
 const CONTENT: Record<Topic, { title: string; intro: string; items: Item[] }> = {
   home: { title: "Ajuda do sistema", intro: "Informações para navegar pelo WEB-CERT.", items: [
     { question: "Para que serve cada módulo?", answer: "Cadastros permite incluir uma nova venda. Gestão de vendas permite localizar e editar registros existentes. Relatórios reúne indicadores, filtros, gráficos e análises financeiras." },
@@ -40,7 +47,7 @@ export function HelpFaq({ topic }: { topic: Topic }) {
   const [expanded, setExpanded] = useState<number | null>(null);
   const triggerRef = useRef<HTMLButtonElement>(null);
   const closeRef = useRef<HTMLButtonElement>(null);
-  useEffect(() => setMounted(true), []);
+  useEffect(() => setMounted(true), []);\n  useEffect(() => {\n    const openHelp = () => { setExpanded(0); setOpen(true); };\n    window.addEventListener("webcert:open-help", openHelp);\n    return () => window.removeEventListener("webcert:open-help", openHelp);\n  }, []);
   const data = CONTENT[topic];
   useEffect(() => {
     if (!open) return;
@@ -83,7 +90,7 @@ export function HelpFaq({ topic }: { topic: Topic }) {
             </article>;
           })}
         </div>
-        <footer className="wc-help-footer">As orientações são específicas desta tela.</footer>
+        <section className="wc-help-shortcuts" aria-label="Atalhos de teclado">\n          <div className="wc-help-shortcuts-heading"><div><p className="eyebrow">PRODUTIVIDADE</p><h3>Atalhos desta tela</h3></div><span aria-hidden="true">⌨</span></div>\n          <div className="wc-help-shortcuts-list">{SHORTCUTS[topic].map((shortcut) => <div className="wc-help-shortcut" key={shortcut.key}><kbd>{shortcut.key}</kbd><span>{shortcut.label}</span></div>)}</div>\n          <p className="wc-help-shortcuts-note">Os atalhos não são executados enquanto você digita em campos. F3 e F10 nativos do navegador são preservados; use Alt + F3 e Alt + F10 no sistema.</p>\n        </section>\n        <footer className="wc-help-footer">As orientações e os atalhos são específicos desta tela.</footer>
       </section>
     </div>}
   </>, document.body);
