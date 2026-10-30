@@ -269,8 +269,10 @@ export default function ReportsPage() {
     const monthly = new Map<string, Group>();
     filteredRows.forEach((row) => {
       const label = periodLabel(row, "month");
-      const group = monthly.get(label) ?? { label, count: 0, completedCount: 0, revenue: 0, cost: 0, profit: 0 };
+      const group = monthly.get(label) ?? { label, count: 0, completedCount: 0, excludedCount: 0, reviewCount: 0, revenue: 0, cost: 0, profit: 0 };
       group.count += 1;
+      if (row.treatment === "Não concluída") group.excludedCount = (group.excludedCount ?? 0) + 1;
+      if (row.treatment === "Revisar") group.reviewCount = (group.reviewCount ?? 0) + 1;
       if (row.completed) { group.completedCount += 1; group.revenue += row.revenue; group.cost += row.cost; }
       if (row.completed) group.profit += row.profit;
       monthly.set(label, group);
