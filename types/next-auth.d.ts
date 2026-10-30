@@ -10,7 +10,7 @@ declare module "next-auth" {
   interface Session {
     user: {
       login: string;
-      role: "viewer" | "editor" | "admin";
+      role: "viewer" | "editor";
       isAdmin: boolean;
     } & DefaultSession["user"];
   }
