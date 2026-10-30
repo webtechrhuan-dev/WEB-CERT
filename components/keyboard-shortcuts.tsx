@@ -33,8 +33,9 @@ export function KeyboardShortcuts() {
           event.preventDefault();
           const selected = document.querySelector<HTMLButtonElement>(".record-picker-row.is-selected");
           const first = selected ?? document.querySelector<HTMLButtonElement>(".record-picker-row");
-          first?.click();
+          if (first && !selected) first.click();
           first?.scrollIntoView({ behavior: "smooth", block: "center" });
+          window.setTimeout(() => document.querySelector<HTMLInputElement>(".selected-record-form input:not([disabled]), .selected-record-form select")?.focus(), 80);
           break;
         }
         case "F3":
@@ -45,7 +46,7 @@ export function KeyboardShortcuts() {
           break;
         case "F4":
           event.preventDefault();
-          document.querySelector<HTMLSelectElement>(".selected-record-form select")?.focus();
+          document.querySelectorAll<HTMLSelectElement>(".selected-record-form .record-form-grid select")[3]?.focus();
           break;
         case "F8":
           go("/relatorios");
