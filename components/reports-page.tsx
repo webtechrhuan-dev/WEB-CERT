@@ -252,7 +252,7 @@ export default function ReportsPage() {
     return [...map.values()].sort((a, b) => {
       if (dimension === "period" && granularity === "year") return a.label.localeCompare(b.label, "pt-BR", { numeric: true });
       if (dimension === "period" && granularity === "month") {
-        const parse = (label: string) => { const m = /^(.*?)\s+(\d{4})$/.exec(label); return m ? Number(m[2]) * 12 + MONTHS.indexOf(m[1].toLocaleLowerCase("pt-BR")) : Number.MAX_SAFE_INTEGER; };
+        const parse = (label: string) => { const m = /^(.*?)\s+(\d{4})$/.exec(label); return m ? Number(m[2]) * 12 + MONTHS.findIndex((month) => month.normalize("NFD").replace(/[\u0300-\u036f]/g, "") === m[1].normalize("NFD").replace(/[\u0300-\u036f]/g, "")) : Number.MAX_SAFE_INTEGER; };
         return parse(a.label) - parse(b.label);
       }
       if (dimension === "period" && granularity === "week") {
@@ -284,7 +284,7 @@ export default function ReportsPage() {
         if (chartGranularity === "year") return /^\d{4}$/.test(label) ? Number(label) : Number.MAX_SAFE_INTEGER;
         if (chartGranularity === "week") { const match = /^(\d{2})\/(\d{2})\/(\d{4})/.exec(label); return match ? new Date(Number(match[3]), Number(match[2]) - 1, Number(match[1])).getTime() : Number.MAX_SAFE_INTEGER; }
         const match = /^(.*?)\s+(\d{4})$/.exec(label);
-        return match ? Number(match[2]) * 12 + MONTHS.indexOf(match[1].toLocaleLowerCase("pt-BR")) : Number.MAX_SAFE_INTEGER;
+        return match ? Number(match[2]) * 12 + MONTHS.findIndex((month) => month.normalize("NFD").replace(/[\u0300-\u036f]/g, "") === match[1].normalize("NFD").replace(/[\u0300-\u036f]/g, "")) : Number.MAX_SAFE_INTEGER;
       };
       return value(a.label) - value(b.label);
     });
