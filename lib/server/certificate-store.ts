@@ -99,6 +99,6 @@ export async function importCertificates(records: WorkbookRecord[]): Promise<num
   if (operations.length) await db.collection(collection).bulkWrite(operations);
   await ensureStorageIndexes();
   const highest = records.reduce((max, record) => Math.max(max, record.rowNumber), 1);
-  await db.collection(counters).updateOne({ _id: counterId }, { $max: { value: highest } }, { upsert: true });
+  await db.collection<{ _id: string; value: number }>(counters).updateOne({ _id: counterId }, { $max: { value: highest } }, { upsert: true });
   return operations.length;
 }
