@@ -39,7 +39,7 @@ async function nextRowNumber(): Promise<number> {
   try {
     await counterCollection.updateOne(
       { _id: counterId },
-      { $setOnInsert: { value: Math.max(1, Number(highest?.rowNumber) || 1) } },
+      { $max: { value: Math.max(1, Number(highest?.rowNumber) || 1) } },
       { upsert: true },
     );
   } catch (error) {
@@ -115,7 +115,13 @@ export async function importCertificates(records: WorkbookRecord[]): Promise<num
   const now = new Date();
   const operations = records.map((record) => ({ updateOne: { filter: { rowNumber: record.rowNumber }, update: { $set: { values: normalizeValues(record.values), updatedAt: now }, $setOnInsert: { rowNumber: record.rowNumber, createdAt: now }, $inc: { version: 1 } }, upsert: true } }));
   if (operations.length) await db.collection(collection).bulkWrite(operations);
-  const highest = records.reduce((max, record) => Math.max(max, record.rowNumber), 1);
-  await db.collection<{ _id: string; value: number }>(counters).updateOne({ _id: counterId }, { $max: { value: highest } }, { upsert: true });
+  // Reconcilia o contador com o maior rowNumber persistido, não apenas com o
+  // maior número do lote: a base pode conter registros legados fora do lote.
+  const highest = await db.collection(collection).findOne({}, { sort: { rowNumber: -1 }, projection: { rowNumber: 1 } });
+  await db.collection<{ _id: string; value: number }>(counters).updateOne(
+    { _id: counterId },
+    { $max: { value: Math.max(1, Number(highest?.rowNumber) || 1) } },
+    { upsert: true },
+  );
   return operations.length;
 }
