@@ -34,12 +34,13 @@ async function nextRowNumber(): Promise<number> {
   // Inicialização idempotente: concorrentes disputam o mesmo upsert; somente
   // uma inserção inicializa o contador e todos incrementam atomicamente depois.
   const highest = await rows.findOne({}, { sort: { rowNumber: -1 }, projection: { rowNumber: 1 } });
-  await db.collection(counters).updateOne(
+  const counterCollection = db.collection<{ _id: string; value: number }>(counters);
+  await counterCollection.updateOne(
     { _id: counterId },
     { $setOnInsert: { value: Math.max(1, Number(highest?.rowNumber) || 1) } },
     { upsert: true },
   );
-  const result = await db.collection(counters).findOneAndUpdate(
+  const result = await counterCollection.findOneAndUpdate(
     { _id: counterId },
     { $inc: { value: 1 } },
     { returnDocument: "after" },
@@ -52,7 +53,7 @@ export async function readCertificateData(): Promise<WorkbookData> {
   const db = await getMongoDb();
   await ensureStorageIndexes();
   const rows = await db.collection(collection).find({}, { projection }).sort({ rowNumber: 1 }).toArray();
-  const records: WorkbookRecord[] = rows.map((row) => ({ rowNumber: row.rowNumber, values: normalizeValues(row.values as WorkbookCell[]), version: row.updatedAt instanceof Date ? row.updatedAt.toISOString() : new Date(row.updatedAt).toISOString() }));
+  const records: WorkbookRecord[] = rows.map((row) => ({ rowNumber: row.rowNumber, values: normalizeValues(row.values as WorkbookCell[]), version: new Date(row.updatedAt ?? row.createdAt ?? 0).toISOString() }));
   return { headers: HEADERS, count: records.length, records, source: "mongodb", version: new Date().toISOString() };
 }
 
