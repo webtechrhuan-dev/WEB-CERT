@@ -35,11 +35,21 @@ async function nextRowNumber(): Promise<number> {
   // uma inserção inicializa o contador e todos incrementam atomicamente depois.
   const highest = await rows.findOne({}, { sort: { rowNumber: -1 }, projection: { rowNumber: 1 } });
   const counterCollection = db.collection<{ _id: string; value: number }>(counters);
-  await counterCollection.updateOne(
-    { _id: counterId },
-    { $setOnInsert: { value: Math.max(1, Number(highest?.rowNumber) || 1) } },
-    { upsert: true },
-  );
+  try {
+    await counterCollection.updateOne(
+      { _id: counterId },
+      { $setOnInsert: { value: Math.max(1, Number(highest?.rowNumber) || 1) } },
+      { upsert: true },
+    );
+  } catch (error) {
+    const duplicateCounterInsert =
+      typeof error === "object" &&
+      error !== null &&
+      "code" in error &&
+      error.code === 11000;
+    if (!duplicateCounterInsert) throw error;
+    // Outra requisição inicializou o contador primeiro; continue para o incremento atômico.
+  }
   const result = await counterCollection.findOneAndUpdate(
     { _id: counterId },
     { $inc: { value: 1 } },
