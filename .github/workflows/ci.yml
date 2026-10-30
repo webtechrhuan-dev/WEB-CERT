@@ -27,7 +27,7 @@ jobs:
       - name: Regenerate npm lockfile from package manifest
         run: npm install --package-lock-only --ignore-scripts --no-audit --no-fund
       - name: Commit synchronized lockfile on branch pushes
-        if: github.event_name == 'push'
+        if: github.event_name == 'push' && github.ref_name == 'improvements/system-hardening'
         run: |
           if ! git diff --quiet -- package-lock.json; then
             git config user.name "github-actions[bot]"
