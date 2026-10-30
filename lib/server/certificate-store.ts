@@ -63,7 +63,7 @@ export async function readCertificateData(): Promise<WorkbookData> {
   const db = await getMongoDb();
   await ensureStorageIndexes();
   const rows = await db.collection(collection).find({}, { projection }).sort({ rowNumber: 1 }).toArray();
-  const records: WorkbookRecord[] = rows.map((row) => ({ rowNumber: row.rowNumber, values: normalizeValues(row.values as WorkbookCell[]), version: new Date(row.updatedAt ?? row.createdAt ?? 0).toISOString() }));
+  const records: WorkbookRecord[] = rows.map((row) => ({ rowNumber: row.rowNumber, values: normalizeValues(row.values as WorkbookCell[]), version: String(Number.isSafeInteger(row.version) ? row.version : 0) }));
   return { headers: HEADERS, count: records.length, records, source: "mongodb", version: new Date().toISOString() };
 }
 
@@ -72,18 +72,25 @@ export async function createCertificate(values: WorkbookCell[]): Promise<void> {
   await ensureStorageIndexes();
   const rowNumber = await nextRowNumber();
   const now = new Date();
-  await db.collection(collection).insertOne({ rowNumber, values: normalizeValues(values), createdAt: now, updatedAt: now });
+  await db.collection(collection).insertOne({ rowNumber, values: normalizeValues(values), createdAt: now, updatedAt: now, version: 1 });
 }
 
 export async function updateCertificate(rowNumber: number, values: WorkbookCell[], expectedVersion?: string): Promise<boolean> {
   const db = await getMongoDb();
   await ensureStorageIndexes();
-  if (!expectedVersion || !Number.isFinite(Date.parse(expectedVersion))) throw new Error("RECORD_CONFLICT");
+  const expectedRevision = Number(expectedVersion);
+  if (
+    !expectedVersion ||
+    !Number.isSafeInteger(expectedRevision) ||
+    expectedRevision < 0
+  ) throw new Error("RECORD_CONFLICT");
   values = normalizeValues(values);
-  const expectedUpdatedAt = new Date(expectedVersion);
+  const filter = expectedRevision === 0
+    ? { rowNumber, $or: [{ version: 0 }, { version: { $exists: false } }] }
+    : { rowNumber, version: expectedRevision };
   const result = await db.collection(collection).findOneAndUpdate(
-    { rowNumber, updatedAt: expectedUpdatedAt },
-    { $set: { values, updatedAt: new Date() } },
+    filter,
+    { $set: { values, updatedAt: new Date(), version: expectedRevision + 1 } },
     { returnDocument: "after", projection },
   );
   if (result) return true;
@@ -95,7 +102,7 @@ export async function updateCertificate(rowNumber: number, values: WorkbookCell[
 export async function importCertificates(records: WorkbookRecord[]): Promise<number> {
   const db = await getMongoDb();
   const now = new Date();
-  const operations = records.map((record) => ({ updateOne: { filter: { rowNumber: record.rowNumber }, update: { $set: { values: normalizeValues(record.values), updatedAt: now }, $setOnInsert: { rowNumber: record.rowNumber, createdAt: now } }, upsert: true } }));
+  const operations = records.map((record) => ({ updateOne: { filter: { rowNumber: record.rowNumber }, update: { $set: { values: normalizeValues(record.values), updatedAt: now }, $setOnInsert: { rowNumber: record.rowNumber, createdAt: now }, $inc: { version: 1 } }, upsert: true } }));
   if (operations.length) await db.collection(collection).bulkWrite(operations);
   await ensureStorageIndexes();
   const highest = records.reduce((max, record) => Math.max(max, record.rowNumber), 1);
