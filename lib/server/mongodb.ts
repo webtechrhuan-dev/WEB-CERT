@@ -5,10 +5,24 @@ const uri = process.env.MONGODB_URI;
 const dbName = process.env.MONGODB_DB ?? "web_cert";
 if (!uri) throw new Error("MONGODB_URI não configurada.");
 
-declare global { var __mongoClientPromise: Promise<MongoClient> | undefined; }
-const clientPromise = global.__mongoClientPromise ?? new MongoClient(uri).connect();
-if (process.env.NODE_ENV !== "production") global.__mongoClientPromise = clientPromise;
+declare global {
+  // Reutiliza o cliente entre invocações quentes do mesmo processo serverless.
+  // A promessa é descartada em caso de falha para permitir uma nova tentativa.
+  var __mongoClientPromise: Promise<MongoClient> | undefined;
+}
+
+function getClientPromise(): Promise<MongoClient> {
+  if (!global.__mongoClientPromise) {
+    const client = new MongoClient(uri);
+    global.__mongoClientPromise = client.connect().catch(async (error) => {
+      global.__mongoClientPromise = undefined;
+      await client.close().catch(() => undefined);
+      throw error;
+    });
+  }
+  return global.__mongoClientPromise;
+}
 
 export async function getMongoDb(): Promise<Db> {
-  return (await clientPromise).db(dbName);
+  return (await getClientPromise()).db(dbName);
 }
