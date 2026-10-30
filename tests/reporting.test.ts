@@ -70,8 +70,8 @@ describe("relatórios agregados", () => {
       profit: 1000,
     });
     expect(summary.groups).toEqual([
-      { label: "Fevereiro 2026", count: 1, revenue: 0, cost: 0, profit: 0, completedCount: 0 },
       { label: "Janeiro 2025", count: 3, revenue: 1734.56, cost: 234.56, profit: 1000, completedCount: 2 },
+      { label: "Fevereiro 2026", count: 1, revenue: 0, cost: 0, profit: 0, completedCount: 0 },
     ]);
   });
 
