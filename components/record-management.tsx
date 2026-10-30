@@ -40,6 +40,11 @@ function apiErrorMessage(value: unknown): string | null {
 const PERIOD_FIELDS = ["Ano da planilha", "Mês da planilha"] as const;
 const MONTH_NAMES = ["janeiro", "fevereiro", "março", "abril", "maio", "junho", "julho", "agosto", "setembro", "outubro", "novembro", "dezembro"];
 
+function normalizeMonth(value: string): string {
+  const normalized = value.trim().normalize("NFD").replace(/[\\u0300-\\u036f]/g, "").replace(/\\s+/g, " ").toLocaleLowerCase("pt-BR");
+  return MONTH_NAMES.find((month) => month.normalize("NFD").replace(/[\\u0300-\\u036f]/g, "") === normalized) ?? normalized;
+}
+
 function availableYears(): string[] {
   const currentYear = Number(currentPeriod().year);
   return Array.from({ length: Math.max(0, currentYear - 2024 + 1) }, (_, index) => String(currentYear - index));
@@ -301,8 +306,8 @@ export function RecordManagement({ mode }: { mode: ManagementMode }) {
     const query = search.trim().toLocaleLowerCase("pt-BR");
     return data.records.filter((record) => {
       const year = valueAsText(record.values[periodIndexes.year]);
-      const month = valueAsText(record.values[periodIndexes.month]).toLocaleLowerCase("pt-BR");
-      if (year !== filterYear || month !== filterMonth.toLocaleLowerCase("pt-BR")) return false;
+      const month = normalizeMonth(valueAsText(record.values[periodIndexes.month]));
+      if (year.trim() !== filterYear.trim() || month !== normalizeMonth(filterMonth)) return false;
       if (!query) return true;
       const clientIndex = data.headers.indexOf("Cliente");
       const clientName = valueAsText(record.values[clientIndex]).toLocaleLowerCase("pt-BR");
@@ -315,8 +320,9 @@ export function RecordManagement({ mode }: { mode: ManagementMode }) {
     const groups = new Map<string, WorkbookRecord[]>();
     for (const record of records) {
       const year = valueAsText(record.values[yearIndexForGroup]) || "Sem ano";
-      const month = valueAsText(record.values[monthIndexForGroup]) || "Sem mês";
-      const key = `${year}||${month}`;
+      const rawMonth = valueAsText(record.values[monthIndexForGroup]) || "Sem mês";
+      const month = rawMonth === "Sem mês" ? rawMonth : normalizeMonth(rawMonth);
+      const key = `${year.trim()}||${month}`;
       if (!groups.has(key)) groups.set(key, []);
       groups.get(key)!.push(record);
     }
