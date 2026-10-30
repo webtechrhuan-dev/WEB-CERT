@@ -27,16 +27,22 @@ async function createWorkbook(
 }
 
 describe("leitura da planilha", () => {
-  it("lê a planilha real disponível localmente e preserva seus cabeçalhos e contagem", async () => {
-    const data = await readWorkbookFromPath();
+  it("lê um workbook sintético com os dez campos do cadastro", async () => {
+    const buffer = await createWorkbook(WORKBOOK_HEADERS, [
+      [2025, "Março", "Cliente teste", "contato", new Date(Date.UTC(2025, 2, 4)), null, "A1", 100, 25, "Ativo"],
+    ]);
+    const data = await parseWorkbookBuffer(buffer);
 
     expect(data.headers).toEqual(WORKBOOK_HEADERS);
-    expect(data.count).toBe(170);
+    expect(data.count).toBe(1);
+    expect(data.records[0].values[2]).toBe("Cliente teste");
+    expect(data.records[0].values[6]).toBe("A1");
+    expect(data.records[0].values[9]).toBe("Ativo");
   });
 
   it("lê registros de um workbook válido", async () => {
     const buffer = await createWorkbook(WORKBOOK_HEADERS, [
-      [2025, "Março", "Cliente teste", null, new Date(Date.UTC(2025, 2, 4)), "A1", 100, 25, null],
+      [2025, "Março", "Cliente teste", "contato", new Date(Date.UTC(2025, 2, 4)), null, "A1", 100, 25, "Ativo"],
     ]);
 
     const data = await parseWorkbookBuffer(buffer);
@@ -84,10 +90,10 @@ describe("leitura da planilha", () => {
 
   it("distingue datas Excel, datas textuais válidas e texto que não representa uma data válida", async () => {
     const buffer = await createWorkbook(WORKBOOK_HEADERS, [
-      [2025, "Março", null, null, new Date(Date.UTC(2025, 2, 4)), null, null, null, null],
-      [2025, "Março", null, null, "4/3/2025", null, null, null, null],
-      [2025, "Março", null, null, "31/2/2025", null, null, null, null],
-      [2025, "Março", null, null, "texto não reconhecido", null, null, null, null],
+      [2025, "Março", null, null, new Date(Date.UTC(2025, 2, 4)), null, null, null, null, null],
+      [2025, "Março", null, null, "4/3/2025", null, null, null, null, null],
+      [2025, "Março", null, null, "31/2/2025", null, null, null, null, null],
+      [2025, "Março", null, null, "texto não reconhecido", null, null, null, null, null],
     ]);
 
     const data = await parseWorkbookBuffer(buffer);
