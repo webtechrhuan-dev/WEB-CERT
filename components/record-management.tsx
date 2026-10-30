@@ -41,8 +41,16 @@ const PERIOD_FIELDS = ["Ano da planilha", "Mês da planilha"] as const;
 const MONTH_NAMES = ["janeiro", "fevereiro", "março", "abril", "maio", "junho", "julho", "agosto", "setembro", "outubro", "novembro", "dezembro"];
 
 function normalizeMonth(value: string): string {
-  const normalized = value.trim().normalize("NFD").replace(/[\\u0300-\\u036f]/g, "").replace(/\\s+/g, " ").toLocaleLowerCase("pt-BR");
-  return MONTH_NAMES.find((month) => month.normalize("NFD").replace(/[\\u0300-\\u036f]/g, "") === normalized) ?? normalized;
+  const normalized = value
+    .trim()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/\s+/g, " ")
+    .toLocaleLowerCase("pt-BR");
+  return MONTH_NAMES.find(
+    (month) =>
+      month.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLocaleLowerCase("pt-BR") === normalized,
+  ) ?? normalized;
 }
 
 function availableYears(): string[] {
@@ -413,7 +421,7 @@ export function RecordManagement({ mode }: { mode: ManagementMode }) {
         <section className="content-panel">
           <div className="panel-heading">
             <div><h2>Gestão de vendas</h2><p>Selecione o ano e o mês para exibir somente as vendas do período escolhido.</p></div>
-            <span className="record-count">{filterYear && filterMonth ? `${records.length} vendas` : `${data.count} registros disponíveis`}</span>
+            <span className="record-count">{filterYear && filterMonth ? `${records.length} ${records.length === 1 ? "venda" : "vendas"}` : `${data.count} registros disponíveis`}</span>
           </div>
           <div className="period-filter-bar">
             <label className="record-form-field">
