@@ -3,7 +3,8 @@ import { requirePageSession } from "@/lib/server/require-page-session";
 import { RecordManagement } from "@/components/record-management";
 import { HelpFaq } from "@/components/help-faq";
 
-export default async function WorkbookEditPage() {\n  await requirePageSession();
+export default async function WorkbookEditPage() {
+  await requirePageSession();
   return (
     <div className="app-shell">
       <AppHeader active="edit" />
