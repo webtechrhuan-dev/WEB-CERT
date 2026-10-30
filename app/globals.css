@@ -2661,3 +2661,110 @@ table tbody tr:hover, .record-row:hover, .sale-row:hover {
 .wc-status-legend-grid{display:flex;flex-wrap:wrap;gap:8px}
 .wc-status-legend p{margin:10px 0 0;color:#64748b;font-size:11px;line-height:1.5}
 @media(max-width:640px){.sale-status-badge{font-size:10px;padding:4px 8px}.record-picker-row .sale-status-badge{margin-left:0}}
+
+
+/* Refatoração visual da Gestão de vendas — escopo restrito ao módulo */
+.content-panel:has(.record-picker--grouped) > .panel-heading {
+  align-items: center;
+  padding: 22px 24px;
+  background: linear-gradient(180deg, #fff 0%, #fbfdfe 100%);
+}
+.content-panel:has(.record-picker--grouped) > .panel-heading .record-count {
+  padding: 7px 11px;
+  border: 1px solid #dce8ee;
+  border-radius: 999px;
+  background: #f5fafc;
+  color: #315b70;
+  font-size: 11px;
+  font-weight: 700;
+  white-space: nowrap;
+}
+.period-filter-bar {
+  grid-template-columns: repeat(2, minmax(190px, 280px)) auto;
+  gap: 14px;
+  padding: 20px 24px;
+  border-bottom: 1px solid #e7edf1;
+  background: #f8fbfc;
+}
+.period-filter-bar .record-form-field { gap: 7px; color: #40596a; font-size: 11px; }
+.period-filter-bar .record-form-field select {
+  width: 100%; min-height: 44px; padding: 0 38px 0 12px;
+  border: 1px solid #d3dfe7; border-radius: 8px; background-color: #fff;
+  color: #172b3b; font-size: 13px; font-weight: 550;
+  transition: border-color .15s ease, box-shadow .15s ease;
+}
+.period-filter-bar .record-form-field select:focus {
+  border-color: #159ab2; outline: 0; box-shadow: 0 0 0 3px rgb(5 168 195 / 12%);
+}
+.period-filter-clear { min-height: 44px; margin: 0; padding-inline: 15px; }
+.period-filter-empty { margin: 0; padding: 42px 24px; color: #647889; font-size: 13px; }
+.record-picker--grouped { background: #fff; }
+.record-period-group + .record-period-group { border-top: 10px solid #f3f6f8; }
+.record-period-heading {
+  min-height: 48px; padding: 11px 24px; gap: 9px;
+  background: #f6f9fb; border-bottom: 1px solid #e6edf1;
+}
+.record-period-heading strong { color: #123d52; font-size: 13px; font-weight: 750; }
+.record-period-heading > span:not(.record-count) { color: #526c7c; font-size: 12px; }
+.record-period-heading .record-count { padding: 4px 9px; border-radius: 999px; background: #eaf1f5; color: #496577; font-size: 10px; font-weight: 650; }
+.record-inline-item { border-bottom: 1px solid #edf1f4; }
+.record-picker-row {
+  grid-template-columns: 76px minmax(150px, 1.25fr) minmax(130px, .9fr) max-content 18px;
+  min-height: 66px; gap: 13px; padding: 11px 24px;
+  border-bottom: 0; background: #fff; color: #627687; font-size: 12px;
+  transition: background-color .14s ease, box-shadow .14s ease;
+}
+.record-picker-row:hover { background: #f7fbfc; }
+.record-picker-row.is-selected { background: #f0f8fa; box-shadow: inset 3px 0 #0a91ad; }
+.record-picker-row strong { color: #19384b; font-size: 13px; font-weight: 680; }
+.record-picker-number { color: #8293a0; font-size: 11px; }
+.record-picker-row > span:nth-of-type(2) { color: #748695; font-size: 11px; }
+.record-picker-row > svg { color: #8ba0ad; transition: transform .14s ease; }
+.record-picker-row[aria-expanded="true"] > svg { transform: rotate(90deg); color: #087c9f; }
+.selected-record-form--inline {
+  border-top: 1px solid #dce9ee; border-bottom: 1px solid #dce9ee;
+  background: #fbfdfe; box-shadow: inset 3px 0 #0a91ad;
+}
+.selected-record-form--inline > .panel-heading {
+  align-items: center; padding: 18px 24px; background: #f5fafb;
+}
+.selected-record-form--inline > .panel-heading h2 { font-size: 15px; }
+.selected-record-form--inline > .panel-heading .button--small { margin: 0; }
+.selected-record-form--inline .record-form { padding: 20px 24px 24px; }
+.selected-record-form--inline .record-form-grid { gap: 15px; }
+.selected-record-form--inline .record-form-field { gap: 7px; color: #40596a; font-size: 11px; }
+.selected-record-form--inline .record-form-field input,
+.selected-record-form--inline .record-form-field select {
+  min-height: 43px; border-color: #d4e0e7; border-radius: 8px; background: #fff;
+  color: #172b3b; font-size: 13px;
+}
+.selected-record-form--inline .record-form-field input:focus,
+.selected-record-form--inline .record-form-field select:focus {
+  border-color: #159ab2; outline: 0; box-shadow: 0 0 0 3px rgb(5 168 195 / 11%);
+}
+.selected-record-form--inline .form-help { padding: 11px 13px; border: 1px solid #e3edf1; border-radius: 8px; background: #f7fafb; }
+.selected-record-form--inline .form-actions { margin-top: 20px; }
+@media (max-width: 760px) {
+  .period-filter-bar { grid-template-columns: repeat(2, minmax(0, 1fr)); padding: 16px; }
+  .period-filter-clear { grid-column: 1 / -1; width: 100%; }
+  .record-picker-row { grid-template-columns: 58px minmax(0, 1fr) max-content 16px; gap: 9px; padding: 11px 15px; }
+  .record-picker-row > span:nth-of-type(2) { grid-column: 2; grid-row: 2; display: block; }
+  .record-picker-row > .sale-status-badge { grid-column: 3; grid-row: 1 / span 2; align-self: center; }
+  .record-picker-row > svg { grid-column: 4; grid-row: 1 / span 2; }
+  .record-period-heading { padding-inline: 15px; }
+  .selected-record-form--inline > .panel-heading,
+  .selected-record-form--inline .record-form { padding-inline: 16px; }
+}
+@media (max-width: 520px) {
+  .content-panel:has(.record-picker--grouped) > .panel-heading { padding: 16px; }
+  .period-filter-bar { grid-template-columns: minmax(0, 1fr); gap: 11px; padding: 14px; }
+  .period-filter-clear { grid-column: auto; }
+  .record-picker-row { grid-template-columns: 48px minmax(0, 1fr) 16px; min-height: 68px; gap: 5px 9px; padding: 10px 12px; }
+  .record-picker-row > .sale-status-badge { grid-column: 2; grid-row: 2; justify-self: start; }
+  .record-picker-row > span:nth-of-type(2) { display: none; }
+  .record-picker-row > svg { grid-column: 3; grid-row: 1 / span 2; }
+  .record-picker-row strong { font-size: 12px; }
+  .record-period-heading { padding-inline: 12px; }
+  .selected-record-form--inline > .panel-heading { padding: 14px 12px; }
+  .selected-record-form--inline .record-form { padding: 16px 12px 18px; }
+}
