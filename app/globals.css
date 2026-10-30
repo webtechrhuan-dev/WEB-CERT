@@ -2642,3 +2642,27 @@ table tbody tr:hover, .record-row:hover, .sale-row:hover {
 .wc-floating-tools .wc-legend-trigger:focus-visible{outline:3px solid rgb(8 150 190 / 30%)!important;outline-offset:3px!important}
 @media(max-width:640px){.wc-floating-tools .wc-legend-trigger{width:46px!important;height:46px!important;border-radius:14px!important}}
 @media(prefers-reduced-motion:reduce){.wc-floating-tools .wc-legend-trigger{transition:none!important}}
+
+
+/* Identidade visual consistente para os seis status das vendas */
+.sale-status-badge{display:inline-flex;align-items:center;justify-content:center;gap:6px;width:max-content;max-width:100%;padding:5px 10px;border:1px solid transparent;border-radius:999px;font-size:11px;font-weight:750;line-height:1.25;letter-spacing:.01em;white-space:nowrap}
+.sale-status-badge::before{content:"";width:7px;height:7px;flex:none;border-radius:50%;background:currentColor;box-shadow:0 0 0 2px rgb(255 255 255 / 65%)}
+.status-emitido{color:#1759a6!important;background:#eaf2ff!important;border-color:#c8dcff!important}
+.status-pendente-instalar{color:#a65308!important;background:#fff3df!important;border-color:#f6d6a5!important}
+.status-instalado{color:#6b36a5!important;background:#f3eaff!important;border-color:#dfc8fb!important}
+.status-concluido{color:#167347!important;background:#e7f7ed!important;border-color:#bce8ca!important}
+.status-nao-concluido{color:#596579!important;background:#eef1f5!important;border-color:#d7dee7!important}
+.status-cancelado{color:#b42332!important;background:#ffebed!important;border-color:#fac6cc!important}
+.status-sem-definicao{color:#596579!important;background:#f3f5f7!important;border-color:#dce2e8!important}
+.record-picker-row.sale-status-badge,.record-picker-row.status-emitido,.record-picker-row.status-pendente-instalar,.record-picker-row.status-instalado,.record-picker-row.status-concluido,.record-picker-row.status-nao-concluido,.record-picker-row.status-cancelado{border-left:4px solid currentColor!important}
+.record-picker-row.status-emitido{background:linear-gradient(90deg,#f1f6ff,#fff 38%)!important}
+.record-picker-row.status-pendente-instalar{background:linear-gradient(90deg,#fff8ec,#fff 38%)!important}
+.record-picker-row.status-instalado{background:linear-gradient(90deg,#f8f1ff,#fff 38%)!important}
+.record-picker-row.status-concluido{background:linear-gradient(90deg,#effaf3,#fff 38%)!important}
+.record-picker-row.status-nao-concluido{background:linear-gradient(90deg,#f4f6f8,#fff 38%)!important}
+.record-picker-row.status-cancelado{background:linear-gradient(90deg,#fff1f2,#fff 38%)!important}
+.wc-status-legend{margin-top:14px;padding:13px 14px;border:1px solid #e1e9ef;border-radius:12px;background:#f9fbfc}
+.wc-status-legend h4{margin:0 0 10px;color:#30495d;font-size:12px;font-weight:800}
+.wc-status-legend-grid{display:flex;flex-wrap:wrap;gap:8px}
+.wc-status-legend p{margin:10px 0 0;color:#718496;font-size:10px;line-height:1.5}
+@media(max-width:640px){.sale-status-badge{font-size:10px;padding:5px 8px}.wc-status-legend-grid{gap:6px}}
