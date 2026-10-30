@@ -1,6 +1,7 @@
 import { AppHeader } from "@/components/app-header";
 import { requirePageSession } from "@/lib/server/require-page-session";
 import { RecordManagement } from "@/components/record-management";
+import { HelpFaq } from "@/components/help-faq";
 
 export default function RegistrationPage() {
   return (
@@ -14,6 +15,7 @@ export default function RegistrationPage() {
           <p>Adicione registros à planilha comercial com validação e histórico de versão.</p>
         </section>
         <RecordManagement mode="create" />
+        <HelpFaq topic="cadastros" />
       </main>
     </div>
   );
