@@ -8,12 +8,10 @@ import { Icon } from "@/components/icon";
 import { HelpFaq } from "@/components/help-faq";
 import { saleStatusClass, saleStatusLabel } from "@/lib/sale-status";
 import { useWorkbookData } from "@/lib/client/use-workbook-data";
-import { getWorkbookReportRows, summarizeWorkbook, type ReportDimension, type DetailedReportRow } from "@/lib/reporting";
+import { buildReportGroups, countReportDateIssues, filterReportRows, getReportChartScale, getReportGroupLabel, getWorkbookReportRows, summarizeReportRows, summarizeWorkbook, type ReportDateBasis, type ReportDimension, type ReportGranularity, type ReportGroup, type DetailedReportRow } from "@/lib/reporting";
 
 const currency = new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" });
 const numbers = new Intl.NumberFormat("pt-BR");
-type Granularity = "month" | "week" | "year";
-type Group = { label: string; count: number; completedCount: number; excludedCount?: number; reviewCount?: number; revenue: number; cost: number; profit: number };
 const MONTHS = ["janeiro", "fevereiro", "março", "abril", "maio", "junho", "julho", "agosto", "setembro", "outubro", "novembro", "dezembro"];
 
 function cellText(value: unknown): string {
@@ -62,50 +60,7 @@ function exportRenewals(rows: { client: string; contact: string; model: string; 
 function textValue(value: string) {
   return value && value !== "Sem preenchimento" ? value : "Não informado";
 }
-function canonicalMonth(value: string): string {
-  const normalized = value.trim().normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLocaleLowerCase("pt-BR");
-  const month = MONTHS.find((item) => item.normalize("NFD").replace(/[\u0300-\u036f]/g, "") === normalized);
-  return month ?? value.trim().replace(/\s+/g, " ").toLocaleLowerCase("pt-BR");
-}
-function parsedDate(row: DetailedReportRow): Date | null {
-  const raw = row.date.trim();
-  let match = /^(\d{1,2})[\/.-](\d{1,2})[\/.-](\d{4})$/.exec(raw);
-  if (match) {
-    const d = new Date(Number(match[3]), Number(match[2]) - 1, Number(match[1]));
-    return Number.isNaN(d.getTime()) ? null : d;
-  }
-  match = /^(\d{4})-(\d{2})-(\d{2})/.exec(raw);
-  if (match) {
-    const d = new Date(Number(match[1]), Number(match[2]) - 1, Number(match[3]));
-    return Number.isNaN(d.getTime()) ? null : d;
-  }
-  const parsed = new Date(raw);
-  return raw && !Number.isNaN(parsed.getTime()) ? parsed : null;
-}
-function periodLabel(row: DetailedReportRow, granularity: Granularity): string {
-  const date = parsedDate(row);
-  // Mês/ano seguem a competência da pasta anual; a data pode ser de renovação antiga.
-  if (granularity === "year") return textValue(row.year) !== "Não informado" ? row.year : date ? String(date.getFullYear()) : "Ano não informado";
-  if (granularity === "month") {
-    if (textValue(row.month) !== "Não informado" && textValue(row.year) !== "Não informado") return `${canonicalMonth(row.month)} ${row.year.trim()}`;
-    return date ? `${MONTHS[date.getMonth()]} ${date.getFullYear()}` : "Período não informado";
-  }
-  if (date) {
-    const monday = new Date(date);
-    monday.setDate(date.getDate() - ((date.getDay() + 6) % 7));
-    const sunday = new Date(monday);
-    sunday.setDate(monday.getDate() + 6);
-    const fmt = (d: Date) => d.toLocaleDateString("pt-BR");
-    return `${fmt(monday)} – ${fmt(sunday)}`;
-  }
-  return `Semana sem data · ${textValue(row.month)} ${textValue(row.year)}`;
-}
-function groupLabel(row: DetailedReportRow, dimension: ReportDimension, granularity: Granularity) {
-  if (dimension === "period") return periodLabel(row, granularity);
-  if (dimension === "model") return textValue(row.model);
-  return textValue(row.status);
-}
-function exportCsv(rows: Group[]) {
+function exportCsv(rows: ReportGroup[]) {
   const quote = (value: string | number) => `"${String(value).replace(/"/g, '""')}"`;
   const content = [
     ["Grupo", "Registros", "Vendas concluídas", "Faturamento bruto (R$)", "Custos (R$)", "Valor líquido (R$)"],
@@ -122,7 +77,7 @@ function exportCsv(rows: Group[]) {
 function ReportError({ message }: { message: string }) {
   return <section className="state-panel state-panel--error"><span className="state-icon state-icon--error"><Icon name="alert" /></span><div className="state-copy"><h2>Não foi possível carregar os relatórios</h2><p>{message}</p></div></section>;
 }
-function UnifiedChart({ rows }: { rows: Group[] }) {
+function UnifiedChart({ rows }: { rows: ReportGroup[] }) {
   const visible = rows;
   if (!visible.length) return <div style={{ padding: 36, textAlign: "center", color: "#64748b" }}>Sem dados suficientes para gerar o gráfico neste filtro.</div>;
   const width = Math.max(760, visible.length * 104 + 100);
@@ -130,19 +85,17 @@ function UnifiedChart({ rows }: { rows: Group[] }) {
   const left = 76, right = 70, top = 30, bottom = 82;
   const plotWidth = width - left - right;
   const plotHeight = height - top - bottom;
-  const minMoney = Math.min(0, ...visible.map((r) => r.profit)) * 1.15;
-  const maxMoney = Math.max(1, ...visible.flatMap((r) => [r.revenue, r.cost, r.profit])) * 1.15;
-  const maxCount = Math.max(1, ...visible.map((r) => r.count)) * 1.2;
+  const { minMoney, maxMoney, maxCount } = getReportChartScale(visible);
   const x = (i: number) => left + (i + .5) * plotWidth / visible.length;
   const yMoney = (v: number) => top + ((maxMoney - v) / (maxMoney - minMoney || 1)) * plotHeight;
   const yCount = (v: number) => top + plotHeight - (v / maxCount) * plotHeight;
   const colors = { revenue: "#087f8c", cost: "#e58b2a", profit: "#2563eb", completed: "#16a34a", excluded: "#dc7b22", review: "#8b5cf6" };
   const compactMoney = (v: number) => new Intl.NumberFormat("pt-BR", { notation: "compact", maximumFractionDigits: 1 }).format(v);
-  const line = (value: (row: Group) => number) => visible.map((row, i) => `${i ? "L" : "M"} ${x(i)} ${yCount(value(row))}`).join(" ");
+  const line = (value: (row: ReportGroup) => number) => visible.map((row, i) => `${i ? "L" : "M"} ${x(i)} ${yCount(value(row))}`).join(" ");
   const series = [
-    { key: "completed", label: "Concluídas", value: (r: Group) => r.completedCount, color: colors.completed },
-    { key: "excluded", label: "Não concluídas", value: (r: Group) => r.excludedCount ?? 0, color: colors.excluded },
-    { key: "review", label: "Em revisão", value: (r: Group) => r.reviewCount ?? 0, color: colors.review },
+    { key: "completed", label: "Concluídas", value: (r: ReportGroup) => r.completedCount, color: colors.completed },
+    { key: "excluded", label: "Não concluídas", value: (r: ReportGroup) => r.excludedCount ?? 0, color: colors.excluded },
+    { key: "review", label: "Em revisão", value: (r: ReportGroup) => r.reviewCount ?? 0, color: colors.review },
   ];
   return <div>
     <div style={{ display: "flex", flexWrap: "wrap", gap: "10px 20px", marginBottom: 18, color: "#52647a", fontSize: 12 }}>
@@ -164,16 +117,17 @@ export default function ReportsPage() {
   const { data: session, status } = useSession();
   const { data, loading, error, refresh } = useWorkbookData(status === "authenticated");
   const [dimension, setDimension] = useState<ReportDimension>("period");
-  const [granularity, setGranularity] = useState<Granularity>("month");
+  const [granularity, setGranularity] = useState<ReportGranularity>("month");
   const [search, setSearch] = useState("");
   const [selectedLabel, setSelectedLabel] = useState<string | null>(null);
   const [detailSearch, setDetailSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
   const [chartDateFrom, setChartDateFrom] = useState("");
   const [chartDateTo, setChartDateTo] = useState("");
+  const [chartDateBasis, setChartDateBasis] = useState<ReportDateBasis>("issue");
   const [chartModel, setChartModel] = useState("all");
   const [chartTreatment, setChartTreatment] = useState("all");
-  const [chartGranularity, setChartGranularity] = useState<Granularity>("month");
+  const [chartGranularity, setChartGranularity] = useState<ReportGranularity>("month");
   const currentMonthYear = new Intl.DateTimeFormat("en-US", { timeZone: "America/Sao_Paulo", year: "numeric", month: "2-digit" }).formatToParts(new Date());
   const [renewalMonth, setRenewalMonth] = useState(currentMonthYear.find((part) => part.type === "month")?.value ?? String(new Date().getMonth() + 1).padStart(2, "0"));
   const [renewalYear, setRenewalYear] = useState(currentMonthYear.find((part) => part.type === "year")?.value ?? String(new Date().getFullYear()));
@@ -217,78 +171,24 @@ export default function ReportsPage() {
   const summary = useMemo(() => data ? summarizeWorkbook(data, dimension) : null, [data, dimension]);
   const rows = useMemo(() => data ? getWorkbookReportRows(data) : [], [data]);
   const modelOptions = useMemo(() => [...new Set(rows.map((row) => textValue(row.model)).filter((value) => value !== "Não informado"))].sort((a, b) => a.localeCompare(b, "pt-BR")), [rows]);
-  const filteredRows = useMemo(() => rows.filter((row) => {
-    const date = isoDate(row.date);
-    if (chartDateFrom && (!date || date < chartDateFrom)) return false;
-    if (chartDateTo && (!date || date > chartDateTo)) return false;
-    if (chartModel !== "all" && textValue(row.model) !== chartModel) return false;
-    if (chartTreatment !== "all" && row.treatment !== chartTreatment) return false;
-    return true;
-  }), [rows, chartDateFrom, chartDateTo, chartModel, chartTreatment]);
-  const filteredSummary = useMemo(() => {
-    const completed = filteredRows.filter((row) => row.completed);
-    return {
-      count: filteredRows.length,
-      completedCount: completed.length,
-      excludedCount: filteredRows.filter((row) => row.treatment === "Não concluída").length,
-      reviewCount: filteredRows.filter((row) => row.treatment === "Revisar").length,
-      revenue: completed.reduce((sum, row) => sum + row.revenue, 0),
-      cost: completed.reduce((sum, row) => sum + row.cost, 0),
-      profit: completed.reduce((sum, row) => sum + row.profit, 0),
-    };
-  }, [filteredRows]);
-  const groups = useMemo(() => {
-    const map = new Map<string, Group>();
-    filteredRows.forEach((row) => {
-      const label = groupLabel(row, dimension, granularity);
-      const group = map.get(label) ?? { label, count: 0, completedCount: 0, excludedCount: 0, reviewCount: 0, revenue: 0, cost: 0, profit: 0 };
-      group.count += 1;
-      if (row.treatment === "Não concluída") group.excludedCount = (group.excludedCount ?? 0) + 1;
-      if (row.treatment === "Revisar") group.reviewCount = (group.reviewCount ?? 0) + 1;
-      if (row.completed) { group.completedCount += 1; group.revenue += row.revenue; group.cost += row.cost; }
-      if (row.completed) group.profit += row.profit;
-      map.set(label, group);
-    });
-    return [...map.values()].sort((a, b) => {
-      if (dimension === "period" && granularity === "year") return a.label.localeCompare(b.label, "pt-BR", { numeric: true });
-      if (dimension === "period" && granularity === "month") {
-        const parse = (label: string) => { const m = /^(.*?)\s+(\d{4})$/.exec(label); return m ? Number(m[2]) * 12 + MONTHS.findIndex((month) => month.normalize("NFD").replace(/[\u0300-\u036f]/g, "") === m[1].normalize("NFD").replace(/[\u0300-\u036f]/g, "")) : Number.MAX_SAFE_INTEGER; };
-        return parse(a.label) - parse(b.label);
-      }
-      if (dimension === "period" && granularity === "week") {
-        const weekStart = (label: string) => {
-          const match = /^(\d{2})\/(\d{2})\/(\d{4})/.exec(label);
-          return match ? new Date(Number(match[3]), Number(match[2]) - 1, Number(match[1])).getTime() : Number.MAX_SAFE_INTEGER;
-        };
-        return weekStart(a.label) - weekStart(b.label) || a.label.localeCompare(b.label, "pt-BR", { numeric: true });
-      }
-      return a.label.localeCompare(b.label, "pt-BR", { numeric: true });
-    });
-  }, [filteredRows, dimension, granularity]);
+  const filteredRows = useMemo(() => filterReportRows(rows, {
+    dateFrom: chartDateFrom,
+    dateTo: chartDateTo,
+    dateBasis: chartDateBasis,
+    model: chartModel,
+    treatment: chartTreatment,
+  }), [rows, chartDateFrom, chartDateTo, chartDateBasis, chartModel, chartTreatment]);
+  const filteredSummary = useMemo(() => summarizeReportRows(filteredRows), [filteredRows]);
+  const groups = useMemo(
+    () => buildReportGroups(filteredRows, dimension, granularity),
+    [filteredRows, dimension, granularity],
+  );
   const filteredGroups = useMemo(() => groups.filter((group) => !search.trim() || group.label.toLocaleLowerCase("pt-BR").includes(search.trim().toLocaleLowerCase("pt-BR"))), [groups, search]);
-  const selectedRows = useMemo(() => filteredRows.filter((row) => selectedLabel && groupLabel(row, dimension, granularity) === selectedLabel).filter((row) => statusFilter === "all" || row.treatment === statusFilter).filter((row) => !detailSearch || [row.client, row.contact, row.model, row.status, row.date].join(" ").toLocaleLowerCase("pt-BR").includes(detailSearch.toLocaleLowerCase("pt-BR"))), [filteredRows, selectedLabel, dimension, granularity, statusFilter, detailSearch]);
-  const monthlyChart = useMemo(() => {
-    const monthly = new Map<string, Group>();
-    filteredRows.forEach((row) => {
-      const label = periodLabel(row, chartGranularity);
-      const group = monthly.get(label) ?? { label, count: 0, completedCount: 0, excludedCount: 0, reviewCount: 0, revenue: 0, cost: 0, profit: 0 };
-      group.count += 1;
-      if (row.treatment === "Não concluída") group.excludedCount = (group.excludedCount ?? 0) + 1;
-      if (row.treatment === "Revisar") group.reviewCount = (group.reviewCount ?? 0) + 1;
-      if (row.completed) { group.completedCount += 1; group.revenue += row.revenue; group.cost += row.cost; }
-      if (row.completed) group.profit += row.profit;
-      monthly.set(label, group);
-    });
-    return [...monthly.values()].sort((a, b) => {
-      const value = (label: string) => {
-        if (chartGranularity === "year") return /^\d{4}$/.test(label) ? Number(label) : Number.MAX_SAFE_INTEGER;
-        if (chartGranularity === "week") { const match = /^(\d{2})\/(\d{2})\/(\d{4})/.exec(label); return match ? new Date(Number(match[3]), Number(match[2]) - 1, Number(match[1])).getTime() : Number.MAX_SAFE_INTEGER; }
-        const match = /^(.*?)\s+(\d{4})$/.exec(label);
-        return match ? Number(match[2]) * 12 + MONTHS.findIndex((month) => month.normalize("NFD").replace(/[\u0300-\u036f]/g, "") === match[1].normalize("NFD").replace(/[\u0300-\u036f]/g, "")) : Number.MAX_SAFE_INTEGER;
-      };
-      return value(a.label) - value(b.label);
-    });
-  }, [filteredRows, chartGranularity]);
+  const selectedRows = useMemo(() => filteredRows.filter((row) => selectedLabel && getReportGroupLabel(row, dimension, granularity) === selectedLabel).filter((row) => statusFilter === "all" || row.treatment === statusFilter).filter((row) => !detailSearch || [row.client, row.contact, row.model, row.status, row.date].join(" ").toLocaleLowerCase("pt-BR").includes(detailSearch.toLocaleLowerCase("pt-BR"))), [filteredRows, selectedLabel, dimension, granularity, statusFilter, detailSearch]);
+  const monthlyChart = useMemo(
+    () => buildReportGroups(filteredRows, "period", chartGranularity),
+    [filteredRows, chartGranularity],
+  );
   const modelRanking = useMemo(() => { const totals = new Map<string, number>(); filteredRows.filter((row) => row.completed).forEach((row) => totals.set(textValue(row.model), (totals.get(textValue(row.model)) ?? 0) + row.revenue)); return [...totals.entries()].map(([label, revenue]) => ({ label, revenue })).sort((a,b) => b.revenue-a.revenue).slice(0,5); }, [filteredRows]);
   const dimensionLabels: Record<ReportDimension, string> = { period: "Período", model: "Modelo do certificado", status: "Status / observação" };
 
@@ -313,16 +213,17 @@ export default function ReportsPage() {
         </section>
         <section aria-label="Filtros dos gráficos e relatórios" style={{ background: "#f7f9fc", border: "1px solid #dce5ef", borderRadius: 16, padding: 20, display: "grid", gap: 14 }}>
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 12, flexWrap: "wrap" }}>
-            <div><h2 style={{ margin: 0, fontSize: 17 }}>Filtros de análise</h2><p style={{ margin: "4px 0 0", fontSize: 12, color: "#64748b" }}>Aplicados aos gráficos, rankings e relatórios detalhados.</p></div>
+            <div><h2 style={{ margin: 0, fontSize: 17 }}>Filtros de análise</h2><p style={{ margin: "4px 0 0", fontSize: 12, color: "#64748b" }}>Aplicados aos gráficos, rankings, indicadores e relatórios detalhados. O intervalo pode usar emissão/renovação ou competência da pasta; o agrupamento mensal/anual usa competência e o semanal usa a data de emissão.</p></div>
             <span style={{ fontSize: 12, color: "#52647a" }}><strong style={{ color: "#10233f" }}>{numbers.format(filteredRows.length)}</strong> de {numbers.format(rows.length)} registros</span>
           </div>
           <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))", gap: 12 }}>
             <label style={{ display: "grid", gap: 6, fontSize: 12, fontWeight: 650, color: "#52647a" }}>Data inicial<input type="date" value={chartDateFrom} max={chartDateTo || undefined} onChange={(e) => setChartDateFrom(e.target.value)} style={{ minHeight: 42, border: "1px solid #cbd7e5", borderRadius: 9, padding: "0 10px", background: "#fff", color: "#10233f" }} /></label>
             <label style={{ display: "grid", gap: 6, fontSize: 12, fontWeight: 650, color: "#52647a" }}>Data final<input type="date" value={chartDateTo} min={chartDateFrom || undefined} onChange={(e) => setChartDateTo(e.target.value)} style={{ minHeight: 42, border: "1px solid #cbd7e5", borderRadius: 9, padding: "0 10px", background: "#fff", color: "#10233f" }} /></label>
             <label style={{ display: "grid", gap: 6, fontSize: 12, fontWeight: 650, color: "#52647a" }}>Modelo do certificado<select value={chartModel} onChange={(e) => setChartModel(e.target.value)} style={{ minHeight: 42, border: "1px solid #cbd7e5", borderRadius: 9, padding: "0 10px", background: "#fff", color: "#10233f" }}><option value="all">Todos os modelos</option>{modelOptions.map((model) => <option key={model} value={model}>{model}</option>)}</select></label>
+            <label style={{ display: "grid", gap: 6, fontSize: 12, fontWeight: 650, color: "#52647a" }}>Filtrar datas por<select value={chartDateBasis} onChange={(e) => setChartDateBasis(e.target.value as ReportDateBasis)} style={{ minHeight: 42, border: "1px solid #cbd7e5", borderRadius: 9, padding: "0 10px", background: "#fff", color: "#10233f" }}><option value="issue">Emissão/renovação</option><option value="competence">Competência da pasta</option></select></label>
             <label style={{ display: "grid", gap: 6, fontSize: 12, fontWeight: 650, color: "#52647a" }}>Situação financeira<select value={chartTreatment} onChange={(e) => setChartTreatment(e.target.value)} style={{ minHeight: 42, border: "1px solid #cbd5e5", borderRadius: 9, padding: "0 10px", background: "#fff", color: "#10233f" }}><option value="all">Todas as situações</option><option value="Concluída">Concluídas</option><option value="Não concluída">Não concluídas</option><option value="Revisar">A revisar</option></select></label>
           </div>
-          <div><button className="button button--secondary button--small" type="button" onClick={() => { setChartDateFrom(""); setChartDateTo(""); setChartModel("all"); setChartTreatment("all"); setSearch(""); }}>Limpar filtros</button></div>
+          <div><button className="button button--secondary button--small" type="button" onClick={() => { setChartDateFrom(""); setChartDateTo(""); setChartDateBasis("issue"); setChartModel("all"); setChartTreatment("all"); setSearch(""); }}>Limpar filtros</button></div>
         </section>
         <section aria-label="Indicadores financeiros" style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(190px, 1fr))", gap: 14 }}>
           {[
@@ -332,7 +233,7 @@ export default function ReportsPage() {
             { label: "Valor líquido estimado", value: currency.format(filteredSummary.profit), note: "Faturamento bruto menos custos dos registros contabilizados", color: filteredSummary.profit >= 0 ? "#86efac" : "#fca5a5", dark: true },
             { label: "Ticket médio", value: currency.format(filteredSummary.completedCount ? filteredSummary.revenue / filteredSummary.completedCount : 0), note: "Faturamento por registro contabilizado", color: "#0f766e" },
             { label: "Aguardando revisão", value: numbers.format(filteredSummary.reviewCount), note: "Status ausente em planilhas de 2026 ou posteriores; confira pendências financeiras nos detalhes", color: "#64748b" },
-            { label: "Datas divergentes/ausentes", value: numbers.format(filteredRows.filter((row) => row.dateIssue).length), note: "Data vazia ou fora do mês/ano da pasta", color: "#b45309" },
+            { label: "Datas divergentes/ausentes", value: numbers.format(countReportDateIssues(filteredRows)), note: "Data vazia ou diferente da competência da pasta, considerando todos os filtros ativos", color: "#b45309" },
           ].map((item) => <article key={item.label} style={{ background: item.dark ? "#10233f" : "#fff", border: `1px solid ${item.dark ? "#10233f" : "#dce5ef"}`, borderRadius: 14, padding: 20, boxShadow: "0 4px 14px rgba(15,23,42,.04)" }}><span style={{ color: item.dark ? "#c8d6e8" : "#52647a", fontSize: 13 }}>{item.label}</span><strong style={{ display: "block", marginTop: 10, fontSize: 25, letterSpacing: "-.04em", color: item.color }}>{item.value}</strong><small style={{ color: item.dark ? "#c8d6e8" : "#64748b" }}>{item.note}</small></article>)}
         </section>
         <section aria-labelledby="unified-chart-title" style={{ background:"#fff", border:"1px solid #dce5ef", borderRadius:18, padding:"clamp(18px,2.5vw,28px)", boxShadow:"0 8px 28px rgba(15,23,42,.05)", minWidth:0 }}>
@@ -356,7 +257,7 @@ export default function ReportsPage() {
         </section>
         <section style={{ background: "#fff", border: "1px solid #dce5ef", borderRadius: 16, overflow: "hidden", boxShadow: "0 5px 20px rgba(15,23,42,.04)" }}>
           <div style={{ padding: "22px 24px", display: "flex", alignItems: "end", justifyContent: "space-between", gap: 18, flexWrap: "wrap", borderBottom: "1px solid #e7edf4" }}><div><h2 style={{ margin: 0, fontSize: 18, fontWeight: 750, color: "#10233f" }}>Relatórios detalhados</h2><p style={{ margin: "6px 0 0", fontSize: 13, color: "#64748b" }}>Clique em qualquer linha para abrir os registros que formam aquele total.</p></div><div style={{ display: "flex", gap: 12, alignItems: "end", flexWrap: "wrap" }}><label style={{ display: "grid", gap: 6, minWidth: 160, fontSize: 12, color: "#52647a", fontWeight: 650 }}>Tipo de relatório<select value={dimension} onChange={(e) => { setDimension(e.target.value as ReportDimension); setSelectedLabel(null); setSearch(""); }} style={{ minHeight: 42, border: "1px solid #cbd7e5", borderRadius: 9, padding: "0 12px", background: "#fff", color: "#10233f" }}><option value="period">Por período</option><option value="model">Por modelo</option><option value="status">Por status</option></select></label>{dimension === "period" && <label style={{ display: "grid", gap: 6, minWidth: 150, fontSize: 12, color: "#52647a", fontWeight: 650 }}>Intervalo<select value={granularity} onChange={(e) => { setGranularity(e.target.value as Granularity); setSelectedLabel(null); }} style={{ minHeight: 42, border: "1px solid #cbd7e5", borderRadius: 9, padding: "0 12px", background: "#fff", color: "#10233f" }}><option value="month">Mensal</option><option value="week">Semanal</option><option value="year">Anual</option></select></label>}<label style={{ display: "grid", gap: 6, minWidth: 200, fontSize: 12, color: "#52647a", fontWeight: 650 }}>Pesquisar grupo<input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Digite para pesquisar…" style={{ minHeight: 42, border: "1px solid #cbd7e5", borderRadius: 9, padding: "0 12px", color: "#10233f" }} /></label></div></div>
-          <div style={{ padding: "12px 24px", display: "flex", justifyContent: "space-between", flexWrap: "wrap", gap: 8, background: "#f7f9fc", borderBottom: "1px solid #e7edf4", color: "#52647a", fontSize: 12 }}><span><strong style={{ color: "#10233f" }}>{filteredGroups.length}</strong> grupos · <strong style={{ color: "#10233f" }}>{rows.length}</strong> registros detalhados</span><span>{numbers.format(filteredSummary.excludedCount)} não concluídos · {numbers.format(filteredSummary.reviewCount)} para revisar · {numbers.format(filteredRows.filter((row) => row.dateIssue).length)} datas divergentes/ausentes · {numbers.format(summary.rowsIgnored)} linhas vazias/totalizadoras ignoradas</span></div>
+          <div style={{ padding: "12px 24px", display: "flex", justifyContent: "space-between", flexWrap: "wrap", gap: 8, background: "#f7f9fc", borderBottom: "1px solid #e7edf4", color: "#52647a", fontSize: 12 }}><span><strong style={{ color: "#10233f" }}>{filteredGroups.length}</strong> grupos · <strong style={{ color: "#10233f" }}>{rows.length}</strong> registros detalhados</span><span>{numbers.format(filteredSummary.excludedCount)} não concluídos · {numbers.format(filteredSummary.reviewCount)} para revisar · {numbers.format(countReportDateIssues(filteredRows))} datas divergentes/ausentes · {numbers.format(summary.rowsIgnored)} linhas vazias/totalizadoras ignoradas</span></div>
           <div style={{ overflowX: "auto" }}><table className="records-table report-table" style={{ width: "100%", minWidth: 800 }}><thead><tr><th>{dimensionLabels[dimension]}</th><th className="numeric-cell">Registros</th><th className="numeric-cell">Concluídos</th><th className="numeric-cell">Faturamento</th><th className="numeric-cell">Custos</th><th className="numeric-cell">Valor líquido</th><th>Abrir</th></tr></thead><tbody>{filteredGroups.map((group) => <tr key={group.label} onClick={() => { setSelectedLabel(group.label); setDetailSearch(""); setStatusFilter("all"); }} onKeyDown={(e) => { if (e.key === "Enter") setSelectedLabel(group.label); }} tabIndex={0} role="button" aria-label={`Abrir detalhes de ${group.label}`} style={{ cursor: "pointer" }}><td style={{ fontWeight: 650, color: "#10233f" }}>{group.label}</td><td className="numeric-cell">{numbers.format(group.count)}</td><td className="numeric-cell">{numbers.format(group.completedCount)}</td><td className="numeric-cell">{currency.format(group.revenue)}</td><td className="numeric-cell">{currency.format(group.cost)}</td><td className="numeric-cell" style={{ fontWeight: 650, color: group.profit >= 0 ? "#087443" : "#b91c1c" }}>{currency.format(group.profit)}</td><td><button type="button" className="button button--secondary button--small" onClick={(e) => { e.stopPropagation(); setSelectedLabel(group.label); setDetailSearch(""); setStatusFilter("all"); }}>Ver vendas</button></td></tr>)}{!filteredGroups.length && <tr><td colSpan={7} style={{ padding: 28, textAlign: "center", color: "#64748b" }}>Nenhum grupo corresponde à pesquisa.</td></tr>}</tbody><tfoot>{filteredGroups.length > 0 && <tr style={{ background: "#f7f9fc", fontWeight: 750 }}><td>Total exibido</td><td className="numeric-cell">{numbers.format(filteredGroups.reduce((n, g) => n + g.count, 0))}</td><td className="numeric-cell">{numbers.format(filteredGroups.reduce((n, g) => n + g.completedCount, 0))}</td><td className="numeric-cell">{currency.format(filteredGroups.reduce((n, g) => n + g.revenue, 0))}</td><td className="numeric-cell">{currency.format(filteredGroups.reduce((n, g) => n + g.cost, 0))}</td><td className="numeric-cell">{currency.format(filteredGroups.reduce((n, g) => n + g.profit, 0))}</td><td /></tr>}</tfoot></table></div>
         </section>
       </div>}
