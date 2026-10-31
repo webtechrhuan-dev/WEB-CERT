@@ -8,7 +8,7 @@ import { Icon } from "@/components/icon";
 import { HelpFaq } from "@/components/help-faq";
 import { saleStatusClass, saleStatusLabel } from "@/lib/sale-status";
 import { useWorkbookData } from "@/lib/client/use-workbook-data";
-import { buildReportGroups, countReportDateIssues, filterReportRows, getReportChartScale, getReportGroupLabel, getWorkbookReportRows, summarizeReportRows, summarizeWorkbook, type ReportDateBasis, type ReportDimension, type ReportGranularity, type ReportGroup } from "@/lib/reporting";
+import { buildReportGroups, countReportDateIssues, filterReportRows, getReportChartScale, getReportGroupLabel, getWorkbookReportRows, summarizeReportRows, summarizeWorkbook, type ReportDateBasis, type ReportDimension, type ReportGranularity, type ReportGroup, type ReportTreatment } from "@/lib/reporting";
 
 const currency = new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" });
 const numbers = new Intl.NumberFormat("pt-BR");
@@ -126,7 +126,7 @@ export default function ReportsPage() {
   const [chartDateTo, setChartDateTo] = useState("");
   const [chartDateBasis, setChartDateBasis] = useState<ReportDateBasis>("issue");
   const [chartModel, setChartModel] = useState("all");
-  const [chartTreatment, setChartTreatment] = useState("all");
+  const [chartTreatment, setChartTreatment] = useState<ReportTreatment | "all">("all");
   const [chartGranularity, setChartGranularity] = useState<ReportGranularity>("month");
   const currentMonthYear = new Intl.DateTimeFormat("en-US", { timeZone: "America/Sao_Paulo", year: "numeric", month: "2-digit" }).formatToParts(new Date());
   const [renewalMonth, setRenewalMonth] = useState(currentMonthYear.find((part) => part.type === "month")?.value ?? String(new Date().getMonth() + 1).padStart(2, "0"));
@@ -221,7 +221,7 @@ export default function ReportsPage() {
             <label style={{ display: "grid", gap: 6, fontSize: 12, fontWeight: 650, color: "#52647a" }}>Data final<input type="date" value={chartDateTo} min={chartDateFrom || undefined} onChange={(e) => setChartDateTo(e.target.value)} style={{ minHeight: 42, border: "1px solid #cbd7e5", borderRadius: 9, padding: "0 10px", background: "#fff", color: "#10233f" }} /></label>
             <label style={{ display: "grid", gap: 6, fontSize: 12, fontWeight: 650, color: "#52647a" }}>Modelo do certificado<select value={chartModel} onChange={(e) => setChartModel(e.target.value)} style={{ minHeight: 42, border: "1px solid #cbd7e5", borderRadius: 9, padding: "0 10px", background: "#fff", color: "#10233f" }}><option value="all">Todos os modelos</option>{modelOptions.map((model) => <option key={model} value={model}>{model}</option>)}</select></label>
             <label style={{ display: "grid", gap: 6, fontSize: 12, fontWeight: 650, color: "#52647a" }}>Filtrar datas por<select value={chartDateBasis} onChange={(e) => setChartDateBasis(e.target.value as ReportDateBasis)} style={{ minHeight: 42, border: "1px solid #cbd7e5", borderRadius: 9, padding: "0 10px", background: "#fff", color: "#10233f" }}><option value="issue">Emissão/renovação</option><option value="competence">Competência da pasta</option></select></label>
-            <label style={{ display: "grid", gap: 6, fontSize: 12, fontWeight: 650, color: "#52647a" }}>Situação financeira<select value={chartTreatment} onChange={(e) => setChartTreatment(e.target.value)} style={{ minHeight: 42, border: "1px solid #cbd5e5", borderRadius: 9, padding: "0 10px", background: "#fff", color: "#10233f" }}><option value="all">Todas as situações</option><option value="Concluída">Concluídas</option><option value="Não concluída">Não concluídas</option><option value="Revisar">A revisar</option></select></label>
+            <label style={{ display: "grid", gap: 6, fontSize: 12, fontWeight: 650, color: "#52647a" }}>Situação financeira<select value={chartTreatment} onChange={(e) => setChartTreatment(e.target.value as ReportTreatment | "all")} style={{ minHeight: 42, border: "1px solid #cbd5e5", borderRadius: 9, padding: "0 10px", background: "#fff", color: "#10233f" }}><option value="all">Todas as situações</option><option value="Concluída">Concluídas</option><option value="Não concluída">Não concluídas</option><option value="Revisar">A revisar</option></select></label>
           </div>
           <div><button className="button button--secondary button--small" type="button" onClick={() => { setChartDateFrom(""); setChartDateTo(""); setChartDateBasis("issue"); setChartModel("all"); setChartTreatment("all"); setSearch(""); }}>Limpar filtros</button></div>
         </section>
