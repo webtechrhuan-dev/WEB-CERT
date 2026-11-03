@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useMemo, useState, type CSSProperties } from "react";
+import { createPortal } from "react-dom";
 import { useSession } from "next-auth/react";
 import { AppHeader } from "@/components/app-header";
 import { Icon } from "@/components/icon";
@@ -125,6 +126,7 @@ function ReportError({ message }: { message: string }) {
 function UnifiedChart({ rows }: { rows: Group[] }) {
   const [hidden, setHidden] = useState<string[]>([]);
   const [hoveredRow, setHoveredRow] = useState<Group | null>(null);
+  const [hoverPosition, setHoverPosition] = useState({ x: 24, y: 100 });
   const visible = rows;
   if (!visible.length) return <div className="unified-chart-empty">Sem dados suficientes para gerar o gráfico neste filtro.</div>;
 
@@ -168,18 +170,6 @@ function UnifiedChart({ rows }: { rows: Group[] }) {
       </button>)}
     </div>
     <div className="unified-chart-scroll" role="region" aria-label="Área do gráfico; role horizontalmente para ver todo o histórico" tabIndex={0}>
-      {hoveredRow && <div className="chart-hover-tooltip" role="status" aria-live="polite">
-        <div className="chart-hover-tooltip__heading">{hoveredRow.label}</div>
-        <div className="chart-hover-tooltip__grid">
-          <span><i style={{ background: colors.revenue }} />Faturamento <strong>{currency.format(hoveredRow.revenue)}</strong></span>
-          <span><i style={{ background: colors.cost }} />Custos <strong>{currency.format(hoveredRow.cost)}</strong></span>
-          <span><i style={{ background: colors.profit }} />Resultado líquido <strong>{currency.format(hoveredRow.profit)}</strong></span>
-          <span><i style={{ background: colors.completed }} />Concluídas <strong>{numbers.format(hoveredRow.completedCount)}</strong></span>
-          <span><i style={{ background: colors.excluded }} />Não concluídas <strong>{numbers.format(hoveredRow.excludedCount ?? 0)}</strong></span>
-          <span><i style={{ background: colors.review }} />Em revisão <strong>{numbers.format(hoveredRow.reviewCount ?? 0)}</strong></span>
-          <span><i style={{ background: "#64748b" }} />Total de registros <strong>{numbers.format(hoveredRow.count)}</strong></span>
-        </div>
-      </div>}
       <svg role="img" aria-label="Gráfico combinado de faturamento, custos, resultado e quantidade de registros por período" viewBox={"0 0 " + width + " " + height} className="unified-chart-svg" style={{ width: width + "px", minWidth: width + "px" }} onMouseLeave={() => setHoveredRow(null)}>
         <defs>
           <linearGradient id="chartRevenue" x1="0" x2="0" y1="0" y2="1"><stop offset="0%" stopColor={colors.revenue} stopOpacity=".96"/><stop offset="100%" stopColor={colors.revenue} stopOpacity=".62"/></linearGradient>
@@ -241,11 +231,35 @@ function UnifiedChart({ rows }: { rows: Group[] }) {
           role="button"
           aria-label={"Ver resumo de " + row.label}
           onMouseEnter={() => setHoveredRow(row)}
+          onMouseMove={(event) => {
+            const cardWidth = 340;
+            const cardHeight = 300;
+            setHoverPosition({
+              x: Math.max(12, Math.min(event.clientX + 18, window.innerWidth - cardWidth - 12)),
+              y: Math.max(12, Math.min(event.clientY + 18, window.innerHeight - cardHeight - 12)),
+            });
+          }}
           onFocus={() => setHoveredRow(row)}
           onBlur={() => setHoveredRow(null)}
         />)}
       </svg>
     </div>
+    {hoveredRow && typeof document !== "undefined" && createPortal(
+      <div className="chart-hover-tooltip" role="status" aria-live="polite" style={{ left: hoverPosition.x, top: hoverPosition.y }}>
+        <div className="chart-hover-tooltip__eyebrow">RESUMO DO PERÍODO</div>
+        <div className="chart-hover-tooltip__heading">{hoveredRow.label}</div>
+        <div className="chart-hover-tooltip__grid">
+          <div><span><i style={{ background: colors.revenue }} />Faturamento</span><strong>{currency.format(hoveredRow.revenue)}</strong></div>
+          <div><span><i style={{ background: colors.cost }} />Custos</span><strong>{currency.format(hoveredRow.cost)}</strong></div>
+          <div><span><i style={{ background: colors.profit }} />Resultado líquido</span><strong>{currency.format(hoveredRow.profit)}</strong></div>
+          <div><span><i style={{ background: colors.completed }} />Concluídas</span><strong>{numbers.format(hoveredRow.completedCount)}</strong></div>
+          <div><span><i style={{ background: colors.excluded }} />Não concluídas</span><strong>{numbers.format(hoveredRow.excludedCount ?? 0)}</strong></div>
+          <div><span><i style={{ background: colors.review }} />Em revisão</span><strong>{numbers.format(hoveredRow.reviewCount ?? 0)}</strong></div>
+          <div><span><i style={{ background: "#64748b" }} />Total de registros</span><strong>{numbers.format(hoveredRow.count)}</strong></div>
+        </div>
+      </div>,
+      document.body
+    )}
     <details className="chart-data-details">
       <summary>Consultar valores exatos por período</summary>
       <div className="chart-data-table-scroll">
