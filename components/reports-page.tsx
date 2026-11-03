@@ -142,7 +142,7 @@ function UnifiedChart({ rows }: { rows: Group[] }) {
   const yMoney = (value: number) => top + ((maxMoney - value) / (maxMoney - minMoney || 1)) * plotHeight;
   const yCount = (value: number) => top + plotHeight - (value / maxCount) * plotHeight;
   const colors = { revenue: "#0e9aa7", cost: "#f0a34a", profit: "#4778e8", completed: "#16a477", excluded: "#e58b42", review: "#8b6be8" };
-  const compactMoney = (value: number) => new Intl.NumberFormat("pt-BR", { notation: "compact", maximumFractionDigits: 1 }).format(value);
+  const compactMoney = (value: number) => new Intl.NumberFormat("pt-BR", { notation: "compact", maximumFractionDigits: 2 }).format(value);
   const series = [
     { key: "completed", label: "Concluídas", value: (row: Group) => row.completedCount, color: colors.completed },
     { key: "excluded", label: "Não concluídas", value: (row: Group) => row.excludedCount ?? 0, color: colors.excluded },
@@ -229,7 +229,7 @@ function UnifiedChart({ rows }: { rows: Group[] }) {
               const barX = center - groupWidth / 2 + itemIndex * barWidth;
               const labelFits = plotWidth / visible.length >= 116 && barWidth >= 30 && Math.abs(value) > 0;
               const labelY = value >= 0 ? Math.max(top + 10, valueY - 5) : Math.min(top + plotHeight - 3, valueY + 11);
-              const tinyValue = new Intl.NumberFormat("pt-BR", { notation: "compact", maximumFractionDigits: 0 }).format(value);
+              const tinyValue = new Intl.NumberFormat("pt-BR", { notation: "compact", maximumFractionDigits: 2 }).format(value);
               return <g key={item.key}>
                 <rect x={barX} y={Math.min(valueY, base)} width={Math.max(2, barWidth - 4)} height={Math.max(1.5, Math.abs(base - valueY))} rx="4" fill={fill} className="chart-bar" filter="url(#chartBarShadow)" pointerEvents="none">
                   <title>{row.label}: {item.label} — {currency.format(value)}</title>
@@ -261,8 +261,12 @@ function UnifiedChart({ rows }: { rows: Group[] }) {
             // Só exibe rótulos quando há espaço entre os períodos; cada série recebe
             // um pequeno deslocamento horizontal para evitar que números se encostem.
             const showPointLabel = count > 0 && plotWidth / visible.length >= 116;
-            const labelX = x(index) + (seriesIndex - 1) * 18;
-            const labelY = Math.max(top + 10, Math.min(top + plotHeight - 4, pointY - 11));
+            const edgePadding = 16;
+            const desiredLabelX = x(index) + (seriesIndex - 1) * 18;
+            // Mantém os rótulos dentro da área útil, inclusive no último período.
+            const labelX = Math.max(left + edgePadding, Math.min(width - right - edgePadding, desiredLabelX));
+            // Afasta os números das etiquetas das colunas, reduzindo colisões na base.
+            const labelY = Math.max(top + 12, pointY - 19 - (seriesIndex * 2));
             return <g key={row.label}>
               {count > 0 && <circle cx={x(index)} cy={pointY} r="5.5" fill={item.color} stroke="#fff" strokeWidth="2.2" filter="url(#chartPointShadow)" pointerEvents="none">
                 <title>{row.label}: {item.label} — {numbers.format(count)} registros</title>
