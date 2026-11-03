@@ -574,12 +574,15 @@ export default function ReportsPage() {
     const normalize = (value: string) => value.trim().normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLocaleLowerCase("pt-BR");
     filteredRows.forEach((row) => {
       const date = parsedDate(row);
-      const sourceYear = textValue(row.year).trim();
-      const year = /^\d{4}$/.test(sourceYear)
-        ? sourceYear
+      const sourceYear = String(row.year ?? "").trim();
+      const numericYear = Number(sourceYear);
+      // A competência cadastrada é a fonte principal. A data de emissão não
+      // participa da classificação quando ano e mês já estão preenchidos.
+      const year = Number.isInteger(numericYear) && numericYear >= 1900 && numericYear <= 9999
+        ? String(numericYear)
         : date ? String(date.getFullYear()) : "";
       if (!year) return;
-      const sourceMonth = textValue(row.month).trim();
+      const sourceMonth = String(row.month ?? "").trim();
       const monthIndex = MONTHS.findIndex((month) => normalize(month) === normalize(sourceMonth));
       const numericMonth = /^\d{1,2}$/.test(sourceMonth) ? Number(sourceMonth) - 1 : -1;
       const validNumericMonth = numericMonth >= 0 && numericMonth < 12 ? numericMonth : -1;
@@ -590,7 +593,7 @@ export default function ReportsPage() {
           : date
             ? MONTHS[date.getMonth()]
             : "Mês não informado";
-      const label = year === "Ano não informado" ? month : `${month} ${year}`;
+      const label = `${month} ${year}`;
       const yearMonths = years.get(year) ?? new Map<string, Group>();
       const group = yearMonths.get(label) ?? {
         label, count: 0, completedCount: 0, excludedCount: 0, reviewCount: 0,
