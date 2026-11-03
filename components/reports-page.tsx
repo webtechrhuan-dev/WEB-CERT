@@ -253,13 +253,35 @@ function UnifiedChart({ rows }: { rows: Group[] }) {
             <text x={center} y={height - 27} textAnchor="middle" className="chart-category-count">{numbers.format(row.count)} registros</text>
           </g>;
         })}
-        {series.map((item) => isVisible(item.key) && <g key={item.key}>
+        {series.map((item, seriesIndex) => isVisible(item.key) && <g key={item.key}>
           <path d={linePath(item.value)} fill="none" stroke={item.color} strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" className="chart-series-line"/>
-          {visible.map((row, index) => <g key={row.label}>
-            {item.value(row) > 0 && <circle cx={x(index)} cy={yCount(item.value(row))} r="5.5" fill={item.color} stroke="#fff" strokeWidth="2.2" filter="url(#chartPointShadow)" pointerEvents="none">
-              <title>{row.label}: {item.label} — {numbers.format(item.value(row))} registros</title>
-            </circle>}
-          </g>)}
+          {visible.map((row, index) => {
+            const count = item.value(row);
+            const pointY = yCount(count);
+            // Só exibe rótulos quando há espaço entre os períodos; cada série recebe
+            // um pequeno deslocamento horizontal para evitar que números se encostem.
+            const showPointLabel = count > 0 && plotWidth / visible.length >= 116;
+            const labelX = x(index) + (seriesIndex - 1) * 18;
+            const labelY = Math.max(top + 10, Math.min(top + plotHeight - 4, pointY - 11));
+            return <g key={row.label}>
+              {count > 0 && <circle cx={x(index)} cy={pointY} r="5.5" fill={item.color} stroke="#fff" strokeWidth="2.2" filter="url(#chartPointShadow)" pointerEvents="none">
+                <title>{row.label}: {item.label} — {numbers.format(count)} registros</title>
+              </circle>}
+              {showPointLabel && <text
+                x={labelX}
+                y={labelY}
+                textAnchor="middle"
+                fontSize="8"
+                fontWeight="800"
+                fill={item.color}
+                stroke="#f8fafc"
+                strokeWidth="2.8"
+                paintOrder="stroke"
+                pointerEvents="none"
+                aria-hidden="true"
+              >{numbers.format(count)}</text>}
+            </g>;
+          })}
         </g>)}
         {visible.map((row, index) => <rect
           key={"hover-" + row.label}
