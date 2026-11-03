@@ -212,7 +212,7 @@ function UnifiedChart({ rows }: { rows: Group[] }) {
               const valueY = yMoney(value);
               const fill = item.key === "profit" && value < 0 ? "#df5b65" : "url(#" + item.gradient + ")";
               return <g key={item.key}>
-                <rect x={center - groupWidth / 2 + itemIndex * barWidth} y={Math.min(valueY, base)} width={Math.max(2, barWidth - 4)} height={Math.max(1.5, Math.abs(base - valueY))} rx="4" fill={fill} className="chart-bar" filter="url(#chartBarShadow)" tabIndex={0} role="button" aria-label={row.label + ", " + item.label + ": " + currency.format(value) + ". Focalize ou passe o mouse para ver o resumo do período."} onMouseEnter={() => setHoveredRow(row)} onMouseLeave={() => setHoveredRow(null)} onFocus={() => setHoveredRow(row)} onBlur={() => setHoveredRow(null)} onClick={() => setHoveredRow((current) => current?.label === row.label ? null : row)}>
+                <rect x={center - groupWidth / 2 + itemIndex * barWidth} y={Math.min(valueY, base)} width={Math.max(2, barWidth - 4)} height={Math.max(1.5, Math.abs(base - valueY))} rx="4" fill={fill} className="chart-bar" filter="url(#chartBarShadow)" pointerEvents="none">
                   <title>{row.label}: {item.label} — {currency.format(value)}</title>
                 </rect>
               </g>;
@@ -223,24 +223,27 @@ function UnifiedChart({ rows }: { rows: Group[] }) {
         })}
         {series.map((item) => isVisible(item.key) && <g key={item.key}>
           <path d={linePath(item.value)} fill="none" stroke={item.color} strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" className="chart-series-line"/>
-          <path d={linePath(item.value)} fill="none" stroke="transparent" strokeWidth="16" pointerEvents="stroke" style={{ cursor: "crosshair" }}
-            onMouseMove={(event) => {
-              const svg = event.currentTarget.ownerSVGElement;
-              if (!svg) return;
-              const bounds = svg.getBoundingClientRect();
-              const svgX = ((event.clientX - bounds.left) / bounds.width) * width;
-              const slotWidth = plotWidth / visible.length;
-              const index = Math.max(0, Math.min(visible.length - 1, Math.floor((svgX - left) / slotWidth)));
-              setHoveredRow(visible[index]);
-            }}
-            onMouseLeave={() => setHoveredRow(null)}
-          />
           {visible.map((row, index) => <g key={row.label}>
-            {item.value(row) > 0 && <circle cx={x(index)} cy={yCount(item.value(row))} r="5.5" fill={item.color} stroke="#fff" strokeWidth="2.2" filter="url(#chartPointShadow)" tabIndex={0} role="button" aria-label={row.label + ", " + item.label + ": " + numbers.format(item.value(row)) + " registros."} onMouseEnter={() => setHoveredRow(row)} onMouseLeave={() => setHoveredRow(null)} onFocus={() => setHoveredRow(row)} onBlur={() => setHoveredRow(null)} onClick={() => setHoveredRow((current) => current?.label === row.label ? null : row)}>
+            {item.value(row) > 0 && <circle cx={x(index)} cy={yCount(item.value(row))} r="5.5" fill={item.color} stroke="#fff" strokeWidth="2.2" filter="url(#chartPointShadow)" pointerEvents="none">
               <title>{row.label}: {item.label} — {numbers.format(item.value(row))} registros</title>
             </circle>}
           </g>)}
         </g>)}
+        {visible.map((row, index) => <rect
+          key={"hover-" + row.label}
+          x={left + index * (plotWidth / visible.length)}
+          y={top}
+          width={plotWidth / visible.length}
+          height={plotHeight}
+          fill="transparent"
+          pointerEvents="all"
+          tabIndex={0}
+          role="button"
+          aria-label={"Ver resumo de " + row.label}
+          onMouseEnter={() => setHoveredRow(row)}
+          onFocus={() => setHoveredRow(row)}
+          onBlur={() => setHoveredRow(null)}
+        />)}
       </svg>
     </div>
     <details className="chart-data-details">
