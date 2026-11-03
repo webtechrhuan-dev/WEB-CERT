@@ -198,10 +198,12 @@ function UnifiedChart({ rows }: { rows: Group[] }) {
               const value = item.value(row);
               const valueY = yMoney(value);
               const fill = item.key === "profit" && value < 0 ? "#df5b65" : "url(#" + item.gradient + ")";
-              return <rect key={item.key} x={center - groupWidth / 2 + itemIndex * barWidth} y={Math.min(valueY, base)} width={Math.max(2, barWidth - 4)} height={Math.max(1.5, Math.abs(base - valueY))} rx="4" fill={fill} className="chart-bar" filter="url(#chartBarShadow)">
-                <title>{row.label}: {item.label} — {currency.format(value)}</title>
-              </rect>;
-              <text x={center - groupWidth / 2 + itemIndex * barWidth + (barWidth - 4) / 2} y={Math.max(top + 12, Math.min(valueY, base) - 7)} textAnchor="middle" className="chart-value-label chart-value-label--bar">{compactMoney(value)}</text>
+              return <g key={item.key}>
+                <rect x={center - groupWidth / 2 + itemIndex * barWidth} y={Math.min(valueY, base)} width={Math.max(2, barWidth - 4)} height={Math.max(1.5, Math.abs(base - valueY))} rx="4" fill={fill} className="chart-bar" filter="url(#chartBarShadow)">
+                  <title>{row.label}: {item.label} — {currency.format(value)}</title>
+                </rect>
+                <text x={center - groupWidth / 2 + itemIndex * barWidth + (barWidth - 4) / 2} y={Math.max(top + 12, Math.min(valueY, base) - 7)} textAnchor="middle" className="chart-value-label chart-value-label--bar">{compactMoney(value)}</text>
+              </g>;
             })}
             <text x={center} y={height - 48} textAnchor="middle" className="chart-category-label">{row.label.length > 18 ? row.label.slice(0, 16) + "…" : row.label}</text>
             <text x={center} y={height - 27} textAnchor="middle" className="chart-category-count">{numbers.format(row.count)} registros</text>
