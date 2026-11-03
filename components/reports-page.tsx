@@ -570,16 +570,49 @@ export default function ReportsPage() {
 
   const monthlyYearGroups = useMemo(() => {
     if (dimension !== "period" || granularity !== "month") return [];
-    const grouped = new Map<string, Group[]>();
-    filteredGroups.forEach((monthGroup) => {
-      const match = /^(.*?)\\s+(\\d{4})$/.exec(monthGroup.label);
-      const year = match?.[2] ?? "Ano não informado";
-      grouped.set(year, [...(grouped.get(year) ?? []), monthGroup]);
+    const years = new Map<string, Map<string, Group>>();
+    const normalize = (value: string) => value.trim().normalize("NFD").replace(/[\\u0300-\\u036f]/g, "").toLocaleLowerCase("pt-BR");
+    filteredRows.forEach((row) => {
+      const date = parsedDate(row);
+      const sourceYear = textValue(row.year).trim();
+      const year = /^\\d{4}$/.test(sourceYear)
+        ? sourceYear
+        : date ? String(date.getFullYear()) : "Ano não informado";
+      const sourceMonth = textValue(row.month).trim();
+      const monthIndex = MONTHS.findIndex((month) => normalize(month) === normalize(sourceMonth));
+      const numericMonth = /^\\d{1,2}$/.test(sourceMonth) ? Number(sourceMonth) - 1 : -1;
+      const validNumericMonth = numericMonth >= 0 && numericMonth < 12 ? numericMonth : -1;
+      const month = monthIndex >= 0
+        ? MONTHS[monthIndex]
+        : validNumericMonth >= 0
+          ? MONTHS[validNumericMonth]
+          : date
+            ? MONTHS[date.getMonth()]
+            : "Mês não informado";
+      const label = year === "Ano não informado" ? month : `${month} ${year}`;
+      const yearMonths = years.get(year) ?? new Map<string, Group>();
+      const group = yearMonths.get(label) ?? {
+        label, count: 0, completedCount: 0, excludedCount: 0, reviewCount: 0,
+        revenue: 0, cost: 0, profit: 0,
+      };
+      group.count += 1;
+      if (row.treatment === "Não concluída") group.excludedCount = (group.excludedCount ?? 0) + 1;
+      if (row.treatment === "Revisar") group.reviewCount = (group.reviewCount ?? 0) + 1;
+      if (row.completed) {
+        group.completedCount += 1;
+        group.revenue += row.revenue;
+        group.cost += row.cost;
+        group.profit += row.profit;
+      }
+      yearMonths.set(label, group);
+      years.set(year, yearMonths);
     });
-    return [...grouped.entries()].map(([year, months]) => ({
-      year,
-      months,
-      total: months.reduce((acc, month) => ({
+    return [...years.entries()].map(([year, monthMap]) => {
+      const months = [...monthMap.values()].sort((a, b) => {
+        const monthOf = (label: string) => MONTHS.findIndex((month) => normalize(month) === normalize(label.split(" ")[0]));
+        return monthOf(a.label) - monthOf(b.label) || a.label.localeCompare(b.label, "pt-BR");
+      });
+      const total = months.reduce((acc, month) => ({
         label: year,
         count: acc.count + month.count,
         completedCount: acc.completedCount + month.completedCount,
@@ -588,9 +621,11 @@ export default function ReportsPage() {
         revenue: acc.revenue + month.revenue,
         cost: acc.cost + month.cost,
         profit: acc.profit + month.profit,
-      }), { label: year, count: 0, completedCount: 0, excludedCount: 0, reviewCount: 0, revenue: 0, cost: 0, profit: 0 } as Group),
-    })).sort((a, b) => a.year.localeCompare(b.year, "pt-BR", { numeric: true }));
-  }, [filteredGroups, dimension, granularity]);
+      }), { label: year, count: 0, completedCount: 0, excludedCount: 0, reviewCount: 0, revenue: 0, cost: 0, profit: 0 } as Group);
+      return { year, months, total };
+    }).filter(({ year, months }) => !search.trim() || year.includes(search.trim()) || months.some((month) => month.label.toLocaleLowerCase("pt-BR").includes(search.trim().toLocaleLowerCase("pt-BR"))))
+      .sort((a, b) => a.year.localeCompare(b.year, "pt-BR", { numeric: true }));
+  }, [filteredRows, dimension, granularity, search]);
   const useYearGrouping = dimension === "period" && granularity === "month";
 
   return <div className="app-shell">
