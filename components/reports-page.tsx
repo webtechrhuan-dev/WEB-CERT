@@ -235,7 +235,6 @@ export default function ReportsPage() {
   const [chartDateTo, setChartDateTo] = useState("");
   const [chartModel, setChartModel] = useState("all");
   const [chartTreatment, setChartTreatment] = useState("all");
-  const [chartGranularity, setChartGranularity] = useState<Granularity>("month");
   const currentMonthYear = new Intl.DateTimeFormat("en-US", { timeZone: "America/Sao_Paulo", year: "numeric", month: "2-digit" }).formatToParts(new Date());
   const [renewalMonth, setRenewalMonth] = useState(currentMonthYear.find((part) => part.type === "month")?.value ?? String(new Date().getMonth() + 1).padStart(2, "0"));
   const [renewalYear, setRenewalYear] = useState(currentMonthYear.find((part) => part.type === "year")?.value ?? String(new Date().getFullYear()));
