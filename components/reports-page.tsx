@@ -226,7 +226,7 @@ function UnifiedChart({ rows }: { rows: Group[] }) {
     const barX=x(index)-groupWidth/2+itemIndex*barWidth;
     const valueY=yMoney(value);
     const text=new Intl.NumberFormat("pt-BR",{notation:"compact",maximumFractionDigits:2}).format(value);
-    registerLabel("bar:"+index+":"+item.key,barX+(barWidth-4)/2+barX,valueY,text,"bar");
+    registerLabel("bar:"+index+":"+item.key,barX+(barWidth-4)/2,valueY,text,"bar");
   }));
   series.forEach((item) => {
     if (!isVisible(item.key)) return;
