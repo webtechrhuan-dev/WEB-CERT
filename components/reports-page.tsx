@@ -343,8 +343,8 @@ function UnifiedChart({ rows }: { rows: Group[] }) {
             // um pequeno deslocamento horizontal para evitar que números se encostem.
             const showPointLabel = count > 0 && plotWidth / visible.length >= 116;
             const labelPosition = labelPositions.get("line:" + index + ":" + item.key);
-            const labelX = labelPosition.x;
-            const labelY = labelPosition.y;
+            const labelX = labelPosition?.x ?? x(index);
+            const labelY = labelPosition?.y ?? Math.max(top + 12, pointY - 19);
             return <g key={row.label}>
               {count > 0 && <circle cx={x(index)} cy={pointY} r="5.5" fill={item.color} stroke="#fff" strokeWidth="2.2" filter="url(#chartPointShadow)" pointerEvents="none">
                 <title>{row.label}: {item.label} — {numbers.format(count)} registros</title>
