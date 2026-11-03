@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useMemo, useState } from "react";
+import { useMemo, useState, type CSSProperties } from "react";
 import { useSession } from "next-auth/react";
 import { AppHeader } from "@/components/app-header";
 import { Icon } from "@/components/icon";
@@ -123,40 +123,104 @@ function ReportError({ message }: { message: string }) {
   return <section className="state-panel state-panel--error"><span className="state-icon state-icon--error"><Icon name="alert" /></span><div className="state-copy"><h2>Não foi possível carregar os relatórios</h2><p>{message}</p></div></section>;
 }
 function UnifiedChart({ rows }: { rows: Group[] }) {
+  const [hidden, setHidden] = useState<string[]>([]);
   const visible = rows;
-  if (!visible.length) return <div style={{ padding: 36, textAlign: "center", color: "#64748b" }}>Sem dados suficientes para gerar o gráfico neste filtro.</div>;
-  const width = Math.max(760, visible.length * 104 + 100);
-  const height = 360;
-  const left = 76, right = 70, top = 30, bottom = 82;
+  if (!visible.length) return <div className="unified-chart-empty">Sem dados suficientes para gerar o gráfico neste filtro.</div>;
+
+  const width = Math.max(900, visible.length * 148 + 132);
+  const height = 390;
+  const left = 82, right = 76, top = 34, bottom = 88;
   const plotWidth = width - left - right;
   const plotHeight = height - top - bottom;
-  const minMoney = Math.min(0, ...visible.map((r) => r.profit)) * 1.15;
-  const maxMoney = Math.max(1, ...visible.flatMap((r) => [r.revenue, r.cost, r.profit])) * 1.15;
-  const maxCount = Math.max(1, ...visible.map((r) => r.count)) * 1.2;
-  const x = (i: number) => left + (i + .5) * plotWidth / visible.length;
-  const yMoney = (v: number) => top + ((maxMoney - v) / (maxMoney - minMoney || 1)) * plotHeight;
-  const yCount = (v: number) => top + plotHeight - (v / maxCount) * plotHeight;
-  const colors = { revenue: "#087f8c", cost: "#e58b2a", profit: "#2563eb", completed: "#16a34a", excluded: "#dc7b22", review: "#8b5cf6" };
-  const compactMoney = (v: number) => new Intl.NumberFormat("pt-BR", { notation: "compact", maximumFractionDigits: 1 }).format(v);
-  const line = (value: (row: Group) => number) => visible.map((row, i) => `${i ? "L" : "M"} ${x(i)} ${yCount(value(row))}`).join(" ");
+  const minMoney = Math.min(0, ...visible.map((row) => row.profit)) * 1.16;
+  const maxMoney = Math.max(1, ...visible.flatMap((row) => [row.revenue, row.cost, row.profit])) * 1.16;
+  const maxCount = Math.max(1, ...visible.map((row) => row.count)) * 1.2;
+  const x = (index: number) => left + (index + 0.5) * plotWidth / visible.length;
+  const yMoney = (value: number) => top + ((maxMoney - value) / (maxMoney - minMoney || 1)) * plotHeight;
+  const yCount = (value: number) => top + plotHeight - (value / maxCount) * plotHeight;
+  const colors = { revenue: "#0e9aa7", cost: "#f0a34a", profit: "#4778e8", completed: "#16a477", excluded: "#e58b42", review: "#8b6be8" };
+  const compactMoney = (value: number) => new Intl.NumberFormat("pt-BR", { notation: "compact", maximumFractionDigits: 1 }).format(value);
   const series = [
-    { key: "completed", label: "Concluídas", value: (r: Group) => r.completedCount, color: colors.completed },
-    { key: "excluded", label: "Não concluídas", value: (r: Group) => r.excludedCount ?? 0, color: colors.excluded },
-    { key: "review", label: "Em revisão", value: (r: Group) => r.reviewCount ?? 0, color: colors.review },
+    { key: "completed", label: "Concluídas", value: (row: Group) => row.completedCount, color: colors.completed },
+    { key: "excluded", label: "Não concluídas", value: (row: Group) => row.excludedCount ?? 0, color: colors.excluded },
+    { key: "review", label: "Em revisão", value: (row: Group) => row.reviewCount ?? 0, color: colors.review },
   ];
-  return <div>
-    <div style={{ display: "flex", flexWrap: "wrap", gap: "10px 20px", marginBottom: 18, color: "#52647a", fontSize: 12 }}>
-      {([{label:"Faturamento",color:colors.revenue},{label:"Custos",color:colors.cost},{label:"Resultado líquido",color:colors.profit},...series] as {label:string;color:string}[]).map((item) => <span key={item.label} style={{ display:"inline-flex", alignItems:"center", gap:7 }}><i style={{ width: item.label === "Faturamento" || item.label === "Custos" || item.label === "Resultado líquido" ? 10 : 18, height: 3, borderRadius: 3, background:item.color, display:"inline-block" }} />{item.label}</span>)}
+  const financial = [
+    { key: "revenue", label: "Faturamento", value: (row: Group) => row.revenue, color: colors.revenue, gradient: "chartRevenue" },
+    { key: "cost", label: "Custos", value: (row: Group) => row.cost, color: colors.cost, gradient: "chartCost" },
+    { key: "profit", label: "Resultado líquido", value: (row: Group) => row.profit, color: colors.profit, gradient: "chartProfit" },
+  ];
+  const isVisible = (key: string) => !hidden.includes(key);
+  const toggle = (key: string) => setHidden((current) => current.includes(key) ? current.filter((item) => item !== key) : [...current, key]);
+  const linePath = (value: (row: Group) => number) => visible.map((row, index) => (index ? "L" : "M") + " " + x(index) + " " + yCount(value(row))).join(" ");
+
+  return <div className="unified-chart">
+    <div className="unified-chart-legend" aria-label="Legenda interativa do gráfico">
+      {financial.map((item) => <button key={item.key} type="button" className={"chart-legend-item" + (isVisible(item.key) ? "" : " is-muted")} aria-pressed={isVisible(item.key)} onClick={() => toggle(item.key)}>
+        <span className="chart-legend-mark chart-legend-mark--bar" style={{ "--legend-color": item.color } as CSSProperties} />
+        <span>{item.label}</span>
+      </button>)}
+      <span className="chart-legend-divider" aria-hidden="true" />
+      {series.map((item) => <button key={item.key} type="button" className={"chart-legend-item" + (isVisible(item.key) ? "" : " is-muted")} aria-pressed={isVisible(item.key)} onClick={() => toggle(item.key)}>
+        <span className="chart-legend-mark chart-legend-mark--line" style={{ "--legend-color": item.color } as CSSProperties} />
+        <span>{item.label}</span>
+      </button>)}
     </div>
-    <div style={{ overflowX: "auto", border: "1px solid #e7edf4", borderRadius: 12 }}>
-      <svg role="img" aria-label="Gráfico combinado de faturamento, custos, resultado e quantidade de registros por período" viewBox={`0 0 ${width} ${height}`} style={{ display:"block", width:`${width}px`, minWidth:`${width}px`, maxWidth:"none", height:"auto" }}>
-        {[0,1,2,3,4].map((tick) => { const val=minMoney+(maxMoney-minMoney)*tick/4; const y=yMoney(val); return <g key={tick}><line x1={left} x2={width-right} y1={y} y2={y} stroke={Math.abs(val)<0.0001 ? "#94a3b8" : "#e8eef5"} strokeDasharray={Math.abs(val)<0.0001 ? undefined : "4 5"}/><text x={left-10} y={y+4} textAnchor="end" fontSize="11" fill="#64748b">{compactMoney(val)}</text><text x={width-right+10} y={y+4} fontSize="11" fill="#64748b">{Math.round(maxCount*tick/4)}</text></g>; })}
-        <text x="16" y="18" fontSize="10" fontWeight="700" fill="#64748b">R$</text><text x={width-24} y="18" textAnchor="end" fontSize="10" fontWeight="700" fill="#64748b">REG.</text>
-        {visible.map((row,i)=>{const center=x(i), groupWidth=Math.min(58,plotWidth/visible.length*.68), barWidth=groupWidth/3; const values=[{v:row.revenue,c:colors.revenue},{v:row.cost,c:colors.cost},{v:row.profit,c:colors.profit}]; return <g key={row.label}>{values.map((item,k)=>{const valueY=yMoney(item.v); const base=yMoney(0); const fill=k===2 && item.v<0 ? "#dc2626" : item.c; return <rect key={k} x={center-groupWidth/2+k*barWidth} y={Math.min(valueY,base)} width={barWidth-3} height={Math.max(1,Math.abs(base-valueY))} rx="3" fill={fill}><title>{row.label}: {["Faturamento","Custos","Resultado líquido"][k]} {currency.format(item.v)}</title></rect>;})}<text x={center} y={height-48} textAnchor="middle" fontSize="11" fill="#52647a">{row.label.length>15?row.label.slice(0,13)+"…":row.label}</text><text x={center} y={height-29} textAnchor="middle" fontSize="10" fill="#94a3b8">{numbers.format(row.count)} registros</text></g>;})}
-        {series.map((item) => <g key={item.key}><path d={line(item.value)} fill="none" stroke={item.color} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"/>{visible.map((row,i)=><circle key={row.label} cx={x(i)} cy={yCount(item.value(row))} r="4" fill={item.color} stroke="#fff" strokeWidth="1.5"><title>{row.label}: {item.label} — {numbers.format(item.value(row))}</title></circle>)}</g>)}
+    <div className="unified-chart-scroll" role="region" aria-label="Área do gráfico; role horizontalmente para ver todo o histórico" tabIndex={0}>
+      <svg role="img" aria-label="Gráfico combinado de faturamento, custos, resultado e quantidade de registros por período" viewBox={"0 0 " + width + " " + height} className="unified-chart-svg" style={{ width: width + "px", minWidth: width + "px" }}>
+        <defs>
+          <linearGradient id="chartRevenue" x1="0" x2="0" y1="0" y2="1"><stop offset="0%" stopColor={colors.revenue} stopOpacity=".96"/><stop offset="100%" stopColor={colors.revenue} stopOpacity=".62"/></linearGradient>
+          <linearGradient id="chartCost" x1="0" x2="0" y1="0" y2="1"><stop offset="0%" stopColor={colors.cost} stopOpacity=".96"/><stop offset="100%" stopColor={colors.cost} stopOpacity=".62"/></linearGradient>
+          <linearGradient id="chartProfit" x1="0" x2="0" y1="0" y2="1"><stop offset="0%" stopColor={colors.profit} stopOpacity=".96"/><stop offset="100%" stopColor={colors.profit} stopOpacity=".62"/></linearGradient>
+          <filter id="chartPointShadow" x="-80%" y="-80%" width="260%" height="260%"><feDropShadow dx="0" dy="2" stdDeviation="2" floodColor="#0f172a" floodOpacity=".2"/></filter>
+          <filter id="chartBarShadow" x="-50%" y="-30%" width="200%" height="180%"><feDropShadow dx="0" dy="2" stdDeviation="2" floodColor="#0f172a" floodOpacity=".12"/></filter>
+        </defs>
+        <rect x={left} y={top} width={plotWidth} height={plotHeight} rx="12" fill="#f8fafc"/>
+        {[0, 1, 2, 3, 4].map((tick) => {
+          const value = minMoney + (maxMoney - minMoney) * tick / 4;
+          const y = yMoney(value);
+          return <g key={tick}>
+            <line x1={left} x2={width - right} y1={y} y2={y} stroke={Math.abs(value) < 0.0001 ? "#94a3b8" : "#e3eaf2"} strokeWidth={Math.abs(value) < 0.0001 ? 1.6 : 1} strokeDasharray={Math.abs(value) < 0.0001 ? undefined : "3 6"}/>
+            <text x={left - 12} y={y + 4} textAnchor="end" className="chart-axis-label">{compactMoney(value)}</text>
+            <text x={width - right + 12} y={y + 4} className="chart-axis-label">{Math.round(maxCount * tick / 4)}</text>
+          </g>;
+        })}
+        <text x="16" y="19" className="chart-axis-caption">VALOR (R$)</text>
+        <text x={width - 12} y="19" textAnchor="end" className="chart-axis-caption">REGISTROS</text>
+        {visible.map((row, index) => {
+          const center = x(index);
+          const groupWidth = Math.min(96, plotWidth / visible.length * .78);
+          const barWidth = groupWidth / 3;
+          const base = yMoney(0);
+          return <g key={row.label}>
+            {financial.map((item, itemIndex) => {
+              if (!isVisible(item.key)) return null;
+              const value = item.value(row);
+              const valueY = yMoney(value);
+              const fill = item.key === "profit" && value < 0 ? "#df5b65" : "url(#" + item.gradient + ")";
+              return <g key={item.key}>
+                <rect x={center - groupWidth / 2 + itemIndex * barWidth} y={Math.min(valueY, base)} width={Math.max(2, barWidth - 4)} height={Math.max(1.5, Math.abs(base - valueY))} rx="4" fill={fill} className="chart-bar" filter="url(#chartBarShadow)">
+                  <title>{row.label}: {item.label} — {currency.format(value)}</title>
+                </rect>
+                <text x={center - groupWidth / 2 + itemIndex * barWidth + (barWidth - 4) / 2} y={Math.max(top + 12, Math.min(valueY, base) - 7)} textAnchor="middle" className="chart-value-label chart-value-label--bar">{compactMoney(value)}</text>
+              </g>;
+            })}
+            <text x={center} y={height - 48} textAnchor="middle" className="chart-category-label">{row.label.length > 18 ? row.label.slice(0, 16) + "…" : row.label}</text>
+            <text x={center} y={height - 27} textAnchor="middle" className="chart-category-count">{numbers.format(row.count)} registros</text>
+          </g>;
+        })}
+        {series.map((item) => isVisible(item.key) && <g key={item.key}>
+          <path d={linePath(item.value)} fill="none" stroke={item.color} strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" className="chart-series-line"/>
+          {visible.map((row, index) => <g key={row.label}>
+            <circle cx={x(index)} cy={yCount(item.value(row))} r="5.5" fill={item.color} stroke="#fff" strokeWidth="2.2" filter="url(#chartPointShadow)">
+              <title>{row.label}: {item.label} — {numbers.format(item.value(row))} registros</title>
+            </circle>
+            <text x={x(index)} y={Math.max(top + 12, yCount(item.value(row)) - (item.key === "completed" ? 13 : item.key === "excluded" ? 25 : 37))} textAnchor="middle" className="chart-value-label chart-value-label--line" fill={item.color}>{numbers.format(item.value(row))}</text>
+          </g>)}
+        </g>)}
       </svg>
     </div>
-    <p style={{ margin:"10px 2px 0", color:"#64748b", fontSize:12 }}>Barras usam a escala financeira (R$); linhas usam a escala de quantidade, indicada à direita. Passe o cursor sobre os elementos para consultar os valores.</p>
+    <div className="unified-chart-footnote"><span className="chart-footnote-dot" /> Anos anteriores aparecem consolidados; o ano atual é detalhado por mês. Barras mostram valores financeiros e linhas mostram quantidades. Os números ficam visíveis no gráfico; passe o cursor para consultar o valor completo. Clique na legenda para ocultar ou exibir séries.</div>
   </div>;
 }
 
@@ -173,7 +237,6 @@ export default function ReportsPage() {
   const [chartDateTo, setChartDateTo] = useState("");
   const [chartModel, setChartModel] = useState("all");
   const [chartTreatment, setChartTreatment] = useState("all");
-  const [chartGranularity, setChartGranularity] = useState<Granularity>("month");
   const currentMonthYear = new Intl.DateTimeFormat("en-US", { timeZone: "America/Sao_Paulo", year: "numeric", month: "2-digit" }).formatToParts(new Date());
   const [renewalMonth, setRenewalMonth] = useState(currentMonthYear.find((part) => part.type === "month")?.value ?? String(new Date().getMonth() + 1).padStart(2, "0"));
   const [renewalYear, setRenewalYear] = useState(currentMonthYear.find((part) => part.type === "year")?.value ?? String(new Date().getFullYear()));
@@ -268,27 +331,39 @@ export default function ReportsPage() {
   const filteredGroups = useMemo(() => groups.filter((group) => !search.trim() || group.label.toLocaleLowerCase("pt-BR").includes(search.trim().toLocaleLowerCase("pt-BR"))), [groups, search]);
   const selectedRows = useMemo(() => filteredRows.filter((row) => selectedLabel && groupLabel(row, dimension, granularity) === selectedLabel).filter((row) => statusFilter === "all" || row.treatment === statusFilter).filter((row) => !detailSearch || [row.client, row.contact, row.model, row.status, row.date].join(" ").toLocaleLowerCase("pt-BR").includes(detailSearch.toLocaleLowerCase("pt-BR"))), [filteredRows, selectedLabel, dimension, granularity, statusFilter, detailSearch]);
   const monthlyChart = useMemo(() => {
-    const monthly = new Map<string, Group>();
+    const currentYear = Number(new Intl.DateTimeFormat("en-US", { timeZone: "America/Sao_Paulo", year: "numeric" }).format(new Date()));
+    const grouped = new Map<string, Group>();
     filteredRows.forEach((row) => {
-      const label = periodLabel(row, chartGranularity);
-      const group = monthly.get(label) ?? { label, count: 0, completedCount: 0, excludedCount: 0, reviewCount: 0, revenue: 0, cost: 0, profit: 0 };
+      const sourceYear = Number(textValue(row.year)) || parsedDate(row)?.getFullYear() || currentYear;
+      const isCurrentYear = sourceYear === currentYear;
+      const label = isCurrentYear
+        ? periodLabel(row, "month")
+        : String(sourceYear);
+      const group = grouped.get(label) ?? { label, count: 0, completedCount: 0, excludedCount: 0, reviewCount: 0, revenue: 0, cost: 0, profit: 0 };
       group.count += 1;
       if (row.treatment === "Não concluída") group.excludedCount = (group.excludedCount ?? 0) + 1;
       if (row.treatment === "Revisar") group.reviewCount = (group.reviewCount ?? 0) + 1;
-      if (row.completed) { group.completedCount += 1; group.revenue += row.revenue; group.cost += row.cost; }
-      if (row.completed) group.profit += row.profit;
-      monthly.set(label, group);
+      if (row.completed) {
+        group.completedCount += 1;
+        group.revenue += row.revenue;
+        group.cost += row.cost;
+        group.profit += row.profit;
+      }
+      grouped.set(label, group);
     });
-    return [...monthly.values()].sort((a, b) => {
-      const value = (label: string) => {
-        if (chartGranularity === "year") return /^\d{4}$/.test(label) ? Number(label) : Number.MAX_SAFE_INTEGER;
-        if (chartGranularity === "week") { const match = /^(\d{2})\/(\d{2})\/(\d{4})/.exec(label); return match ? new Date(Number(match[3]), Number(match[2]) - 1, Number(match[1])).getTime() : Number.MAX_SAFE_INTEGER; }
-        const match = /^(.*?)\s+(\d{4})$/.exec(label);
-        return match ? Number(match[2]) * 12 + MONTHS.findIndex((month) => month.normalize("NFD").replace(/[\u0300-\u036f]/g, "") === match[1].normalize("NFD").replace(/[\u0300-\u036f]/g, "")) : Number.MAX_SAFE_INTEGER;
+    return [...grouped.values()].sort((a, b) => {
+      const yearOf = (label: string) => {
+        const year = /(?:^|\\s)(\\d{4})$/.exec(label);
+        return year ? Number(year[1]) : Number.MAX_SAFE_INTEGER;
       };
-      return value(a.label) - value(b.label);
+      const monthOf = (label: string) => {
+        const match = /^(.*?)\\s+(\\d{4})$/.exec(label);
+        if (!match) return -1;
+        return MONTHS.findIndex((month) => month.normalize("NFD").replace(/[\\u0300-\\u036f]/g, "") === match[1].normalize("NFD").replace(/[\\u0300-\\u036f]/g, ""));
+      };
+      return yearOf(a.label) - yearOf(b.label) || monthOf(a.label) - monthOf(b.label) || a.label.localeCompare(b.label, "pt-BR", { numeric: true });
     });
-  }, [filteredRows, chartGranularity]);
+  }, [filteredRows]);
   const modelRanking = useMemo(() => { const totals = new Map<string, number>(); filteredRows.filter((row) => row.completed).forEach((row) => totals.set(textValue(row.model), (totals.get(textValue(row.model)) ?? 0) + row.revenue)); return [...totals.entries()].map(([label, revenue]) => ({ label, revenue })).sort((a,b) => b.revenue-a.revenue).slice(0,5); }, [filteredRows]);
   const dimensionLabels: Record<ReportDimension, string> = { period: "Período", model: "Modelo do certificado", status: "Status / observação" };
 
@@ -337,14 +412,8 @@ export default function ReportsPage() {
         </section>
         <section aria-labelledby="unified-chart-title" style={{ background:"#fff", border:"1px solid #dce5ef", borderRadius:18, padding:"clamp(18px,2.5vw,28px)", boxShadow:"0 8px 28px rgba(15,23,42,.05)", minWidth:0 }}>
           <div style={{ display:"flex", justifyContent:"space-between", alignItems:"start", gap:16, flexWrap:"wrap", marginBottom:20 }}>
-            <div><p className="eyebrow" style={{margin:"0 0 6px"}}>VISÃO CONSOLIDADA</p><h2 id="unified-chart-title" style={{margin:0,fontSize:20,color:"#10233f"}}>Desempenho financeiro e comercial</h2><p style={{margin:"6px 0 0",fontSize:13,color:"#64748b"}}>Faturamento, custos, resultado líquido e volume de registros na mesma linha do tempo.</p></div>
+            <div><p className="eyebrow" style={{margin:"0 0 6px"}}>VISÃO CONSOLIDADA</p><h2 id="unified-chart-title" style={{margin:0,fontSize:20,color:"#10233f"}}>Desempenho financeiro e comercial</h2><p style={{margin:"6px 0 0",fontSize:13,color:"#64748b"}}>Anos anteriores consolidados por ano; o ano atual detalhado mês a mês, com valores exibidos diretamente nas barras e nos pontos das linhas.</p></div>
             <span style={{fontSize:12,color:"#64748b",background:"#f1f5f9",borderRadius:20,padding:"7px 11px"}}>{numbers.format(filteredRows.length)} registros no filtro</span>
-          </div>
-          <div style={{display:"flex",alignItems:"center",gap:10,flexWrap:"wrap",marginBottom:16}}>
-            <label htmlFor="unified-chart-period" style={{fontSize:12,fontWeight:700,color:"#52647a"}}>Agrupar por</label>
-            <select id="unified-chart-period" value={chartGranularity} onChange={(event)=>setChartGranularity(event.target.value as Granularity)} style={{minHeight:36,border:"1px solid #cbd7e5",borderRadius:8,padding:"0 10px",background:"#fff",color:"#10233f"}}>
-              <option value="month">Mês</option><option value="week">Semana</option><option value="year">Ano</option>
-            </select>
           </div>
           <UnifiedChart rows={monthlyChart}/>
           {modelRanking.length > 0 && <div style={{marginTop:22,paddingTop:18,borderTop:"1px solid #e7edf4"}}>
