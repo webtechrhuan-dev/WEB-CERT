@@ -124,6 +124,7 @@ function ReportError({ message }: { message: string }) {
 }
 function UnifiedChart({ rows }: { rows: Group[] }) {
   const [hidden, setHidden] = useState<string[]>([]);
+  const [hoveredRow, setHoveredRow] = useState<Group | null>(null);
   const visible = rows;
   if (!visible.length) return <div className="unified-chart-empty">Sem dados suficientes para gerar o gráfico neste filtro.</div>;
 
@@ -167,6 +168,18 @@ function UnifiedChart({ rows }: { rows: Group[] }) {
       </button>)}
     </div>
     <div className="unified-chart-scroll" role="region" aria-label="Área do gráfico; role horizontalmente para ver todo o histórico" tabIndex={0}>
+      {hoveredRow && <div className="chart-hover-tooltip" role="status" aria-live="polite">
+        <div className="chart-hover-tooltip__heading">{hoveredRow.label}</div>
+        <div className="chart-hover-tooltip__grid">
+          <span><i style={{ background: colors.revenue }} />Faturamento <strong>{currency.format(hoveredRow.revenue)}</strong></span>
+          <span><i style={{ background: colors.cost }} />Custos <strong>{currency.format(hoveredRow.cost)}</strong></span>
+          <span><i style={{ background: colors.profit }} />Resultado líquido <strong>{currency.format(hoveredRow.profit)}</strong></span>
+          <span><i style={{ background: colors.completed }} />Concluídas <strong>{numbers.format(hoveredRow.completedCount)}</strong></span>
+          <span><i style={{ background: colors.excluded }} />Não concluídas <strong>{numbers.format(hoveredRow.excludedCount ?? 0)}</strong></span>
+          <span><i style={{ background: colors.review }} />Em revisão <strong>{numbers.format(hoveredRow.reviewCount ?? 0)}</strong></span>
+          <span><i style={{ background: "#64748b" }} />Total de registros <strong>{numbers.format(hoveredRow.count)}</strong></span>
+        </div>
+      </div>}
       <svg role="img" aria-label="Gráfico combinado de faturamento, custos, resultado e quantidade de registros por período" viewBox={"0 0 " + width + " " + height} className="unified-chart-svg" style={{ width: width + "px", minWidth: width + "px" }}>
         <defs>
           <linearGradient id="chartRevenue" x1="0" x2="0" y1="0" y2="1"><stop offset="0%" stopColor={colors.revenue} stopOpacity=".96"/><stop offset="100%" stopColor={colors.revenue} stopOpacity=".62"/></linearGradient>
@@ -199,7 +212,7 @@ function UnifiedChart({ rows }: { rows: Group[] }) {
               const valueY = yMoney(value);
               const fill = item.key === "profit" && value < 0 ? "#df5b65" : "url(#" + item.gradient + ")";
               return <g key={item.key}>
-                <rect x={center - groupWidth / 2 + itemIndex * barWidth} y={Math.min(valueY, base)} width={Math.max(2, barWidth - 4)} height={Math.max(1.5, Math.abs(base - valueY))} rx="4" fill={fill} className="chart-bar" filter="url(#chartBarShadow)">
+                <rect x={center - groupWidth / 2 + itemIndex * barWidth} y={Math.min(valueY, base)} width={Math.max(2, barWidth - 4)} height={Math.max(1.5, Math.abs(base - valueY))} rx="4" fill={fill} className="chart-bar" filter="url(#chartBarShadow)" tabIndex={0} role="button" aria-label={row.label + ", " + item.label + ": " + currency.format(value) + ". Focalize ou passe o mouse para ver o resumo do período."} onMouseEnter={() => setHoveredRow(row)} onMouseLeave={() => setHoveredRow(null)} onFocus={() => setHoveredRow(row)} onBlur={() => setHoveredRow(null)} onClick={() => setHoveredRow((current) => current?.label === row.label ? null : row)}>
                   <title>{row.label}: {item.label} — {currency.format(value)}</title>
                 </rect>
               </g>;
@@ -211,7 +224,7 @@ function UnifiedChart({ rows }: { rows: Group[] }) {
         {series.map((item) => isVisible(item.key) && <g key={item.key}>
           <path d={linePath(item.value)} fill="none" stroke={item.color} strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" className="chart-series-line"/>
           {visible.map((row, index) => <g key={row.label}>
-            {item.value(row) > 0 && <circle cx={x(index)} cy={yCount(item.value(row))} r="5.5" fill={item.color} stroke="#fff" strokeWidth="2.2" filter="url(#chartPointShadow)">
+            {item.value(row) > 0 && <circle cx={x(index)} cy={yCount(item.value(row))} r="5.5" fill={item.color} stroke="#fff" strokeWidth="2.2" filter="url(#chartPointShadow)" tabIndex={0} role="button" aria-label={row.label + ", " + item.label + ": " + numbers.format(item.value(row)) + " registros."} onMouseEnter={() => setHoveredRow(row)} onMouseLeave={() => setHoveredRow(null)} onFocus={() => setHoveredRow(row)} onBlur={() => setHoveredRow(null)} onClick={() => setHoveredRow((current) => current?.label === row.label ? null : row)}>
               <title>{row.label}: {item.label} — {numbers.format(item.value(row))} registros</title>
             </circle>}
           </g>)}
