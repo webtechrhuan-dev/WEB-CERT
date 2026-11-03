@@ -2465,3 +2465,75 @@ input:focus-visible,
 .chart-data-table tbody tr:hover td {
   background: #f5f9fc;
 }
+
+.unified-chart-scroll {
+  position: relative;
+}
+.chart-hover-tooltip {
+  position: sticky;
+  z-index: 5;
+  top: 8px;
+  width: max-content;
+  max-width: min(560px, calc(100% - 24px));
+  margin: 8px 0 -104px 12px;
+  padding: 11px 14px;
+  border: 1px solid #d8e3ef;
+  border-radius: 11px;
+  background: rgb(255 255 255 / 97%);
+  box-shadow: 0 8px 24px rgb(15 35 63 / 15%);
+  color: #263e58;
+  pointer-events: none;
+  backdrop-filter: blur(8px);
+}
+.chart-hover-tooltip__heading {
+  margin-bottom: 7px;
+  color: #17324f;
+  font-size: 12px;
+  font-weight: 800;
+}
+.chart-hover-tooltip__grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 5px 16px;
+}
+.chart-hover-tooltip__grid span {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  color: #64748b;
+  font-size: 10px;
+  white-space: nowrap;
+}
+.chart-hover-tooltip__grid i {
+  flex: 0 0 7px;
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+}
+.chart-hover-tooltip__grid strong {
+  margin-left: auto;
+  color: #1e334b;
+  font-size: 11px;
+  font-variant-numeric: tabular-nums;
+}
+.chart-bar,
+.chart-series-line,
+.unified-chart-svg circle {
+  cursor: crosshair;
+}
+.chart-bar:focus,
+.unified-chart-svg circle:focus {
+  outline: none;
+  stroke: #17324f;
+  stroke-width: 2.5px;
+}
+@media (max-width: 640px) {
+  .chart-hover-tooltip {
+    max-width: calc(100% - 16px);
+    margin-left: 8px;
+    padding: 9px 10px;
+  }
+  .chart-hover-tooltip__grid { gap: 5px 10px; }
+  .chart-hover-tooltip__grid span { font-size: 9px; }
+  .chart-hover-tooltip__grid strong { font-size: 10px; }
+}
