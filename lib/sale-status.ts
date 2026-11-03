@@ -1,8 +1,9 @@
-export type SaleStatus = "Cancelado" | "não concluido" | "Emitido" | "Pendente instalar" | "Instalado" | "Concluido";
+export type SaleStatus = "Cancelado" | "não concluido" | "Orçamento/oferta enviada ao cliente" | "Emitido" | "Pendente instalar" | "Instalado" | "Concluido";
 
 const STATUS_CLASS: Record<SaleStatus, string> = {
   "Cancelado": "sale-status--cancelado",
   "não concluido": "sale-status--nao-concluido",
+  "Orçamento/oferta enviada ao cliente": "sale-status--orcamento",
   "Emitido": "sale-status--emitido",
   "Pendente instalar": "sale-status--pendente",
   "Instalado": "sale-status--instalado",
@@ -29,6 +30,7 @@ export function saleStatusLabel(value: string): string {
 }
 
 export const SALE_STATUS_LEGEND: { label: SaleStatus; className: string; description: string }[] = [
+  { label: "Orçamento/oferta enviada ao cliente", className: STATUS_CLASS["Orçamento/oferta enviada ao cliente"], description: "Orçamento ou oferta encaminhada ao cliente; aguardando retorno." },
   { label: "Emitido", className: STATUS_CLASS.Emitido, description: "Certificado emitido." },
   { label: "Pendente instalar", className: STATUS_CLASS["Pendente instalar"], description: "Aguardando instalação." },
   { label: "Instalado", className: STATUS_CLASS.Instalado, description: "Instalação realizada." },
