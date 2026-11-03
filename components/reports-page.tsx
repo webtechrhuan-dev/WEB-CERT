@@ -262,9 +262,9 @@ function UnifiedChart({ rows }: { rows: Group[] }) {
     )}
     <details className="chart-data-details">
       <summary>Consultar valores exatos por período</summary>
-      <div className="chart-data-table-scroll">
-        <table className="chart-data-table">
-          <thead><tr><th>Período</th><th>Faturamento</th><th>Custos</th><th>Resultado líquido</th><th>Concluídas</th><th>Não concluídas</th><th>Em revisão</th><th>Total de registros</th></tr></thead>
+      <div className="chart-data-table-scroll" style={{ display: "block", width: "100%", maxWidth: "100%", minWidth: 0, overflowX: "auto", overflowY: "hidden", paddingBottom: 14, boxSizing: "border-box" }}>
+        <table className="chart-data-table" style={{ width: "1325px", minWidth: "1325px", maxWidth: "none", tableLayout: "fixed", borderCollapse: "separate", borderSpacing: 0 }}>
+          <colgroup><col style={{ width: 150 }} /><col style={{ width: 175 }} /><col style={{ width: 145 }} /><col style={{ width: 195 }} /><col style={{ width: 155 }} /><col style={{ width: 185 }} /><col style={{ width: 155 }} /><col style={{ width: 165 }} /></colgroup><thead><tr><th>Período</th><th>Faturamento</th><th>Custos</th><th>Resultado líquido</th><th>Concluídas</th><th>Não concluídas</th><th>Em revisão</th><th>Total de registros</th></tr></thead>
           <tbody>{visible.map((row) => <tr key={row.label}>
             <th scope="row">{row.label}</th><td>{currency.format(row.revenue)}</td><td>{currency.format(row.cost)}</td><td>{currency.format(row.profit)}</td><td>{numbers.format(row.completedCount)}</td><td>{numbers.format(row.excludedCount ?? 0)}</td><td>{numbers.format(row.reviewCount ?? 0)}</td><td>{numbers.format(row.count)}</td>
           </tr>)}</tbody>
