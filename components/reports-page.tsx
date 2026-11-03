@@ -209,9 +209,9 @@ function UnifiedChart({ rows }: { rows: Group[] }) {
       );
       if (!textCollision && !pointCollision && !collidesWithLine(box)) { selected=candidate; break; }
     }
-    // Se todas as alternativas estiverem ocupadas, mantém a alternativa com menor
-    // quantidade de colisões e acrescenta uma placa branca para preservar a leitura.
-    if (!selected) selected = clampLabel({x:anchorX-w/2,y:anchorY-(kind==="bar"?16:20),w,h});
+    // Se nenhuma posição estiver livre, omite somente esse rótulo (o valor exato
+    // continua no tooltip), em vez de desenhar texto por cima de outro elemento.
+    if (!selected) return;
     labelPositions.set(key,selected);
     placedLabelBoxes.push({...selected,w,h});
   };
@@ -313,7 +313,7 @@ function UnifiedChart({ rows }: { rows: Group[] }) {
                 <rect x={barX} y={Math.min(valueY, base)} width={Math.max(2, barWidth - 4)} height={Math.max(1.5, Math.abs(base - valueY))} rx="4" fill={fill} className="chart-bar" filter="url(#chartBarShadow)" pointerEvents="none">
                   <title>{row.label}: {item.label} — {currency.format(value)}</title>
                 </rect>
-                {labelFits && isVisible(item.key) && <text
+                {labelFits && labelPosition && isVisible(item.key) && <text
                   x={labelPosition?.x ?? (barX + barWidth / 2 - 2)}
                   y={labelPosition?.y ?? Math.max(top + 10, valueY - 5)}
                   textAnchor="middle"
@@ -347,7 +347,7 @@ function UnifiedChart({ rows }: { rows: Group[] }) {
               {count > 0 && <circle cx={x(index)} cy={pointY} r="5.5" fill={item.color} stroke="#fff" strokeWidth="2.2" filter="url(#chartPointShadow)" pointerEvents="none">
                 <title>{row.label}: {item.label} — {numbers.format(count)} registros</title>
               </circle>}
-              {showPointLabel && <text
+              {showPointLabel && labelPosition && <text
                 x={labelX}
                 y={labelY}
                 textAnchor="middle"
