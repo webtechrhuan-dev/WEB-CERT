@@ -127,7 +127,7 @@ function UnifiedChart({ rows }: { rows: Group[] }) {
   const visible = rows;
   if (!visible.length) return <div className="unified-chart-empty">Sem dados suficientes para gerar o gráfico neste filtro.</div>;
 
-  const width = Math.max(820, visible.length * 112 + 116);
+  const width = Math.max(900, visible.length * 148 + 132);
   const height = 390;
   const left = 82, right = 76, top = 34, bottom = 88;
   const plotWidth = width - left - right;
@@ -172,7 +172,8 @@ function UnifiedChart({ rows }: { rows: Group[] }) {
           <linearGradient id="chartRevenue" x1="0" x2="0" y1="0" y2="1"><stop offset="0%" stopColor={colors.revenue} stopOpacity=".96"/><stop offset="100%" stopColor={colors.revenue} stopOpacity=".62"/></linearGradient>
           <linearGradient id="chartCost" x1="0" x2="0" y1="0" y2="1"><stop offset="0%" stopColor={colors.cost} stopOpacity=".96"/><stop offset="100%" stopColor={colors.cost} stopOpacity=".62"/></linearGradient>
           <linearGradient id="chartProfit" x1="0" x2="0" y1="0" y2="1"><stop offset="0%" stopColor={colors.profit} stopOpacity=".96"/><stop offset="100%" stopColor={colors.profit} stopOpacity=".62"/></linearGradient>
-          <filter id="chartPointShadow" x="-80%" y="-80%" width="260%" height="260%"><feDropShadow dx="0" dy="2" stdDeviation="2" floodColor="#0f172a" floodOpacity=".18"/></filter>
+          <filter id="chartPointShadow" x="-80%" y="-80%" width="260%" height="260%"><feDropShadow dx="0" dy="2" stdDeviation="2" floodColor="#0f172a" floodOpacity=".2"/></filter>
+          <filter id="chartBarShadow" x="-50%" y="-30%" width="200%" height="180%"><feDropShadow dx="0" dy="2" stdDeviation="2" floodColor="#0f172a" floodOpacity=".12"/></filter>
         </defs>
         <rect x={left} y={top} width={plotWidth} height={plotHeight} rx="12" fill="#f8fafc"/>
         {[0, 1, 2, 3, 4].map((tick) => {
@@ -188,7 +189,7 @@ function UnifiedChart({ rows }: { rows: Group[] }) {
         <text x={width - 12} y="19" textAnchor="end" className="chart-axis-caption">REGISTROS</text>
         {visible.map((row, index) => {
           const center = x(index);
-          const groupWidth = Math.min(66, plotWidth / visible.length * .72);
+          const groupWidth = Math.min(96, plotWidth / visible.length * .78);
           const barWidth = groupWidth / 3;
           const base = yMoney(0);
           return <g key={row.label}>
@@ -197,23 +198,27 @@ function UnifiedChart({ rows }: { rows: Group[] }) {
               const value = item.value(row);
               const valueY = yMoney(value);
               const fill = item.key === "profit" && value < 0 ? "#df5b65" : "url(#" + item.gradient + ")";
-              return <rect key={item.key} x={center - groupWidth / 2 + itemIndex * barWidth} y={Math.min(valueY, base)} width={Math.max(2, barWidth - 4)} height={Math.max(1.5, Math.abs(base - valueY))} rx="4" fill={fill} className="chart-bar">
+              return <rect key={item.key} x={center - groupWidth / 2 + itemIndex * barWidth} y={Math.min(valueY, base)} width={Math.max(2, barWidth - 4)} height={Math.max(1.5, Math.abs(base - valueY))} rx="4" fill={fill} className="chart-bar" filter="url(#chartBarShadow)">
                 <title>{row.label}: {item.label} — {currency.format(value)}</title>
               </rect>;
+              <text x={center - groupWidth / 2 + itemIndex * barWidth + (barWidth - 4) / 2} y={Math.max(top + 12, Math.min(valueY, base) - 7)} textAnchor="middle" className="chart-value-label chart-value-label--bar">{compactMoney(value)}</text>
             })}
-            <text x={center} y={height - 48} textAnchor="middle" className="chart-category-label">{row.label.length > 15 ? row.label.slice(0, 13) + "…" : row.label}</text>
+            <text x={center} y={height - 48} textAnchor="middle" className="chart-category-label">{row.label.length > 18 ? row.label.slice(0, 16) + "…" : row.label}</text>
             <text x={center} y={height - 27} textAnchor="middle" className="chart-category-count">{numbers.format(row.count)} registros</text>
           </g>;
         })}
         {series.map((item) => isVisible(item.key) && <g key={item.key}>
           <path d={linePath(item.value)} fill="none" stroke={item.color} strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" className="chart-series-line"/>
-          {visible.map((row, index) => <circle key={row.label} cx={x(index)} cy={yCount(item.value(row))} r="5" fill={item.color} stroke="#fff" strokeWidth="2" filter="url(#chartPointShadow)">
-            <title>{row.label}: {item.label} — {numbers.format(item.value(row))} registros</title>
-          </circle>)}
+          {visible.map((row, index) => <g key={row.label}>
+            <circle cx={x(index)} cy={yCount(item.value(row))} r="5.5" fill={item.color} stroke="#fff" strokeWidth="2.2" filter="url(#chartPointShadow)">
+              <title>{row.label}: {item.label} — {numbers.format(item.value(row))} registros</title>
+            </circle>
+            <text x={x(index)} y={Math.max(top + 12, yCount(item.value(row)) - (item.key === "completed" ? 13 : item.key === "excluded" ? 25 : 37))} textAnchor="middle" className="chart-value-label chart-value-label--line" fill={item.color}>{numbers.format(item.value(row))}</text>
+          </g>)}
         </g>)}
       </svg>
     </div>
-    <div className="unified-chart-footnote"><span className="chart-footnote-dot" /> Barras representam valores financeiros; linhas representam quantidade de registros. Clique nos itens da legenda para ocultar ou exibir séries.</div>
+    <div className="unified-chart-footnote"><span className="chart-footnote-dot" /> Anos anteriores aparecem consolidados; o ano atual é detalhado por mês. Barras mostram valores financeiros e linhas mostram quantidades. Os números ficam visíveis no gráfico; passe o cursor para consultar o valor completo. Clique na legenda para ocultar ou exibir séries.</div>
   </div>;
 }
 
@@ -325,27 +330,39 @@ export default function ReportsPage() {
   const filteredGroups = useMemo(() => groups.filter((group) => !search.trim() || group.label.toLocaleLowerCase("pt-BR").includes(search.trim().toLocaleLowerCase("pt-BR"))), [groups, search]);
   const selectedRows = useMemo(() => filteredRows.filter((row) => selectedLabel && groupLabel(row, dimension, granularity) === selectedLabel).filter((row) => statusFilter === "all" || row.treatment === statusFilter).filter((row) => !detailSearch || [row.client, row.contact, row.model, row.status, row.date].join(" ").toLocaleLowerCase("pt-BR").includes(detailSearch.toLocaleLowerCase("pt-BR"))), [filteredRows, selectedLabel, dimension, granularity, statusFilter, detailSearch]);
   const monthlyChart = useMemo(() => {
-    const monthly = new Map<string, Group>();
+    const currentYear = Number(new Intl.DateTimeFormat("en-US", { timeZone: "America/Sao_Paulo", year: "numeric" }).format(new Date()));
+    const grouped = new Map<string, Group>();
     filteredRows.forEach((row) => {
-      const label = periodLabel(row, chartGranularity);
-      const group = monthly.get(label) ?? { label, count: 0, completedCount: 0, excludedCount: 0, reviewCount: 0, revenue: 0, cost: 0, profit: 0 };
+      const sourceYear = Number(textValue(row.year)) || parsedDate(row)?.getFullYear() || currentYear;
+      const isCurrentYear = sourceYear === currentYear;
+      const label = isCurrentYear
+        ? periodLabel(row, "month")
+        : String(sourceYear);
+      const group = grouped.get(label) ?? { label, count: 0, completedCount: 0, excludedCount: 0, reviewCount: 0, revenue: 0, cost: 0, profit: 0 };
       group.count += 1;
       if (row.treatment === "Não concluída") group.excludedCount = (group.excludedCount ?? 0) + 1;
       if (row.treatment === "Revisar") group.reviewCount = (group.reviewCount ?? 0) + 1;
-      if (row.completed) { group.completedCount += 1; group.revenue += row.revenue; group.cost += row.cost; }
-      if (row.completed) group.profit += row.profit;
-      monthly.set(label, group);
+      if (row.completed) {
+        group.completedCount += 1;
+        group.revenue += row.revenue;
+        group.cost += row.cost;
+        group.profit += row.profit;
+      }
+      grouped.set(label, group);
     });
-    return [...monthly.values()].sort((a, b) => {
-      const value = (label: string) => {
-        if (chartGranularity === "year") return /^\d{4}$/.test(label) ? Number(label) : Number.MAX_SAFE_INTEGER;
-        if (chartGranularity === "week") { const match = /^(\d{2})\/(\d{2})\/(\d{4})/.exec(label); return match ? new Date(Number(match[3]), Number(match[2]) - 1, Number(match[1])).getTime() : Number.MAX_SAFE_INTEGER; }
-        const match = /^(.*?)\s+(\d{4})$/.exec(label);
-        return match ? Number(match[2]) * 12 + MONTHS.findIndex((month) => month.normalize("NFD").replace(/[\u0300-\u036f]/g, "") === match[1].normalize("NFD").replace(/[\u0300-\u036f]/g, "")) : Number.MAX_SAFE_INTEGER;
+    return [...grouped.values()].sort((a, b) => {
+      const yearOf = (label: string) => {
+        const year = /(?:^|\\s)(\\d{4})$/.exec(label);
+        return year ? Number(year[1]) : Number.MAX_SAFE_INTEGER;
       };
-      return value(a.label) - value(b.label);
+      const monthOf = (label: string) => {
+        const match = /^(.*?)\\s+(\\d{4})$/.exec(label);
+        if (!match) return -1;
+        return MONTHS.findIndex((month) => month.normalize("NFD").replace(/[\\u0300-\\u036f]/g, "") === match[1].normalize("NFD").replace(/[\\u0300-\\u036f]/g, ""));
+      };
+      return yearOf(a.label) - yearOf(b.label) || monthOf(a.label) - monthOf(b.label) || a.label.localeCompare(b.label, "pt-BR", { numeric: true });
     });
-  }, [filteredRows, chartGranularity]);
+  }, [filteredRows]);
   const modelRanking = useMemo(() => { const totals = new Map<string, number>(); filteredRows.filter((row) => row.completed).forEach((row) => totals.set(textValue(row.model), (totals.get(textValue(row.model)) ?? 0) + row.revenue)); return [...totals.entries()].map(([label, revenue]) => ({ label, revenue })).sort((a,b) => b.revenue-a.revenue).slice(0,5); }, [filteredRows]);
   const dimensionLabels: Record<ReportDimension, string> = { period: "Período", model: "Modelo do certificado", status: "Status / observação" };
 
@@ -394,14 +411,8 @@ export default function ReportsPage() {
         </section>
         <section aria-labelledby="unified-chart-title" style={{ background:"#fff", border:"1px solid #dce5ef", borderRadius:18, padding:"clamp(18px,2.5vw,28px)", boxShadow:"0 8px 28px rgba(15,23,42,.05)", minWidth:0 }}>
           <div style={{ display:"flex", justifyContent:"space-between", alignItems:"start", gap:16, flexWrap:"wrap", marginBottom:20 }}>
-            <div><p className="eyebrow" style={{margin:"0 0 6px"}}>VISÃO CONSOLIDADA</p><h2 id="unified-chart-title" style={{margin:0,fontSize:20,color:"#10233f"}}>Desempenho financeiro e comercial</h2><p style={{margin:"6px 0 0",fontSize:13,color:"#64748b"}}>Faturamento, custos, resultado líquido e volume de registros na mesma linha do tempo.</p></div>
+            <div><p className="eyebrow" style={{margin:"0 0 6px"}}>VISÃO CONSOLIDADA</p><h2 id="unified-chart-title" style={{margin:0,fontSize:20,color:"#10233f"}}>Desempenho financeiro e comercial</h2><p style={{margin:"6px 0 0",fontSize:13,color:"#64748b"}}>Anos anteriores consolidados por ano; o ano atual detalhado mês a mês, com valores exibidos diretamente nas barras e nos pontos das linhas.</p></div>
             <span style={{fontSize:12,color:"#64748b",background:"#f1f5f9",borderRadius:20,padding:"7px 11px"}}>{numbers.format(filteredRows.length)} registros no filtro</span>
-          </div>
-          <div style={{display:"flex",alignItems:"center",gap:10,flexWrap:"wrap",marginBottom:16}}>
-            <label htmlFor="unified-chart-period" style={{fontSize:12,fontWeight:700,color:"#52647a"}}>Agrupar por</label>
-            <select id="unified-chart-period" value={chartGranularity} onChange={(event)=>setChartGranularity(event.target.value as Granularity)} style={{minHeight:36,border:"1px solid #cbd7e5",borderRadius:8,padding:"0 10px",background:"#fff",color:"#10233f"}}>
-              <option value="month">Mês</option><option value="week">Semana</option><option value="year">Ano</option>
-            </select>
           </div>
           <UnifiedChart rows={monthlyChart}/>
           {modelRanking.length > 0 && <div style={{marginTop:22,paddingTop:18,borderTop:"1px solid #e7edf4"}}>
