@@ -2843,8 +2843,9 @@ section[aria-labelledby="unified-chart-title"] .unified-chart-scroll > .unified-
 }
 .chart-data-table-scroll > table.chart-data-table {
   display: table !important;
-  width: 1px !important;
+  width: 1325px !important;
   min-width: 1325px !important;
+  max-width: none !important;
   table-layout: fixed !important;
   border-collapse: separate !important;
   border-spacing: 0 !important;
