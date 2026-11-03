@@ -226,10 +226,27 @@ function UnifiedChart({ rows }: { rows: Group[] }) {
               const value = item.value(row);
               const valueY = yMoney(value);
               const fill = item.key === "profit" && value < 0 ? "#df5b65" : "url(#" + item.gradient + ")";
+              const barX = center - groupWidth / 2 + itemIndex * barWidth;
+              const labelFits = plotWidth / visible.length >= 116 && barWidth >= 30 && Math.abs(value) > 0;
+              const labelY = value >= 0 ? Math.max(top + 10, valueY - 5) : Math.min(top + plotHeight - 3, valueY + 11);
+              const tinyValue = new Intl.NumberFormat("pt-BR", { notation: "compact", maximumFractionDigits: 0 }).format(value);
               return <g key={item.key}>
-                <rect x={center - groupWidth / 2 + itemIndex * barWidth} y={Math.min(valueY, base)} width={Math.max(2, barWidth - 4)} height={Math.max(1.5, Math.abs(base - valueY))} rx="4" fill={fill} className="chart-bar" filter="url(#chartBarShadow)" pointerEvents="none">
+                <rect x={barX} y={Math.min(valueY, base)} width={Math.max(2, barWidth - 4)} height={Math.max(1.5, Math.abs(base - valueY))} rx="4" fill={fill} className="chart-bar" filter="url(#chartBarShadow)" pointerEvents="none">
                   <title>{row.label}: {item.label} — {currency.format(value)}</title>
                 </rect>
+                {labelFits && isVisible(item.key) && <text
+                  x={barX + barWidth / 2 - 2}
+                  y={labelY}
+                  textAnchor="middle"
+                  fontSize="8"
+                  fontWeight="750"
+                  fill="#26384b"
+                  stroke="#f8fafc"
+                  strokeWidth="2.5"
+                  paintOrder="stroke"
+                  pointerEvents="none"
+                  aria-hidden="true"
+                >{tinyValue}</text>}
               </g>;
             })}
             <text x={center} y={height - 48} textAnchor="middle" className="chart-category-label">{row.label.length > 18 ? row.label.slice(0, 16) + "…" : row.label}</text>
