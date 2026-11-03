@@ -223,6 +223,18 @@ function UnifiedChart({ rows }: { rows: Group[] }) {
         })}
         {series.map((item) => isVisible(item.key) && <g key={item.key}>
           <path d={linePath(item.value)} fill="none" stroke={item.color} strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" className="chart-series-line"/>
+          <path d={linePath(item.value)} fill="none" stroke="transparent" strokeWidth="16" pointerEvents="stroke" style={{ cursor: "crosshair" }}
+            onMouseMove={(event) => {
+              const svg = event.currentTarget.ownerSVGElement;
+              if (!svg) return;
+              const bounds = svg.getBoundingClientRect();
+              const svgX = ((event.clientX - bounds.left) / bounds.width) * width;
+              const slotWidth = plotWidth / visible.length;
+              const index = Math.max(0, Math.min(visible.length - 1, Math.floor((svgX - left) / slotWidth)));
+              setHoveredRow(visible[index]);
+            }}
+            onMouseLeave={() => setHoveredRow(null)}
+          />
           {visible.map((row, index) => <g key={row.label}>
             {item.value(row) > 0 && <circle cx={x(index)} cy={yCount(item.value(row))} r="5.5" fill={item.color} stroke="#fff" strokeWidth="2.2" filter="url(#chartPointShadow)" tabIndex={0} role="button" aria-label={row.label + ", " + item.label + ": " + numbers.format(item.value(row)) + " registros."} onMouseEnter={() => setHoveredRow(row)} onMouseLeave={() => setHoveredRow(null)} onFocus={() => setHoveredRow(row)} onBlur={() => setHoveredRow(null)} onClick={() => setHoveredRow((current) => current?.label === row.label ? null : row)}>
               <title>{row.label}: {item.label} — {numbers.format(item.value(row))} registros</title>
