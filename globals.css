@@ -2723,3 +2723,43 @@ input:focus-visible,
   padding: 12px 16px;
   white-space: nowrap;
 }
+
+/* Mantém o gráfico contido no card e permite navegar pelo histórico horizontalmente. */
+.unified-chart,
+.unified-chart-scroll {
+  box-sizing: border-box;
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+}
+.unified-chart {
+  overflow: hidden;
+}
+.unified-chart-scroll {
+  display: block;
+  position: relative;
+  min-width: 0;
+  max-width: 100%;
+  overflow-x: auto !important;
+  overflow-y: hidden !important;
+  overscroll-behavior-x: contain;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-gutter: stable;
+}
+.unified-chart-svg {
+  display: block;
+  max-width: none !important;
+  flex: 0 0 auto;
+}
+.unified-chart-scroll:focus-visible {
+  outline: 2px solid #0e9aa7;
+  outline-offset: 2px;
+}
+@media (max-width: 720px) {
+  .unified-chart {
+    padding: 14px 10px 12px;
+  }
+  .unified-chart-scroll {
+    border-radius: 10px;
+  }
+}
