@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useMemo, useState, type CSSProperties } from "react";
+import { Fragment, useMemo, useState, type CSSProperties } from "react";
 import { createPortal } from "react-dom";
 import { useSession } from "next-auth/react";
 import { AppHeader } from "@/components/app-header";
@@ -426,6 +426,7 @@ export default function ReportsPage() {
   const { data, loading, error, refresh } = useWorkbookData(status === "authenticated");
   const [dimension, setDimension] = useState<ReportDimension>("period");
   const [granularity, setGranularity] = useState<Granularity>("month");
+  const [expandedReportYears, setExpandedReportYears] = useState<string[]>([]);
   const [search, setSearch] = useState("");
   const [selectedLabel, setSelectedLabel] = useState<string | null>(null);
   const [detailSearch, setDetailSearch] = useState("");
@@ -567,6 +568,31 @@ export default function ReportsPage() {
   const modelRanking = useMemo(() => { const totals = new Map<string, number>(); filteredRows.filter((row) => row.completed).forEach((row) => totals.set(textValue(row.model), (totals.get(textValue(row.model)) ?? 0) + row.revenue)); return [...totals.entries()].map(([label, revenue]) => ({ label, revenue })).sort((a,b) => b.revenue-a.revenue).slice(0,5); }, [filteredRows]);
   const dimensionLabels: Record<ReportDimension, string> = { period: "Período", model: "Modelo do certificado", status: "Status / observação" };
 
+  const monthlyYearGroups = useMemo(() => {
+    if (dimension !== "period" || granularity !== "month") return [];
+    const grouped = new Map<string, Group[]>();
+    filteredGroups.forEach((monthGroup) => {
+      const match = /^(.*?)\\s+(\\d{4})$/.exec(monthGroup.label);
+      const year = match?.[2] ?? "Ano não informado";
+      grouped.set(year, [...(grouped.get(year) ?? []), monthGroup]);
+    });
+    return [...grouped.entries()].map(([year, months]) => ({
+      year,
+      months,
+      total: months.reduce((acc, month) => ({
+        label: year,
+        count: acc.count + month.count,
+        completedCount: acc.completedCount + month.completedCount,
+        excludedCount: (acc.excludedCount ?? 0) + (month.excludedCount ?? 0),
+        reviewCount: (acc.reviewCount ?? 0) + (month.reviewCount ?? 0),
+        revenue: acc.revenue + month.revenue,
+        cost: acc.cost + month.cost,
+        profit: acc.profit + month.profit,
+      }), { label: year, count: 0, completedCount: 0, excludedCount: 0, reviewCount: 0, revenue: 0, cost: 0, profit: 0 } as Group),
+    })).sort((a, b) => a.year.localeCompare(b.year, "pt-BR", { numeric: true }));
+  }, [filteredGroups, dimension, granularity]);
+  const useYearGrouping = dimension === "period" && granularity === "month";
+
   return <div className="app-shell">
     <AppHeader active="reports" />
     <main className="workspace module-workspace" style={{ maxWidth: 1500 }}>
@@ -626,7 +652,33 @@ export default function ReportsPage() {
         <section style={{ background: "#fff", border: "1px solid #dce5ef", borderRadius: 16, overflow: "hidden", boxShadow: "0 5px 20px rgba(15,23,42,.04)" }}>
           <div style={{ padding: "22px 24px", display: "flex", alignItems: "end", justifyContent: "space-between", gap: 18, flexWrap: "wrap", borderBottom: "1px solid #e7edf4" }}><div><h2 style={{ margin: 0, fontSize: 18, fontWeight: 750, color: "#10233f" }}>Relatórios detalhados</h2><p style={{ margin: "6px 0 0", fontSize: 13, color: "#64748b" }}>Clique em qualquer linha para abrir os registros que formam aquele total.</p></div><div style={{ display: "flex", gap: 12, alignItems: "end", flexWrap: "wrap" }}><label style={{ display: "grid", gap: 6, minWidth: 160, fontSize: 12, color: "#52647a", fontWeight: 650 }}>Tipo de relatório<select value={dimension} onChange={(e) => { setDimension(e.target.value as ReportDimension); setSelectedLabel(null); setSearch(""); }} style={{ minHeight: 42, border: "1px solid #cbd7e5", borderRadius: 9, padding: "0 12px", background: "#fff", color: "#10233f" }}><option value="period">Por período</option><option value="model">Por modelo</option><option value="status">Por status</option></select></label>{dimension === "period" && <label style={{ display: "grid", gap: 6, minWidth: 150, fontSize: 12, color: "#52647a", fontWeight: 650 }}>Intervalo<select value={granularity} onChange={(e) => { setGranularity(e.target.value as Granularity); setSelectedLabel(null); }} style={{ minHeight: 42, border: "1px solid #cbd7e5", borderRadius: 9, padding: "0 12px", background: "#fff", color: "#10233f" }}><option value="month">Mensal</option><option value="week">Semanal</option><option value="year">Anual</option></select></label>}<label style={{ display: "grid", gap: 6, minWidth: 200, fontSize: 12, color: "#52647a", fontWeight: 650 }}>Pesquisar grupo<input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Digite para pesquisar…" style={{ minHeight: 42, border: "1px solid #cbd7e5", borderRadius: 9, padding: "0 12px", color: "#10233f" }} /></label></div></div>
           <div style={{ padding: "12px 24px", display: "flex", justifyContent: "space-between", flexWrap: "wrap", gap: 8, background: "#f7f9fc", borderBottom: "1px solid #e7edf4", color: "#52647a", fontSize: 12 }}><span><strong style={{ color: "#10233f" }}>{filteredGroups.length}</strong> grupos · <strong style={{ color: "#10233f" }}>{rows.length}</strong> registros detalhados</span><span>{numbers.format(filteredSummary.excludedCount)} não concluídos · {numbers.format(filteredSummary.reviewCount)} para revisar · {numbers.format(filteredRows.filter((row) => row.dateIssue).length)} datas divergentes/ausentes · {numbers.format(summary.rowsIgnored)} linhas vazias/totalizadoras ignoradas</span></div>
-          <div style={{ overflowX: "auto" }}><table className="records-table report-table" style={{ width: "100%", minWidth: 800 }}><thead><tr><th>{dimensionLabels[dimension]}</th><th className="numeric-cell">Registros</th><th className="numeric-cell">Concluídos</th><th className="numeric-cell">Faturamento</th><th className="numeric-cell">Custos</th><th className="numeric-cell">Valor líquido</th><th>Abrir</th></tr></thead><tbody>{filteredGroups.map((group) => <tr key={group.label} onClick={() => { setSelectedLabel(group.label); setDetailSearch(""); setStatusFilter("all"); }} onKeyDown={(e) => { if (e.key === "Enter") setSelectedLabel(group.label); }} tabIndex={0} role="button" aria-label={`Abrir detalhes de ${group.label}`} style={{ cursor: "pointer" }}><td style={{ fontWeight: 650, color: "#10233f" }}>{group.label}</td><td className="numeric-cell">{numbers.format(group.count)}</td><td className="numeric-cell">{numbers.format(group.completedCount)}</td><td className="numeric-cell">{currency.format(group.revenue)}</td><td className="numeric-cell">{currency.format(group.cost)}</td><td className="numeric-cell" style={{ fontWeight: 650, color: group.profit >= 0 ? "#087443" : "#b91c1c" }}>{currency.format(group.profit)}</td><td><button type="button" className="button button--secondary button--small" onClick={(e) => { e.stopPropagation(); setSelectedLabel(group.label); setDetailSearch(""); setStatusFilter("all"); }}>Ver vendas</button></td></tr>)}{!filteredGroups.length && <tr><td colSpan={7} style={{ padding: 28, textAlign: "center", color: "#64748b" }}>Nenhum grupo corresponde à pesquisa.</td></tr>}</tbody><tfoot>{filteredGroups.length > 0 && <tr style={{ background: "#f7f9fc", fontWeight: 750 }}><td>Total exibido</td><td className="numeric-cell">{numbers.format(filteredGroups.reduce((n, g) => n + g.count, 0))}</td><td className="numeric-cell">{numbers.format(filteredGroups.reduce((n, g) => n + g.completedCount, 0))}</td><td className="numeric-cell">{currency.format(filteredGroups.reduce((n, g) => n + g.revenue, 0))}</td><td className="numeric-cell">{currency.format(filteredGroups.reduce((n, g) => n + g.cost, 0))}</td><td className="numeric-cell">{currency.format(filteredGroups.reduce((n, g) => n + g.profit, 0))}</td><td /></tr>}</tfoot></table></div>
+          <div style={{ overflowX: "auto" }}><table className="records-table report-table" style={{ width: "100%", minWidth: 800 }}><thead><tr><th>{dimensionLabels[dimension]}</th><th className="numeric-cell">Registros</th><th className="numeric-cell">Concluídos</th><th className="numeric-cell">Faturamento</th><th className="numeric-cell">Custos</th><th className="numeric-cell">Valor líquido</th><th>Abrir</th></tr></thead><tbody>{useYearGrouping ? monthlyYearGroups.map(({ year, months, total }) => <Fragment key={year}>
+            <tr
+              onClick={() => setExpandedReportYears((current) => current.includes(year) ? current.filter((item) => item !== year) : [...current, year])}
+              onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); setExpandedReportYears((current) => current.includes(year) ? current.filter((item) => item !== year) : [...current, year]); } }}
+              tabIndex={0}
+              role="button"
+              aria-expanded={expandedReportYears.includes(year)}
+              style={{ cursor: "pointer", background: "#eef5fa", borderTop: "2px solid #d7e4ef" }}
+            >
+              <td style={{ fontWeight: 800, color: "#10233f", whiteSpace: "nowrap" }}><span aria-hidden="true" style={{ display: "inline-block", width: 18, color: "#087f8c" }}>{expandedReportYears.includes(year) ? "▾" : "▸"}</span>{year}<span style={{ marginLeft: 9, color: "#64748b", fontSize: 11, fontWeight: 600 }}>{months.length} {months.length === 1 ? "mês" : "meses"}</span></td>
+              <td className="numeric-cell">{numbers.format(total.count)}</td>
+              <td className="numeric-cell">{numbers.format(total.completedCount)}</td>
+              <td className="numeric-cell">{currency.format(total.revenue)}</td>
+              <td className="numeric-cell">{currency.format(total.cost)}</td>
+              <td className="numeric-cell" style={{ fontWeight: 750, color: total.profit >= 0 ? "#087443" : "#b91c1c" }}>{currency.format(total.profit)}</td>
+              <td><span style={{ color: "#087f8c", fontSize: 12, fontWeight: 700 }}>{expandedReportYears.includes(year) ? "Ocultar meses" : "Ver meses"}</span></td>
+            </tr>
+            {expandedReportYears.includes(year) && months.map((group) => <tr key={group.label} onClick={() => { setSelectedLabel(group.label); setDetailSearch(""); setStatusFilter("all"); }} onKeyDown={(e) => { if (e.key === "Enter") setSelectedLabel(group.label); }} tabIndex={0} role="button" aria-label={`Abrir detalhes de ${group.label}`} style={{ cursor: "pointer", background: "#fff" }}>
+              <td style={{ paddingLeft: 42, color: "#334b63", fontWeight: 650 }}>↳ {group.label}</td>
+              <td className="numeric-cell">{numbers.format(group.count)}</td>
+              <td className="numeric-cell">{numbers.format(group.completedCount)}</td>
+              <td className="numeric-cell">{currency.format(group.revenue)}</td>
+              <td className="numeric-cell">{currency.format(group.cost)}</td>
+              <td className="numeric-cell" style={{ fontWeight: 650, color: group.profit >= 0 ? "#087443" : "#b91c1c" }}>{currency.format(group.profit)}</td>
+              <td><button type="button" className="button button--secondary button--small" onClick={(e) => { e.stopPropagation(); setSelectedLabel(group.label); setDetailSearch(""); setStatusFilter("all"); }}>Ver vendas</button></td>
+            </tr>)}
+          </Fragment>) : filteredGroups.map((group) => <tr key={group.label} onClick={() => { setSelectedLabel(group.label); setDetailSearch(""); setStatusFilter("all"); }} onKeyDown={(e) => { if (e.key === "Enter") setSelectedLabel(group.label); }} tabIndex={0} role="button" aria-label={`Abrir detalhes de ${group.label}`} style={{ cursor: "pointer" }}><td style={{ fontWeight: 650, color: "#10233f" }}>{group.label}</td><td className="numeric-cell">{numbers.format(group.count)}</td><td className="numeric-cell">{numbers.format(group.completedCount)}</td><td className="numeric-cell">{currency.format(group.revenue)}</td><td className="numeric-cell">{currency.format(group.cost)}</td><td className="numeric-cell" style={{ fontWeight: 650, color: group.profit >= 0 ? "#087443" : "#b91c1c" }}>{currency.format(group.profit)}</td><td><button type="button" className="button button--secondary button--small" onClick={(e) => { e.stopPropagation(); setSelectedLabel(group.label); setDetailSearch(""); setStatusFilter("all"); }}>Ver vendas</button></td></tr>)}{!filteredGroups.length && <tr><td colSpan={7} style={{ padding: 28, textAlign: "center", color: "#64748b" }}>Nenhum grupo corresponde à pesquisa.</td></tr>}</tbody><tfoot>{filteredGroups.length > 0 && <tr style={{ background: "#f7f9fc", fontWeight: 750 }}><td>Total exibido</td><td className="numeric-cell">{numbers.format(filteredGroups.reduce((n, g) => n + g.count, 0))}</td><td className="numeric-cell">{numbers.format(filteredGroups.reduce((n, g) => n + g.completedCount, 0))}</td><td className="numeric-cell">{currency.format(filteredGroups.reduce((n, g) => n + g.revenue, 0))}</td><td className="numeric-cell">{currency.format(filteredGroups.reduce((n, g) => n + g.cost, 0))}</td><td className="numeric-cell">{currency.format(filteredGroups.reduce((n, g) => n + g.profit, 0))}</td><td /></tr>}</tfoot></table></div>
         </section>
       </div>}
     </main>
