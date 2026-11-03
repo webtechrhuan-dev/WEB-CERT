@@ -202,7 +202,6 @@ function UnifiedChart({ rows }: { rows: Group[] }) {
                 <rect x={center - groupWidth / 2 + itemIndex * barWidth} y={Math.min(valueY, base)} width={Math.max(2, barWidth - 4)} height={Math.max(1.5, Math.abs(base - valueY))} rx="4" fill={fill} className="chart-bar" filter="url(#chartBarShadow)">
                   <title>{row.label}: {item.label} — {currency.format(value)}</title>
                 </rect>
-                <text x={center - groupWidth / 2 + itemIndex * barWidth + (barWidth - 4) / 2} y={Math.max(top + 12, Math.min(valueY, base) - 7)} textAnchor="middle" className="chart-value-label chart-value-label--bar">{compactMoney(value)}</text>
               </g>;
             })}
             <text x={center} y={height - 48} textAnchor="middle" className="chart-category-label">{row.label.length > 18 ? row.label.slice(0, 16) + "…" : row.label}</text>
@@ -212,15 +211,25 @@ function UnifiedChart({ rows }: { rows: Group[] }) {
         {series.map((item) => isVisible(item.key) && <g key={item.key}>
           <path d={linePath(item.value)} fill="none" stroke={item.color} strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" className="chart-series-line"/>
           {visible.map((row, index) => <g key={row.label}>
-            <circle cx={x(index)} cy={yCount(item.value(row))} r="5.5" fill={item.color} stroke="#fff" strokeWidth="2.2" filter="url(#chartPointShadow)">
+            {item.value(row) > 0 && <circle cx={x(index)} cy={yCount(item.value(row))} r="5.5" fill={item.color} stroke="#fff" strokeWidth="2.2" filter="url(#chartPointShadow)">
               <title>{row.label}: {item.label} — {numbers.format(item.value(row))} registros</title>
-            </circle>
-            <text x={x(index)} y={Math.max(top + 12, yCount(item.value(row)) - (item.key === "completed" ? 13 : item.key === "excluded" ? 25 : 37))} textAnchor="middle" className="chart-value-label chart-value-label--line" fill={item.color}>{numbers.format(item.value(row))}</text>
+            </circle>}
           </g>)}
         </g>)}
       </svg>
     </div>
-    <div className="unified-chart-footnote"><span className="chart-footnote-dot" /> Anos anteriores aparecem consolidados; o ano atual é detalhado por mês. Barras mostram valores financeiros e linhas mostram quantidades. Os números ficam visíveis no gráfico; passe o cursor para consultar o valor completo. Clique na legenda para ocultar ou exibir séries.</div>
+    <details className="chart-data-details">
+      <summary>Consultar valores exatos por período</summary>
+      <div className="chart-data-table-scroll">
+        <table className="chart-data-table">
+          <thead><tr><th>Período</th><th>Faturamento</th><th>Custos</th><th>Resultado líquido</th><th>Concluídas</th><th>Não concluídas</th><th>Em revisão</th><th>Total de registros</th></tr></thead>
+          <tbody>{visible.map((row) => <tr key={row.label}>
+            <th scope="row">{row.label}</th><td>{currency.format(row.revenue)}</td><td>{currency.format(row.cost)}</td><td>{currency.format(row.profit)}</td><td>{numbers.format(row.completedCount)}</td><td>{numbers.format(row.excludedCount ?? 0)}</td><td>{numbers.format(row.reviewCount ?? 0)}</td><td>{numbers.format(row.count)}</td>
+          </tr>)}</tbody>
+        </table>
+      </div>
+    </details>
+    <div className="unified-chart-footnote"><span className="chart-footnote-dot" /> Anos anteriores consolidados por ano; ano atual detalhado por mês. Os valores exatos ficam na tabela expansível abaixo ou nas dicas ao passar o cursor. Use a legenda para filtrar as séries.</div>
   </div>;
 }
 
@@ -352,16 +361,19 @@ export default function ReportsPage() {
       grouped.set(label, group);
     });
     return [...grouped.values()].sort((a, b) => {
-      const yearOf = (label: string) => {
-        const year = /(?:^|\\s)(\\d{4})$/.exec(label);
-        return year ? Number(year[1]) : Number.MAX_SAFE_INTEGER;
+      const parsePeriod = (label: string) => {
+        const match = label.match(/^(.+?)\s+(\d{4})$/);
+        if (match) {
+          const normalizedMonth = match[1].normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLocaleLowerCase("pt-BR");
+          const monthIndex = MONTHS.findIndex((month) => month.normalize("NFD").replace(/[\u0300-\u036f]/g, "") === normalizedMonth);
+          return { year: Number(match[2]), month: monthIndex };
+        }
+        const year = Number(label);
+        return { year: Number.isFinite(year) ? year : Number.MAX_SAFE_INTEGER, month: -1 };
       };
-      const monthOf = (label: string) => {
-        const match = /^(.*?)\\s+(\\d{4})$/.exec(label);
-        if (!match) return -1;
-        return MONTHS.findIndex((month) => month.normalize("NFD").replace(/[\\u0300-\\u036f]/g, "") === match[1].normalize("NFD").replace(/[\\u0300-\\u036f]/g, ""));
-      };
-      return yearOf(a.label) - yearOf(b.label) || monthOf(a.label) - monthOf(b.label) || a.label.localeCompare(b.label, "pt-BR", { numeric: true });
+      const left = parsePeriod(a.label);
+      const right = parsePeriod(b.label);
+      return left.year - right.year || left.month - right.month || a.label.localeCompare(b.label, "pt-BR", { numeric: true });
     });
   }, [filteredRows]);
   const modelRanking = useMemo(() => { const totals = new Map<string, number>(); filteredRows.filter((row) => row.completed).forEach((row) => totals.set(textValue(row.model), (totals.get(textValue(row.model)) ?? 0) + row.revenue)); return [...totals.entries()].map(([label, revenue]) => ({ label, revenue })).sort((a,b) => b.revenue-a.revenue).slice(0,5); }, [filteredRows]);
