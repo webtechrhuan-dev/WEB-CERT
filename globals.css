@@ -2395,3 +2395,73 @@ input:focus-visible,
   .chart-value-label--bar { font-size: 8px; }
   .chart-value-label--line { font-size: 9px; }
 }
+
+/* Exact values are available in a separate table to keep the chart readable. */
+.chart-data-details {
+  margin-top: 12px;
+  border: 1px solid #e3eaf2;
+  border-radius: 10px;
+  background: #fff;
+  overflow: hidden;
+}
+.chart-data-details > summary {
+  padding: 12px 15px;
+  color: #29445f;
+  cursor: pointer;
+  font-size: 12px;
+  font-weight: 700;
+  list-style-position: inside;
+}
+.chart-data-details[open] > summary {
+  border-bottom: 1px solid #e8eef5;
+  background: #f8fafc;
+}
+.chart-data-table-scroll {
+  max-width: 100%;
+  overflow-x: auto;
+}
+.chart-data-table {
+  width: 100%;
+  min-width: 900px;
+  border-collapse: separate;
+  border-spacing: 0;
+  font-size: 12px;
+  font-variant-numeric: tabular-nums;
+}
+.chart-data-table th,
+.chart-data-table td {
+  padding: 10px 13px;
+  border-bottom: 1px solid #edf1f5;
+  text-align: right;
+  white-space: nowrap;
+}
+.chart-data-table thead th {
+  background: #f8fafc;
+  color: #61748a;
+  font-size: 10px;
+  font-weight: 750;
+}
+.chart-data-table th:first-child,
+.chart-data-table td:first-child {
+  position: sticky;
+  left: 0;
+  z-index: 1;
+  background: #fff;
+  text-align: left;
+}
+.chart-data-table thead th:first-child {
+  z-index: 2;
+  background: #f8fafc;
+}
+.chart-data-table tbody th {
+  color: #263e58;
+  font-weight: 700;
+}
+.chart-data-table tbody tr:last-child th,
+.chart-data-table tbody tr:last-child td {
+  border-bottom: 0;
+}
+.chart-data-table tbody tr:hover th,
+.chart-data-table tbody tr:hover td {
+  background: #f5f9fc;
+}
