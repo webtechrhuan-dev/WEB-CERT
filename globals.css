@@ -2604,3 +2604,81 @@ input:focus-visible,
     padding: 13px 14px;
   }
 }
+
+/* Tooltip em portal: fora do SVG e de qualquer container com overflow. */
+.chart-hover-tooltip {
+  position: fixed !important;
+  z-index: 99999 !important;
+  display: block !important;
+  box-sizing: border-box !important;
+  width: 320px !important;
+  max-width: calc(100vw - 24px) !important;
+  margin: 0 !important;
+  padding: 16px 18px !important;
+  overflow: hidden !important;
+  border: 1px solid #dce5ef !important;
+  border-radius: 14px !important;
+  background: #fff !important;
+  box-shadow: 0 18px 48px rgb(16 38 64 / 24%), 0 3px 10px rgb(16 38 64 / 8%) !important;
+  color: #233b55 !important;
+  pointer-events: none !important;
+  backdrop-filter: none !important;
+  animation: chart-card-appear .12s ease-out both !important;
+}
+@keyframes chart-card-appear {
+  from { opacity: 0; transform: translateY(4px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+.chart-hover-tooltip__eyebrow {
+  margin-bottom: 5px;
+  color: #8292a5;
+  font-size: 9px;
+  font-weight: 800;
+  letter-spacing: .11em;
+}
+.chart-hover-tooltip__heading {
+  margin: 0 0 12px !important;
+  padding: 0 0 10px;
+  border-bottom: 1px solid #eaf0f5;
+  color: #183653 !important;
+  font-size: 17px !important;
+  line-height: 1.25;
+  font-weight: 800 !important;
+}
+.chart-hover-tooltip__grid {
+  display: grid !important;
+  grid-template-columns: 1fr !important;
+  gap: 0 !important;
+}
+.chart-hover-tooltip__grid > div {
+  display: flex;
+  min-height: 30px;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  border-bottom: 1px solid #f0f3f7;
+}
+.chart-hover-tooltip__grid > div:last-child { border-bottom: 0; }
+.chart-hover-tooltip__grid > div > span {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  color: #66788d;
+  font-size: 11px;
+  white-space: nowrap;
+}
+.chart-hover-tooltip__grid i {
+  display: inline-block;
+  flex: 0 0 8px;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+}
+.chart-hover-tooltip__grid > div > strong {
+  margin: 0 !important;
+  color: #203a55 !important;
+  font-size: 12px !important;
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
