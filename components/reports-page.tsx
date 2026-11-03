@@ -157,6 +157,85 @@ function UnifiedChart({ rows }: { rows: Group[] }) {
   const toggle = (key: string) => setHidden((current) => current.includes(key) ? current.filter((item) => item !== key) : [...current, key]);
   const linePath = (value: (row: Group) => number) => visible.map((row, index) => (index ? "L" : "M") + " " + x(index) + " " + yCount(value(row))).join(" ");
 
+  // Motor de posicionamento: mede caixas de texto e procura posições alternativas
+  // antes de renderizar. Prioriza rótulos financeiros e distribui os rótulos das linhas
+  // acima/abaixo/laterais dos pontos, sem permitir colisões entre textos.
+  type LabelBox = { x: number; y: number; w: number; h: number };
+  const placedLabelBoxes: LabelBox[] = [];
+  const labelPositions = new Map<string, { x: number; y: number }>();
+  const overlaps = (a: LabelBox, b: LabelBox, gap = 3) =>
+    a.x < b.x + b.w + gap && a.x + a.w + gap > b.x &&
+    a.y < b.y + b.h + gap && a.y + a.h + gap > b.y;
+  const clampLabel = (box: LabelBox) => ({
+    x: Math.max(left + 2, Math.min(width - right - box.w - 2, box.x)),
+    y: Math.max(top + 2, Math.min(top + plotHeight - box.h - 2, box.y)),
+  });
+  const lineSegments = series.filter((item) => isVisible(item.key)).flatMap((item) =>
+    visible.slice(0, -1).map((row, index) => ({
+      x1: x(index), y1: yCount(item.value(row)),
+      x2: x(index + 1), y2: yCount(item.value(visible[index + 1])),
+    }))
+  );
+  const pointObstacles = series.filter((item) => isVisible(item.key)).flatMap((item) =>
+    visible.map((row, index) => ({ x: x(index), y: yCount(item.value(row)) }))
+      .filter((point) => Number.isFinite(point.y))
+  );
+  const distanceToSegment = (px: number, py: number, seg: {x1:number;y1:number;x2:number;y2:number}) => {
+    const dx = seg.x2 - seg.x1, dy = seg.y2 - seg.y1;
+    const t = Math.max(0, Math.min(1, ((px-seg.x1)*dx+(py-seg.y1)*dy)/(dx*dx+dy*dy || 1)));
+    return Math.hypot(px-(seg.x1+t*dx), py-(seg.y1+t*dy));
+  };
+  const collidesWithLine = (box: LabelBox) => lineSegments.some((seg) => {
+    const samples = 5;
+    return Array.from({length:samples+1},(_,n)=>n/samples).some((t) => {
+      const px=seg.x1+(seg.x2-seg.x1)*t, py=seg.y1+(seg.y2-seg.y1)*t;
+      return px >= box.x-3 && px <= box.x+box.w+3 && py >= box.y-3 && py <= box.y+box.h+3 &&
+        distanceToSegment(px,py,seg) < 8;
+    });
+  });
+  const registerLabel = (key: string, anchorX: number, anchorY: number, text: string, kind: "bar" | "line") => {
+    const w = Math.max(18, text.length * (kind === "bar" ? 4.7 : 5.1));
+    const h = 12;
+    const offsets = kind === "bar"
+      ? [[-w/2,-16],[-w/2,-29],[-w/2,5],[-w/2,18],[-w/2-10,-16],[-w/2+10,-29],[-w/2-18,5],[-w/2+18,18]]
+      : [[-w/2,-20],[-w/2,12],[-w/2-18,-8],[18,-8],[-w/2,-34],[-w/2,26],[-w/2-28,10],[28,10]];
+    let selected: {x:number;y:number} | null = null;
+    for (const [dx,dy] of offsets) {
+      const candidate = clampLabel({x:anchorX+dx,y:anchorY+dy,w,h});
+      const box = {...candidate,w,h};
+      const textCollision = placedLabelBoxes.some((other) => overlaps(box,other,4));
+      const pointCollision = kind === "line" && pointObstacles.some((p) =>
+        Math.hypot(p.x-(box.x+w/2),p.y-(box.y+h/2)) < 12
+      );
+      if (!textCollision && !pointCollision && !collidesWithLine(box)) { selected=candidate; break; }
+    }
+    // Se todas as alternativas estiverem ocupadas, mantém a alternativa com menor
+    // quantidade de colisões e acrescenta uma placa branca para preservar a leitura.
+    if (!selected) selected = clampLabel({x:anchorX-w/2,y:anchorY-(kind==="bar"?16:20),w,h});
+    labelPositions.set(key,selected);
+    placedLabelBoxes.push({...selected,w,h});
+  };
+  visible.forEach((row,index) => financial.forEach((item,itemIndex) => {
+    if (!isVisible(item.key)) return;
+    const value=item.value(row);
+    if (!value) return;
+    const groupWidth=Math.min(96,plotWidth/visible.length*.78);
+    const barWidth=groupWidth/3;
+    const barX=x(index)-groupWidth/2+itemIndex*barWidth;
+    const valueY=yMoney(value);
+    const text=new Intl.NumberFormat("pt-BR",{notation:"compact",maximumFractionDigits:2}).format(value);
+    registerLabel("bar:"+index+":"+item.key,barX+barWidth/2-2,valueY,text,"bar");
+  }));
+  series.forEach((item) => {
+    if (!isVisible(item.key)) return;
+    visible.forEach((row,index) => {
+      const count=item.value(row);
+      if (!count || plotWidth/visible.length<116) return;
+      registerLabel("line:"+index+":"+item.key,x(index),yCount(count),
+        numbers.format(count),"line");
+    });
+  });
+
   return <div className="unified-chart">
     <div className="chart-key-panel" style={{ display: "grid", gap: 18, margin: "0 0 18px", padding: "18px 20px", border: "1px solid #dbe5ef", borderRadius: 14, background: "linear-gradient(180deg,#fbfdff 0%,#f4f8fc 100%)" }}>
       <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 12, flexWrap: "wrap" }}>
@@ -228,15 +307,15 @@ function UnifiedChart({ rows }: { rows: Group[] }) {
               const fill = item.key === "profit" && value < 0 ? "#df5b65" : "url(#" + item.gradient + ")";
               const barX = center - groupWidth / 2 + itemIndex * barWidth;
               const labelFits = plotWidth / visible.length >= 116 && barWidth >= 30 && Math.abs(value) > 0;
-              const labelY = value >= 0 ? Math.max(top + 10, valueY - 5) : Math.min(top + plotHeight - 3, valueY + 11);
+              const labelPosition = labelPositions.get("bar:" + index + ":" + item.key);
               const tinyValue = new Intl.NumberFormat("pt-BR", { notation: "compact", maximumFractionDigits: 2 }).format(value);
               return <g key={item.key}>
                 <rect x={barX} y={Math.min(valueY, base)} width={Math.max(2, barWidth - 4)} height={Math.max(1.5, Math.abs(base - valueY))} rx="4" fill={fill} className="chart-bar" filter="url(#chartBarShadow)" pointerEvents="none">
                   <title>{row.label}: {item.label} — {currency.format(value)}</title>
                 </rect>
                 {labelFits && isVisible(item.key) && <text
-                  x={barX + barWidth / 2 - 2}
-                  y={labelY}
+                  x={labelPosition?.x ?? (barX + barWidth / 2 - 2)}
+                  y={labelPosition?.y ?? Math.max(top + 10, valueY - 5)}
                   textAnchor="middle"
                   fontSize="8"
                   fontWeight="750"
@@ -261,12 +340,9 @@ function UnifiedChart({ rows }: { rows: Group[] }) {
             // Só exibe rótulos quando há espaço entre os períodos; cada série recebe
             // um pequeno deslocamento horizontal para evitar que números se encostem.
             const showPointLabel = count > 0 && plotWidth / visible.length >= 116;
-            const edgePadding = 16;
-            const desiredLabelX = x(index) + (seriesIndex - 1) * 18;
-            // Mantém os rótulos dentro da área útil, inclusive no último período.
-            const labelX = Math.max(left + edgePadding, Math.min(width - right - edgePadding, desiredLabelX));
-            // Afasta os números das etiquetas das colunas, reduzindo colisões na base.
-            const labelY = Math.max(top + 12, pointY - 19 - (seriesIndex * 2));
+            const labelPosition = labelPositions.get("line:" + index + ":" + item.key);
+            const labelX = labelPosition?.x ?? x(index);
+            const labelY = labelPosition?.y ?? Math.max(top + 12, pointY - 19);
             return <g key={row.label}>
               {count > 0 && <circle cx={x(index)} cy={pointY} r="5.5" fill={item.color} stroke="#fff" strokeWidth="2.2" filter="url(#chartPointShadow)" pointerEvents="none">
                 <title>{row.label}: {item.label} — {numbers.format(count)} registros</title>
