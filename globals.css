@@ -2814,3 +2814,85 @@ section[aria-labelledby="unified-chart-title"] .unified-chart-scroll > .unified-
   max-width: none !important;
   flex: none !important;
 }
+
+/* Tabela de conferência: colunas amplas e separação visual inequívoca. */
+.chart-data-table-scroll {
+  display: block !important;
+  width: 100% !important;
+  max-width: 100% !important;
+  min-width: 0 !important;
+  overflow-x: auto !important;
+  overflow-y: hidden !important;
+  padding: 0 0 12px !important;
+  scrollbar-width: auto !important;
+  scrollbar-color: #8298ad #edf2f7 !important;
+  -webkit-overflow-scrolling: touch;
+}
+.chart-data-table-scroll::-webkit-scrollbar {
+  height: 13px !important;
+  display: block !important;
+}
+.chart-data-table-scroll::-webkit-scrollbar-track {
+  background: #edf2f7 !important;
+  border-radius: 10px;
+}
+.chart-data-table-scroll::-webkit-scrollbar-thumb {
+  background: #8298ad !important;
+  border: 3px solid #edf2f7 !important;
+  border-radius: 10px;
+}
+.chart-data-table-scroll > table.chart-data-table {
+  display: table !important;
+  width: 1px !important;
+  min-width: 1325px !important;
+  table-layout: fixed !important;
+  border-collapse: separate !important;
+  border-spacing: 0 !important;
+}
+.chart-data-table-scroll > table.chart-data-table thead th,
+.chart-data-table-scroll > table.chart-data-table tbody th,
+.chart-data-table-scroll > table.chart-data-table tbody td {
+  box-sizing: border-box !important;
+  padding: 15px 20px !important;
+  vertical-align: middle !important;
+}
+.chart-data-table-scroll > table.chart-data-table thead th {
+  height: 54px;
+  background: #f1f6fb !important;
+  color: #405b75 !important;
+  font-size: 12px !important;
+  font-weight: 750 !important;
+  line-height: 1.45 !important;
+  text-align: center !important;
+  white-space: normal !important;
+  overflow-wrap: normal !important;
+  word-break: normal !important;
+  border-bottom: 1px solid #dce6ef !important;
+}
+.chart-data-table-scroll > table.chart-data-table thead th:nth-child(1) { width: 150px !important; text-align: left !important; }
+.chart-data-table-scroll > table.chart-data-table thead th:nth-child(2) { width: 175px !important; }
+.chart-data-table-scroll > table.chart-data-table thead th:nth-child(3) { width: 145px !important; }
+.chart-data-table-scroll > table.chart-data-table thead th:nth-child(4) { width: 195px !important; }
+.chart-data-table-scroll > table.chart-data-table thead th:nth-child(5) { width: 155px !important; }
+.chart-data-table-scroll > table.chart-data-table thead th:nth-child(6) { width: 185px !important; }
+.chart-data-table-scroll > table.chart-data-table thead th:nth-child(7) { width: 155px !important; }
+.chart-data-table-scroll > table.chart-data-table thead th:nth-child(8) { width: 165px !important; }
+.chart-data-table-scroll > table.chart-data-table tbody th {
+  min-width: 150px !important;
+  color: #405b75 !important;
+  font-weight: 750 !important;
+  text-align: left !important;
+  white-space: nowrap !important;
+}
+.chart-data-table-scroll > table.chart-data-table tbody td {
+  color: #263b50 !important;
+  text-align: center !important;
+  white-space: nowrap !important;
+  font-variant-numeric: tabular-nums;
+}
+.chart-data-table-scroll > table.chart-data-table tbody tr:nth-child(even) {
+  background: #f7fafc !important;
+}
+.chart-data-table-scroll > table.chart-data-table tbody tr:hover {
+  background: #edf7fa !important;
+}
