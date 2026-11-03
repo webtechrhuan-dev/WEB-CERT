@@ -2537,3 +2537,70 @@ input:focus-visible,
   .chart-hover-tooltip__grid span { font-size: 9px; }
   .chart-hover-tooltip__grid strong { font-size: 10px; }
 }
+
+/* Tooltip flutuante estável: não participa da área de hover do gráfico. */
+.chart-hover-tooltip {
+  position: fixed;
+  z-index: 1000;
+  top: 104px;
+  right: 28px;
+  width: min(390px, calc(100vw - 32px));
+  max-width: min(390px, calc(100vw - 32px));
+  margin: 0;
+  padding: 16px 18px;
+  border: 1px solid #d7e3ef;
+  border-radius: 14px;
+  background: #fff;
+  box-shadow: 0 16px 44px rgb(15 35 63 / 22%), 0 3px 10px rgb(15 35 63 / 8%);
+  color: #263e58;
+  pointer-events: none;
+  backdrop-filter: blur(12px);
+  animation: chart-tooltip-in .14s ease-out both;
+}
+@keyframes chart-tooltip-in {
+  from { opacity: 0; transform: translateY(5px) scale(.985); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+.chart-hover-tooltip__heading {
+  margin-bottom: 11px;
+  padding-bottom: 9px;
+  border-bottom: 1px solid #edf1f6;
+  color: #17324f;
+  font-size: 14px;
+  font-weight: 800;
+}
+.chart-hover-tooltip__grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 9px;
+}
+.chart-hover-tooltip__grid span {
+  display: grid;
+  grid-template-columns: 8px minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 9px;
+  color: #64748b;
+  font-size: 12px;
+  white-space: nowrap;
+}
+.chart-hover-tooltip__grid i {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+}
+.chart-hover-tooltip__grid strong {
+  margin-left: 12px;
+  color: #1e334b;
+  font-size: 12px;
+  font-weight: 750;
+  font-variant-numeric: tabular-nums;
+}
+@media (max-width: 640px) {
+  .chart-hover-tooltip {
+    top: auto;
+    right: 12px;
+    bottom: 16px;
+    width: min(340px, calc(100vw - 24px));
+    padding: 13px 14px;
+  }
+}
