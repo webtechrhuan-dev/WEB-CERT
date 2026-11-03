@@ -212,7 +212,9 @@ function UnifiedChart({ rows }: { rows: Group[] }) {
     // Se nenhuma posição estiver livre, omite somente esse rótulo (o valor exato
     // continua no tooltip), em vez de desenhar texto por cima de outro elemento.
     if (!selected) return;
-    labelPositions.set(key,selected);
+    // O SVG usa textAnchor="middle": converte a caixa (canto superior esquerdo)
+    // em ponto central para alinhar o texto exatamente ao centro da coluna/ponto.
+    labelPositions.set(key,{x:selected.x+w/2,y:selected.y+h-2});
     placedLabelBoxes.push({...selected,w,h});
   };
   visible.forEach((row,index) => financial.forEach((item,itemIndex) => {
@@ -224,7 +226,7 @@ function UnifiedChart({ rows }: { rows: Group[] }) {
     const barX=x(index)-groupWidth/2+itemIndex*barWidth;
     const valueY=yMoney(value);
     const text=new Intl.NumberFormat("pt-BR",{notation:"compact",maximumFractionDigits:2}).format(value);
-    registerLabel("bar:"+index+":"+item.key,barX+barWidth/2-2,valueY,text,"bar");
+    registerLabel("bar:"+index+":"+item.key,barX+(barWidth-4)/2+barX,valueY,text,"bar");
   }));
   series.forEach((item) => {
     if (!isVisible(item.key)) return;
@@ -314,8 +316,8 @@ function UnifiedChart({ rows }: { rows: Group[] }) {
                   <title>{row.label}: {item.label} — {currency.format(value)}</title>
                 </rect>
                 {labelFits && labelPosition && isVisible(item.key) && <text
-                  x={labelPosition?.x ?? (barX + barWidth / 2 - 2)}
-                  y={labelPosition?.y ?? Math.max(top + 10, valueY - 5)}
+                  x={labelPosition.x}
+                  y={labelPosition.y}
                   textAnchor="middle"
                   fontSize="8"
                   fontWeight="750"
@@ -341,8 +343,8 @@ function UnifiedChart({ rows }: { rows: Group[] }) {
             // um pequeno deslocamento horizontal para evitar que números se encostem.
             const showPointLabel = count > 0 && plotWidth / visible.length >= 116;
             const labelPosition = labelPositions.get("line:" + index + ":" + item.key);
-            const labelX = labelPosition?.x ?? x(index);
-            const labelY = labelPosition?.y ?? Math.max(top + 12, pointY - 19);
+            const labelX = labelPosition.x;
+            const labelY = labelPosition.y;
             return <g key={row.label}>
               {count > 0 && <circle cx={x(index)} cy={pointY} r="5.5" fill={item.color} stroke="#fff" strokeWidth="2.2" filter="url(#chartPointShadow)" pointerEvents="none">
                 <title>{row.label}: {item.label} — {numbers.format(count)} registros</title>
