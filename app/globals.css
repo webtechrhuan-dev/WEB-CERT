@@ -2653,6 +2653,7 @@ table tbody tr:hover, .record-row:hover, .sale-row:hover {
 .sale-status--instalado{color:#6941a5;background:#f4efff;border-color:#e2d7f7}
 .sale-status--concluido{color:#176b45;background:#eaf6ef;border-color:#cce8d7}
 .sale-status--nao-concluido{color:#596579;background:#f1f3f6;border-color:#dce1e8}
+.sale-status--orcamento{color:#7a4a9e;background:#f7efff;border-color:#e7d7f5}
 .sale-status--cancelado{color:#a52d39;background:#fff0f1;border-color:#f1d1d5}
 .sale-status--unknown{color:#596579;background:#f3f5f7;border-color:#dce2e8}
 .record-picker-row .sale-status-badge{margin-left:auto;flex:0 0 auto}
