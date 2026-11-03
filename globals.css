@@ -2365,3 +2365,33 @@ input:focus-visible,
     font-size: 10px;
   }
 }
+
+.chart-value-label {
+  pointer-events: none;
+  font-variant-numeric: tabular-nums;
+  paint-order: stroke;
+  stroke: #fff;
+  stroke-linejoin: round;
+  stroke-width: 3px;
+}
+.chart-value-label--bar {
+  fill: #334155;
+  font-size: 9px;
+  font-weight: 750;
+}
+.chart-value-label--line {
+  font-size: 10px;
+  font-weight: 800;
+  stroke-width: 3.5px;
+}
+.chart-bar {
+  transform-box: fill-box;
+  transform-origin: center bottom;
+}
+.chart-bar:hover {
+  filter: brightness(1.08) drop-shadow(0 4px 5px rgb(15 35 63 / 18%));
+}
+@media (max-width: 640px) {
+  .chart-value-label--bar { font-size: 8px; }
+  .chart-value-label--line { font-size: 9px; }
+}
