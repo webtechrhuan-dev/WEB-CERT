@@ -2897,3 +2897,33 @@ section[aria-labelledby="unified-chart-title"] .unified-chart-scroll > .unified-
 .chart-data-table-scroll > table.chart-data-table tbody tr:hover {
   background: #edf7fa !important;
 }
+
+/* Alinhamento rigoroso: mesma largura e eixo central no cabeçalho e em cada célula. */
+.chart-data-table-scroll table.chart-data-table {
+  width: 1325px !important;
+  min-width: 1325px !important;
+  table-layout: fixed !important;
+}
+.chart-data-table-scroll table.chart-data-table thead th,
+.chart-data-table-scroll table.chart-data-table tbody th,
+.chart-data-table-scroll table.chart-data-table tbody td {
+  box-sizing: border-box !important;
+  text-align: center !important;
+  padding-left: 10px !important;
+  padding-right: 10px !important;
+  white-space: nowrap !important;
+}
+.chart-data-table-scroll table.chart-data-table tr > :nth-child(1) { width: 150px !important; }
+.chart-data-table-scroll table.chart-data-table tr > :nth-child(2) { width: 175px !important; }
+.chart-data-table-scroll table.chart-data-table tr > :nth-child(3) { width: 145px !important; }
+.chart-data-table-scroll table.chart-data-table tr > :nth-child(4) { width: 195px !important; }
+.chart-data-table-scroll table.chart-data-table tr > :nth-child(5) { width: 155px !important; }
+.chart-data-table-scroll table.chart-data-table tr > :nth-child(6) { width: 185px !important; }
+.chart-data-table-scroll table.chart-data-table tr > :nth-child(7) { width: 155px !important; }
+.chart-data-table-scroll table.chart-data-table tr > :nth-child(8) { width: 165px !important; }
+.chart-data-table-scroll table.chart-data-table tbody th {
+  font-weight: 750 !important;
+}
+.chart-data-table-scroll table.chart-data-table tbody td {
+  font-variant-numeric: tabular-nums;
+}
