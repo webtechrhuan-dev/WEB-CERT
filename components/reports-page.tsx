@@ -169,6 +169,44 @@ function UnifiedChart({ rows }: { rows: Group[] }) {
         <span>{item.label}</span>
       </button>)}
     </div>
+    <section className="chart-reading-guide" aria-label="Como interpretar o gráfico">
+      <div className="chart-reading-guide__intro">
+        <strong>Como interpretar este gráfico</strong>
+        <span>Compare os valores financeiros nas barras com a quantidade de registros indicada pelas linhas.</span>
+      </div>
+      <div className="chart-reading-guide__grid">
+        <article className="chart-reading-guide__item">
+          <span className="chart-reading-guide__swatch" style={{ background: "#0e9aa7" }} />
+          <div><strong>Faturamento</strong><p>Valor bruto das vendas registradas no período, antes de descontar os custos.</p></div>
+        </article>
+        <article className="chart-reading-guide__item">
+          <span className="chart-reading-guide__swatch" style={{ background: "#f0a34a" }} />
+          <div><strong>Custos</strong><p>Soma dos custos informados para os certificados vendidos no período.</p></div>
+        </article>
+        <article className="chart-reading-guide__item">
+          <span className="chart-reading-guide__swatch" style={{ background: "#4778e8" }} />
+          <div><strong>Resultado líquido</strong><p>Faturamento menos custos. É o resultado financeiro calculado para o período.</p></div>
+        </article>
+        <article className="chart-reading-guide__item">
+          <span className="chart-reading-guide__swatch chart-reading-guide__swatch--line" style={{ background: "#16a477" }} />
+          <div><strong>Concluídas</strong><p>Quantidade de vendas com status considerado concluído pelo relatório.</p></div>
+        </article>
+        <article className="chart-reading-guide__item">
+          <span className="chart-reading-guide__swatch chart-reading-guide__swatch--line" style={{ background: "#e58b42" }} />
+          <div><strong>Não concluídas</strong><p>Quantidade de registros classificados como cancelados ou não concluídos.</p></div>
+        </article>
+        <article className="chart-reading-guide__item">
+          <span className="chart-reading-guide__swatch chart-reading-guide__swatch--line" style={{ background: "#8b6be8" }} />
+          <div><strong>Em revisão</strong><p>Quantidade de registros em revisão, conforme a classificação do relatório.</p></div>
+        </article>
+      </div>
+      <div className="chart-reading-guide__notes">
+        <span><strong>Barras (eixo esquerdo):</strong> valores em reais (R$).</span>
+        <span><strong>Linhas (eixo direito):</strong> quantidade de registros, não valores em dinheiro.</span>
+        <span><strong>Períodos:</strong> anos anteriores aparecem consolidados; o ano atual é detalhado mês a mês.</span>
+        <span><strong>Interação:</strong> clique nos itens da legenda para ocultar ou exibir cada série; passe o cursor sobre uma barra ou ponto para ver os detalhes.</span>
+      </div>
+    </section>
     <div className="unified-chart-scroll" role="region" aria-label="Gráfico com rolagem horizontal; use Shift e a roda do mouse ou a barra inferior para navegar" tabIndex={0} style={{ display: "block", width: "100%", maxWidth: "100%", minWidth: 0, flex: "1 1 0", overflowX: "scroll", overflowY: "hidden", boxSizing: "border-box" }}>
       <svg role="img" aria-label="Gráfico combinado de faturamento, custos, resultado e quantidade de registros por período" viewBox={"0 0 " + width + " " + height} className="unified-chart-svg" style={{ width: width + "px", minWidth: width + "px" }} onMouseLeave={() => setHoveredRow(null)}>
         <defs>
@@ -271,7 +309,7 @@ function UnifiedChart({ rows }: { rows: Group[] }) {
         </table>
       </div>
     </details>
-    <div className="unified-chart-footnote"><span className="chart-footnote-dot" /> Anos anteriores consolidados por ano; ano atual detalhado por mês. Os valores exatos ficam na tabela expansível abaixo ou nas dicas ao passar o cursor. Use a legenda para filtrar as séries.</div>
+    <div className="unified-chart-footnote"><span className="chart-footnote-dot" /> Os valores financeiros são exibidos nas barras e as quantidades nas linhas. Consulte a tabela abaixo para conferir os totais exatos de cada período.</div>
   </div>;
 }
 
