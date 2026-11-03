@@ -86,7 +86,7 @@ function parsedDate(row: DetailedReportRow): Date | null {
 function periodLabel(row: DetailedReportRow, granularity: Granularity): string {
   const date = parsedDate(row);
   // Mês/ano seguem a competência da pasta anual; a data pode ser de renovação antiga.
-  if (granularity === "year") return textValue(row.year) !== "Não informado" ? row.year : date ? String(date.getFullYear()) : "Ano não informado";
+  if (granularity === "year") return textValue(row.year) !== "Não informado" ? row.year : date ? String(date.getFullYear()) : "";
   if (granularity === "month") {
     if (textValue(row.month) !== "Não informado" && textValue(row.year) !== "Não informado") return `${canonicalMonth(row.month)} ${row.year.trim()}`;
     return date ? `${MONTHS[date.getMonth()]} ${date.getFullYear()}` : "Período não informado";
@@ -571,16 +571,17 @@ export default function ReportsPage() {
   const monthlyYearGroups = useMemo(() => {
     if (dimension !== "period" || granularity !== "month") return [];
     const years = new Map<string, Map<string, Group>>();
-    const normalize = (value: string) => value.trim().normalize("NFD").replace(/[\\u0300-\\u036f]/g, "").toLocaleLowerCase("pt-BR");
+    const normalize = (value: string) => value.trim().normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLocaleLowerCase("pt-BR");
     filteredRows.forEach((row) => {
       const date = parsedDate(row);
       const sourceYear = textValue(row.year).trim();
-      const year = /^\\d{4}$/.test(sourceYear)
+      const year = /^\d{4}$/.test(sourceYear)
         ? sourceYear
         : date ? String(date.getFullYear()) : "Ano não informado";
+      if (!year) return;
       const sourceMonth = textValue(row.month).trim();
       const monthIndex = MONTHS.findIndex((month) => normalize(month) === normalize(sourceMonth));
-      const numericMonth = /^\\d{1,2}$/.test(sourceMonth) ? Number(sourceMonth) - 1 : -1;
+      const numericMonth = /^\d{1,2}$/.test(sourceMonth) ? Number(sourceMonth) - 1 : -1;
       const validNumericMonth = numericMonth >= 0 && numericMonth < 12 ? numericMonth : -1;
       const month = monthIndex >= 0
         ? MONTHS[monthIndex]
