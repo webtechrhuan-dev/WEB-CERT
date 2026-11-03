@@ -577,7 +577,7 @@ export default function ReportsPage() {
       const sourceYear = textValue(row.year).trim();
       const year = /^\d{4}$/.test(sourceYear)
         ? sourceYear
-        : date ? String(date.getFullYear()) : "Ano não informado";
+        : date ? String(date.getFullYear()) : "";
       if (!year) return;
       const sourceMonth = textValue(row.month).trim();
       const monthIndex = MONTHS.findIndex((month) => normalize(month) === normalize(sourceMonth));
