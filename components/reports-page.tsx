@@ -169,7 +169,7 @@ function UnifiedChart({ rows }: { rows: Group[] }) {
         <span>{item.label}</span>
       </button>)}
     </div>
-    <div className="unified-chart-scroll" role="region" aria-label="Área do gráfico; role horizontalmente para ver todo o histórico" tabIndex={0}>
+    <div className="unified-chart-scroll" role="region" aria-label="Gráfico com rolagem horizontal; use Shift e a roda do mouse ou a barra inferior para navegar" tabIndex={0} style={{ display: "block", width: "100%", maxWidth: "100%", minWidth: 0, flex: "1 1 0", overflowX: "scroll", overflowY: "hidden", boxSizing: "border-box" }}>
       <svg role="img" aria-label="Gráfico combinado de faturamento, custos, resultado e quantidade de registros por período" viewBox={"0 0 " + width + " " + height} className="unified-chart-svg" style={{ width: width + "px", minWidth: width + "px" }} onMouseLeave={() => setHoveredRow(null)}>
         <defs>
           <linearGradient id="chartRevenue" x1="0" x2="0" y1="0" y2="1"><stop offset="0%" stopColor={colors.revenue} stopOpacity=".96"/><stop offset="100%" stopColor={colors.revenue} stopOpacity=".62"/></linearGradient>
