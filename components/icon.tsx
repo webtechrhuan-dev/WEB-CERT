@@ -94,7 +94,15 @@ const paths: Record<IconName, React.ReactNode> = {
       <path d="M15 3v6" />
     </>
   ),
-  trash: (\n    <>\n      <path d="M3 6h18" />\n      <path d="M8 6V4h8v2" />\n      <path d="m19 6-1 14H6L5 6" />\n      <path d="M10 11v5M14 11v5" />\n    </>\n  ),\n  users: (
+  trash: (
+    <>
+      <path d="M3 6h18" />
+      <path d="M8 6V4h8v2" />
+      <path d="m19 6-1 14H6L5 6" />
+      <path d="M10 11v5M14 11v5" />
+    </>
+  ),
+  users: (
     <>
       <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" />
       <circle cx="9" cy="7" r="4" />
