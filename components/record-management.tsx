@@ -112,17 +112,47 @@ function RecordForm({
   record,
   version,
   onSaved,
+  allowDelete = false,
 }: {
   mode: ManagementMode;
   record?: WorkbookRecord;
   version: string;
   onSaved: (message: string) => void;
+  allowDelete?: boolean;
 }) {
   const initialValues = useMemo(() => formValues(record), [record]);
   const [values, setValues] = useState<FormValues>(initialValues);
   const [error, setError] = useState<string | null>(null);
   const [conflict, setConflict] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [deleting, setDeleting] = useState(false);
+
+  async function deleteRecord() {
+    if (!record || !allowDelete || deleting || saving) return;
+    const clientIndex = WORKBOOK_HEADERS.indexOf("Cliente");
+    const client = valueAsText(record.values[clientIndex]) || "Cliente não identificado";
+    const confirmed = window.confirm(
+      `ATENÇÃO: esta ação é permanente.\\n\\nA venda de "${client}" (registro ${record.rowNumber}) será excluída definitivamente do banco de dados.\\n\\nNão será possível recuperar este registro. Deseja continuar?`,
+    );
+    if (!confirmed) return;
+
+    setError(null);
+    setDeleting(true);
+    try {
+      const response = await fetch(`/api/records/${record.rowNumber}`, {
+        method: "DELETE",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ expectedVersion: version }),
+      });
+      const body: unknown = await response.json();
+      if (!response.ok) throw new Error(apiErrorMessage(body) ?? "Não foi possível excluir a venda.");
+      onSaved("Venda excluída permanentemente do banco de dados.");
+    } catch (deleteError) {
+      setError(deleteError instanceof Error ? deleteError.message : "Não foi possível excluir a venda.");
+    } finally {
+      setDeleting(false);
+    }
+  }
 
   async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -286,7 +316,13 @@ function RecordForm({
         </button>
       )}
       <div className="form-actions">
-        <button className="button button--primary" disabled={saving} type="submit">
+        {mode === "edit" && allowDelete && (
+          <button className="button button--danger" disabled={saving || deleting} onClick={() => void deleteRecord()} type="button">
+            <Icon name="trash" />
+            {deleting ? "Excluindo…" : "Excluir venda"}
+          </button>
+        )}
+        <button className="button button--primary" disabled={saving || deleting} type="submit">
           {saving ? "Salvando…" : mode === "create" ? "Cadastrar registro" : "Salvar alterações"}
         </button>
       </div>
@@ -509,7 +545,7 @@ export function RecordManagement({ mode }: { mode: ManagementMode }) {
                                 <button className="button button--secondary button--small" onClick={() => setSelectedRow(null)} type="button">Fechar</button>
                               </div>
                               {canEdit && canPersist ? (
-                                <RecordForm key={`edit-${record.rowNumber}-${data.version}`} mode="edit" record={record} version={record.version ?? ""} onSaved={handleSaved} />
+                                <RecordForm key={`edit-${record.rowNumber}-${data.version}`} mode="edit" record={record} version={record.version ?? ""} onSaved={handleSaved} allowDelete={canEdit && data.source === "mongodb"} />
                               ) : (
                                 <p className="empty-state">{canEdit ? "A edição será habilitada quando a fonte estiver configurada." : "Edição disponível apenas para usuários autorizados como editores."}</p>
                               )}
