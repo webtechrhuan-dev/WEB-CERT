@@ -275,7 +275,7 @@ function UnifiedChart({ rows }: { rows: Group[] }) {
         <p><strong>Eixos e períodos:</strong> escala esquerda = dinheiro (R$); escala direita = quantidade de registros. O nome abaixo identifica o mês ou ano analisado.</p>
       </footer>
     </section>
-    <div className="unified-chart-scroll" role="region" aria-label="Gráfico com rolagem horizontal; use Shift e a roda do mouse ou a barra inferior para navegar" tabIndex={0} style={{ display: "block", width: "100%", maxWidth: "100%", minWidth: 0, flex: "1 1 0", overflowX: "scroll", overflowY: "hidden", boxSizing: "border-box" }}>
+    <div className="unified-chart-scroll report-chart-scroll" role="region" aria-label="Gráfico com rolagem horizontal; use Shift e a roda do mouse ou a barra inferior para navegar" tabIndex={0}>
       <svg role="img" aria-label="Gráfico combinado de faturamento, custos, resultado e quantidade de registros por período" viewBox={"0 0 " + width + " " + height} className="unified-chart-svg" style={{ width: width + "px", minWidth: width + "px" }} onMouseLeave={() => setHoveredRow(null)}>
         <defs>
           <linearGradient id="chartRevenue" x1="0" x2="0" y1="0" y2="1"><stop offset="0%" stopColor={colors.revenue} stopOpacity=".96"/><stop offset="100%" stopColor={colors.revenue} stopOpacity=".62"/></linearGradient>
@@ -408,8 +408,8 @@ function UnifiedChart({ rows }: { rows: Group[] }) {
     )}
     <details className="chart-data-details">
       <summary>Consultar valores exatos por período</summary>
-      <div className="chart-data-table-scroll" style={{ display: "block", width: "100%", maxWidth: "100%", minWidth: 0, overflowX: "auto", overflowY: "hidden", paddingBottom: 14, boxSizing: "border-box" }}>
-        <table className="chart-data-table" style={{ width: "1325px", minWidth: "1325px", maxWidth: "none", tableLayout: "fixed", borderCollapse: "separate", borderSpacing: 0 }}>
+      <div className="chart-data-table-scroll report-data-scroll">
+        <table className="chart-data-table report-chart-data-table">
           <colgroup><col style={{ width: 150 }} /><col style={{ width: 175 }} /><col style={{ width: 145 }} /><col style={{ width: 195 }} /><col style={{ width: 155 }} /><col style={{ width: 185 }} /><col style={{ width: 155 }} /><col style={{ width: 165 }} /></colgroup><thead><tr><th>Período</th><th>Faturamento</th><th>Custos</th><th>Resultado líquido</th><th>Concluídas</th><th>Não concluídas</th><th>Em revisão</th><th>Total de registros</th></tr></thead>
           <tbody>{visible.map((row) => <tr key={row.label}>
             <th scope="row">{row.label}</th><td>{currency.format(row.revenue)}</td><td>{currency.format(row.cost)}</td><td>{currency.format(row.profit)}</td><td>{numbers.format(row.completedCount)}</td><td>{numbers.format(row.excludedCount ?? 0)}</td><td>{numbers.format(row.reviewCount ?? 0)}</td><td>{numbers.format(row.count)}</td>
@@ -638,7 +638,7 @@ export default function ReportsPage() {
       <div className="breadcrumb" aria-label="Localização"><Link href="/">Início</Link><span aria-hidden="true">/</span><span aria-current="page">Relatórios</span></div>
       <section className="module-page-heading report-page-heading"><p className="eyebrow">INTELIGÊNCIA COMERCIAL</p><h1>Relatórios e análises</h1><p>Explore faturamento, custos, vendas, modelos e evolução por mês, semana ou ano.</p></section>
       {status === "loading" || loading ? <section className="state-panel" aria-busy="true"><span className="loading-spinner" /><div className="state-copy"><h2>Conferindo os dados da planilha…</h2><p>Os indicadores serão calculados após o carregamento.</p></div></section> : !session?.user ? <div><ReportError message={error ?? "Entre com sua conta para acessar os dados."} /><Link className="button button--secondary button--small" href="/login">Ir para o acesso</Link></div> : error || !summary ? <div><ReportError message={error ?? "Não foi possível calcular os indicadores."} /><button className="button button--secondary button--small" onClick={() => void refresh()} type="button">Tentar novamente</button></div> : <div className="report-dashboard-stack">
-        <section className="report-summary-heading"><div><h2 style={{ margin: 0, fontSize: 18, fontWeight: 750 }}>Resumo do negócio</h2><p style={{ margin: "5px 0 0", color: "#64748b", fontSize: 13 }}>Mês/ano seguem a competência das pastas anuais; semanas usam a data de emissão/renovação. Valores incompletos ficam em revisão.</p></div><div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}><button className="button button--secondary button--small" type="button" onClick={() => void refresh()} disabled={loading}><Icon name="refresh" /> Atualizar dados</button><button className="button button--primary button--small" type="button" onClick={() => exportCsv(filteredGroups)} disabled={!filteredGroups.length}>Exportar CSV</button></div></section>
+        <section className="report-summary-heading"><div><h2>Resumo do negócio</h2><p>Mês/ano seguem a competência das pastas anuais; semanas usam a data de emissão/renovação. Valores incompletos ficam em revisão.</p></div><div><button className="button button--secondary button--small" type="button" onClick={() => void refresh()} disabled={loading}><Icon name="refresh" /> Atualizar dados</button><button className="button button--primary button--small" type="button" onClick={() => exportCsv(filteredGroups)} disabled={!filteredGroups.length}>Exportar CSV</button></div></section>
         <section aria-labelledby="renewals-title" className="report-renewals-panel">
           <div className="report-renewals-header">
             <div className="report-renewals-copy"><p className="eyebrow">PROSPECÇÃO COMERCIAL</p><h2 id="renewals-title">Clientes com certificado vencendo no mês</h2><p>Lista para entrar em contato e oferecer a renovação do certificado digital, ordenada pela data de vencimento.</p></div>
@@ -676,15 +676,15 @@ export default function ReportsPage() {
           ].map((item) => <article key={item.label} style={{ background: item.dark ? "#10233f" : "#fff", border: `1px solid ${item.dark ? "#10233f" : "#dce5ef"}`, borderRadius: 14, padding: 20, boxShadow: "0 4px 14px rgba(15,23,42,.04)" }}><span style={{ color: item.dark ? "#c8d6e8" : "#52647a", fontSize: 13 }}>{item.label}</span><strong style={{ display: "block", marginTop: 10, fontSize: 25, letterSpacing: "-.04em", color: item.color }}>{item.value}</strong><small style={{ color: item.dark ? "#c8d6e8" : "#64748b" }}>{item.note}</small></article>)}
         </section>
         <section aria-labelledby="unified-chart-title" className="report-chart-panel">
-          <div style={{ display:"flex", justifyContent:"space-between", alignItems:"start", gap:16, flexWrap:"wrap", marginBottom:20 }}>
-            <div><p className="eyebrow" style={{margin:"0 0 6px"}}>VISÃO CONSOLIDADA</p><h2 id="unified-chart-title" style={{margin:0,fontSize:20,color:"#10233f"}}>Desempenho financeiro e comercial</h2><p style={{margin:"6px 0 0",fontSize:13,color:"#64748b"}}>Anos anteriores consolidados por ano; o ano atual detalhado mês a mês, com valores exibidos diretamente nas barras e nos pontos das linhas.</p></div>
-            <span style={{fontSize:12,color:"#64748b",background:"#f1f5f9",borderRadius:20,padding:"7px 11px"}}>{numbers.format(filteredRows.length)} registros no filtro</span>
+          <div className="report-chart-heading">
+            <div className="report-chart-heading-copy"><p className="eyebrow">VISÃO CONSOLIDADA</p><h2 id="unified-chart-title">Desempenho financeiro e comercial</h2><p>Anos anteriores consolidados por ano; o ano atual detalhado mês a mês, com valores exibidos diretamente nas barras e nos pontos das linhas.</p></div>
+            <span className="report-chart-record-count">{numbers.format(filteredRows.length)} registros no filtro</span>
           </div>
           <UnifiedChart rows={monthlyChart}/>
-          {modelRanking.length > 0 && <div style={{marginTop:22,paddingTop:18,borderTop:"1px solid #e7edf4"}}>
-            <h3 style={{margin:"0 0 12px",fontSize:14,color:"#10233f"}}>Modelos com maior faturamento</h3>
-            <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(180px,1fr))",gap:10}}>
-              {modelRanking.map((item,index)=><div key={item.label} style={{display:"flex",justifyContent:"space-between",alignItems:"center",gap:10,background:"#f8fafc",borderRadius:9,padding:"10px 12px"}}><span style={{fontSize:12,color:"#52647a"}}>{index+1}. {item.label}</span><strong style={{fontSize:12,color:"#10233f",whiteSpace:"nowrap"}}>{currency.format(item.revenue)}</strong></div>)}
+          {modelRanking.length > 0 && <div className="report-model-ranking">
+            <h3 className="report-model-ranking-title">Modelos com maior faturamento</h3>
+            <div className="report-model-ranking-grid">
+              {modelRanking.map((item,index)=><div key={item.label} className="report-model-ranking-item"><span className="report-model-ranking-label">{index+1}. {item.label}</span><strong className="report-model-ranking-value">{currency.format(item.revenue)}</strong></div>)}
             </div>
           </div>}
         </section>
