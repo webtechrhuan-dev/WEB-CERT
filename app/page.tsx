@@ -82,7 +82,7 @@ export default async function Home() {
           <div className="dashboard-hero-mark">
             <img
               className="dashboard-hero-logo"
-              src="/web-tech-logo.webp"
+              src="/web-tech-logo.svg"
               alt="Logo da Web Tech"
             />
           </div>

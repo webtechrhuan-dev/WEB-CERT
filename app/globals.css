@@ -2769,3 +2769,77 @@ table tbody tr:hover, .record-row:hover, .sale-row:hover {
   .selected-record-form--inline > .panel-heading { padding: 14px 12px; }
   .selected-record-form--inline .record-form { padding: 16px 12px 18px; }
 }
+
+
+/* Correção definitiva da identidade visual: logotipo vetorial transparente */
+.dashboard-hero {
+  gap: 36px;
+}
+.dashboard-hero-mark {
+  display: flex;
+  width: clamp(230px, 27vw, 330px);
+  height: auto;
+  min-height: 0;
+  flex: 0 1 330px;
+  margin: 0 14px 0 0;
+  padding: 0;
+  align-items: center;
+  justify-content: center;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+}
+.dashboard-hero-logo {
+  display: block;
+  width: 100%;
+  height: auto;
+  max-height: 132px;
+  object-fit: contain;
+  filter: drop-shadow(0 7px 16px rgb(0 0 0 / 12%));
+}
+.login-brand-stage {
+  display: grid;
+  width: 100%;
+  min-height: 142px;
+  margin: 0 auto 26px;
+  padding: 24px 22px;
+  place-items: center;
+  border: 1px solid #e0edf1;
+  border-radius: 15px;
+  background: linear-gradient(135deg, #f7fcfd 0%, #edf7fa 100%);
+}
+.login-brand-logo {
+  display: block;
+  width: min(100%, 390px);
+  height: auto;
+  margin: 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  object-fit: contain;
+  filter: drop-shadow(0 5px 12px rgb(8 44 65 / 9%));
+}
+@media (max-width: 760px) {
+  .dashboard-hero {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 18px;
+  }
+  .dashboard-hero-mark {
+    display: flex;
+    width: min(100%, 270px);
+    flex: 0 1 auto;
+    margin: 2px auto 0;
+  }
+  .dashboard-hero-logo {
+    max-height: 92px;
+  }
+  .login-brand-stage {
+    min-height: 112px;
+    padding: 18px 15px;
+  }
+  .login-brand-logo {
+    width: min(100%, 320px);
+  }
+}
