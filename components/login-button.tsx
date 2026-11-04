@@ -42,7 +42,7 @@ export function LoginButton() {
   }
 
   return (
-    <form className="login-form login-form--premium" onSubmit={submit} noValidate={false}>
+    <form className="login-form login-form--premium" onSubmit={submit} noValidate={false} aria-busy={loading}>
       <label className="login-input-group" htmlFor="login-username">
         <span className="login-input-label">Usuário</span>
         <span className="login-input-wrap">
@@ -54,8 +54,9 @@ export function LoginButton() {
             autoCorrect="off"
             spellCheck={false}
             autoFocus
-            onChange={(event) => setUsername(event.target.value)}
-            onKeyDown={() => setError("")}
+            aria-invalid={Boolean(error)}
+            aria-describedby={error ? "login-error-message" : undefined}
+            onChange={(event) => { setUsername(event.target.value); setError(""); }}
             placeholder="Digite seu usuário"
             required
             value={username}
@@ -71,6 +72,8 @@ export function LoginButton() {
             ref={passwordRef}
             id="login-password"
             autoComplete="current-password"
+            aria-invalid={Boolean(error)}
+            aria-describedby={error ? "login-error-message" : undefined}
             onChange={(event) => { setPassword(event.target.value); setError(""); }}
             onKeyDown={handleCapsLock}
             onKeyUp={handleCapsLock}
@@ -83,6 +86,7 @@ export function LoginButton() {
           <button
             aria-label={showPassword ? "Ocultar senha" : "Mostrar senha"}
             aria-pressed={showPassword}
+            aria-controls="login-password"
             className="login-password-toggle"
             onClick={() => setShowPassword((visible) => !visible)}
             type="button"
@@ -97,10 +101,10 @@ export function LoginButton() {
         {capsLock && <span className="login-caps-warning" role="status">Caps Lock está ativado.</span>}
       </label>
 
-      {error && <p className="login-error" role="alert" aria-live="assertive">{error}</p>}
+      {error && <p id="login-error-message" className="login-error" role="alert" aria-live="assertive">{error}</p>}
 
       <button className="login-submit" disabled={loading || !username.trim() || !password} type="submit">
-        {loading ? <><span className="login-submit-spinner" /> Validando acesso…</> : <>Entrar no sistema <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M5 12h14m-6-6 6 6-6 6" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/></svg></>}
+        {loading ? <><span className="login-submit-spinner" aria-hidden="true" /> <span role="status">Validando acesso…</span></> : <>Entrar no sistema <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M5 12h14m-6-6 6 6-6 6" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/></svg></>}
       </button>
       <p className="login-form-hint">Utilize o mesmo usuário e senha cadastrados pela administração.</p>
     </form>
