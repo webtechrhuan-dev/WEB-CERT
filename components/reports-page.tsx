@@ -239,43 +239,43 @@ function UnifiedChart({ rows }: { rows: Group[] }) {
   });
 
   return <div className="unified-chart">
-    <div className="chart-key-panel" style={{ display: "grid", gap: 18, margin: "0 0 18px", padding: "18px 20px", border: "1px solid #dbe5ef", borderRadius: 14, background: "linear-gradient(180deg,#fbfdff 0%,#f4f8fc 100%)" }}>
-      <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 12, flexWrap: "wrap" }}>
+    <section className="chart-key-panel report-chart-legend" aria-label="Legenda e instruções do gráfico">
+      <header className="report-chart-legend__header">
         <div>
-          <strong style={{ display: "block", color: "#10233f", fontSize: 15 }}>Legenda do gráfico</strong>
-          <p style={{ margin: "4px 0 0", color: "#52647a", fontSize: 12, lineHeight: 1.5 }}>Cada cor identifica uma informação. As colunas mostram dinheiro; as linhas mostram quantidade de vendas.</p>
+          <strong className="report-chart-legend__title">Legenda do gráfico</strong>
+          <p className="report-chart-legend__intro">Cada cor identifica uma informação. As colunas mostram dinheiro; as linhas mostram quantidade de vendas.</p>
         </div>
-        <span style={{ color: "#52647a", background: "#e8eff6", borderRadius: 20, padding: "6px 10px", fontSize: 11, fontWeight: 700 }}>Clique em uma legenda para ocultar ou exibir</span>
-      </div>
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(260px,1fr))", gap: 18 }}>
-        <div style={{ display: "grid", alignContent: "start", gap: 10 }}>
-          <div style={{ color: "#087c9f", fontSize: 11, fontWeight: 800, letterSpacing: ".08em" }}>COLUNAS · EIXO ESQUERDO · VALORES EM R$</div>
-          <div style={{ display: "grid", gap: 8 }}>
-            {financial.map((item) => <button key={item.key} type="button" className={"chart-legend-item" + (isVisible(item.key) ? "" : " is-muted")} aria-pressed={isVisible(item.key)} onClick={() => toggle(item.key)} style={{ display: "flex", alignItems: "center", gap: 10, width: "100%", minHeight: 42, padding: "8px 11px", border: "1px solid #dce5ef", borderRadius: 9, background: isVisible(item.key) ? "#fff" : "#f1f5f9", color: isVisible(item.key) ? "#20364d" : "#8291a2", textAlign: "left", cursor: "pointer" }}>
-              <span aria-hidden="true" style={{ width: 13, height: 24, flex: "0 0 13px", borderRadius: 4, background: item.color, boxShadow: "0 1px 3px rgba(15,23,42,.18)" }} />
-              <span style={{ display: "grid", gap: 2 }}><strong style={{ fontSize: 13 }}>{item.label}</strong><small style={{ fontSize: 11, color: "inherit" }}>{item.key === "revenue" ? "Total bruto vendido no período" : item.key === "cost" ? "Soma dos custos das vendas" : "Faturamento menos custos"}</small></span>
-              <span style={{ marginLeft: "auto", fontSize: 10, fontWeight: 750 }}>{isVisible(item.key) ? "VISÍVEL" : "OCULTA"}</span>
+        <span className="report-chart-legend__hint">Clique em uma legenda para ocultar ou exibir</span>
+      </header>
+      <div className="report-chart-legend__groups">
+        <section className="report-chart-legend__group" aria-label="Séries financeiras">
+          <h3 className="report-chart-legend__eyebrow">COLUNAS · EIXO ESQUERDO · VALORES EM R$</h3>
+          <div className="report-chart-legend__items">
+            {financial.map((item) => <button key={item.key} type="button" className={"chart-legend-item report-chart-legend__item" + (isVisible(item.key) ? "" : " is-muted")} aria-pressed={isVisible(item.key)} onClick={() => toggle(item.key)} style={{ "--legend-color": item.color } as CSSProperties}>
+              <span aria-hidden="true" className="report-chart-legend__swatch report-chart-legend__swatch--bar" />
+              <span className="report-chart-legend__copy"><strong>{item.label}</strong><small>{item.key === "revenue" ? "Total bruto vendido no período" : item.key === "cost" ? "Soma dos custos das vendas" : "Faturamento menos custos"}</small></span>
+              <span className="report-chart-legend__state">{isVisible(item.key) ? "VISÍVEL" : "OCULTA"}</span>
             </button>)}
           </div>
-        </div>
-        <div style={{ display: "grid", alignContent: "start", gap: 10 }}>
-          <div style={{ color: "#087c9f", fontSize: 11, fontWeight: 800, letterSpacing: ".08em" }}>LINHAS E PONTOS · EIXO DIREITO · QUANTIDADE</div>
-          <div style={{ display: "grid", gap: 8 }}>
-            {series.map((item) => <button key={item.key} type="button" className={"chart-legend-item" + (isVisible(item.key) ? "" : " is-muted")} aria-pressed={isVisible(item.key)} onClick={() => toggle(item.key)} style={{ display: "flex", alignItems: "center", gap: 10, width: "100%", minHeight: 42, padding: "8px 11px", border: "1px solid #dce5ef", borderRadius: 9, background: isVisible(item.key) ? "#fff" : "#f1f5f9", color: isVisible(item.key) ? "#20364d" : "#8291a2", textAlign: "left", cursor: "pointer" }}>
-              <span aria-hidden="true" style={{ position: "relative", width: 26, height: 12, flex: "0 0 26px", borderTop: "3px solid " + item.color }}><span style={{ position: "absolute", top: -7, left: 8, width: 10, height: 10, borderRadius: "50%", background: item.color, border: "2px solid #fff", boxShadow: "0 0 0 1px " + item.color }} /></span>
-              <span style={{ display: "grid", gap: 2 }}><strong style={{ fontSize: 13 }}>{item.label}</strong><small style={{ fontSize: 11, color: "inherit" }}>{item.key === "completed" ? "Vendas com status concluído" : item.key === "excluded" ? "Canceladas ou não concluídas" : "Registros que precisam de revisão"}</small></span>
-              <span style={{ marginLeft: "auto", fontSize: 10, fontWeight: 750 }}>{isVisible(item.key) ? "VISÍVEL" : "OCULTA"}</span>
+        </section>
+        <section className="report-chart-legend__group" aria-label="Séries de quantidade">
+          <h3 className="report-chart-legend__eyebrow">LINHAS E PONTOS · EIXO DIREITO · QUANTIDADE</h3>
+          <div className="report-chart-legend__items">
+            {series.map((item) => <button key={item.key} type="button" className={"chart-legend-item report-chart-legend__item" + (isVisible(item.key) ? "" : " is-muted")} aria-pressed={isVisible(item.key)} onClick={() => toggle(item.key)} style={{ "--legend-color": item.color } as CSSProperties}>
+              <span aria-hidden="true" className="report-chart-legend__swatch report-chart-legend__swatch--line"><i /></span>
+              <span className="report-chart-legend__copy"><strong>{item.label}</strong><small>{item.key === "completed" ? "Vendas com status concluído" : item.key === "excluded" ? "Canceladas ou não concluídas" : "Registros que precisam de revisão"}</small></span>
+              <span className="report-chart-legend__state">{isVisible(item.key) ? "VISÍVEL" : "OCULTA"}</span>
             </button>)}
           </div>
-        </div>
+        </section>
       </div>
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(220px,1fr))", gap: 10, paddingTop: 14, borderTop: "1px solid #dbe5ef" }}>
-        <div style={{ fontSize: 12, lineHeight: 1.55, color: "#52647a" }}><strong style={{ color: "#10233f" }}>Como ler as colunas:</strong> em cada período, as três colunas coloridas representam faturamento, custos e resultado líquido. A altura corresponde ao valor em reais.</div>
-        <div style={{ fontSize: 12, lineHeight: 1.55, color: "#52647a" }}><strong style={{ color: "#10233f" }}>Como ler as linhas:</strong> cada linha liga os pontos da mesma situação ao longo dos períodos. O ponto indica quantos registros existem naquela situação.</div>
-        <div style={{ fontSize: 12, lineHeight: 1.55, color: "#52647a" }}><strong style={{ color: "#10233f" }}>Eixos e períodos:</strong> escala esquerda = dinheiro (R$); escala direita = quantidade de registros. O nome abaixo identifica o mês ou ano analisado.</div>
-      </div>
-    </div>
-    <div className="unified-chart-scroll" role="region" aria-label="Gráfico com rolagem horizontal; use Shift e a roda do mouse ou a barra inferior para navegar" tabIndex={0} style={{ display: "block", width: "100%", maxWidth: "100%", minWidth: 0, flex: "1 1 0", overflowX: "scroll", overflowY: "hidden", boxSizing: "border-box" }}>
+      <footer className="report-chart-legend__reading-guide">
+        <p><strong>Como ler as colunas:</strong> em cada período, as três colunas coloridas representam faturamento, custos e resultado líquido. A altura corresponde ao valor em reais.</p>
+        <p><strong>Como ler as linhas:</strong> cada linha liga os pontos da mesma situação ao longo dos períodos. O ponto indica quantos registros existem naquela situação.</p>
+        <p><strong>Eixos e períodos:</strong> escala esquerda = dinheiro (R$); escala direita = quantidade de registros. O nome abaixo identifica o mês ou ano analisado.</p>
+      </footer>
+    </section>
+    <div className="unified-chart-scroll report-chart-scroll" role="region" aria-label="Gráfico com rolagem horizontal; use Shift e a roda do mouse ou a barra inferior para navegar" tabIndex={0}>
       <svg role="img" aria-label="Gráfico combinado de faturamento, custos, resultado e quantidade de registros por período" viewBox={"0 0 " + width + " " + height} className="unified-chart-svg" style={{ width: width + "px", minWidth: width + "px" }} onMouseLeave={() => setHoveredRow(null)}>
         <defs>
           <linearGradient id="chartRevenue" x1="0" x2="0" y1="0" y2="1"><stop offset="0%" stopColor={colors.revenue} stopOpacity=".96"/><stop offset="100%" stopColor={colors.revenue} stopOpacity=".62"/></linearGradient>
@@ -395,22 +395,22 @@ function UnifiedChart({ rows }: { rows: Group[] }) {
         <div className="chart-hover-tooltip__eyebrow">RESUMO DO PERÍODO</div>
         <div className="chart-hover-tooltip__heading">{hoveredRow.label}</div>
         <div className="chart-hover-tooltip__grid">
-          <div><span><i style={{ background: colors.revenue }} />Faturamento</span><strong>{currency.format(hoveredRow.revenue)}</strong></div>
-          <div><span><i style={{ background: colors.cost }} />Custos</span><strong>{currency.format(hoveredRow.cost)}</strong></div>
-          <div><span><i style={{ background: colors.profit }} />Resultado líquido</span><strong>{currency.format(hoveredRow.profit)}</strong></div>
-          <div><span><i style={{ background: colors.completed }} />Concluídas</span><strong>{numbers.format(hoveredRow.completedCount)}</strong></div>
-          <div><span><i style={{ background: colors.excluded }} />Não concluídas</span><strong>{numbers.format(hoveredRow.excludedCount ?? 0)}</strong></div>
-          <div><span><i style={{ background: colors.review }} />Em revisão</span><strong>{numbers.format(hoveredRow.reviewCount ?? 0)}</strong></div>
-          <div><span><i style={{ background: "#64748b" }} />Total de registros</span><strong>{numbers.format(hoveredRow.count)}</strong></div>
+          <div><span><i className="chart-tooltip-swatch chart-tooltip-swatch--revenue" />Faturamento</span><strong>{currency.format(hoveredRow.revenue)}</strong></div>
+          <div><span><i className="chart-tooltip-swatch chart-tooltip-swatch--cost" />Custos</span><strong>{currency.format(hoveredRow.cost)}</strong></div>
+          <div><span><i className="chart-tooltip-swatch chart-tooltip-swatch--profit" />Resultado líquido</span><strong>{currency.format(hoveredRow.profit)}</strong></div>
+          <div><span><i className="chart-tooltip-swatch chart-tooltip-swatch--completed" />Concluídas</span><strong>{numbers.format(hoveredRow.completedCount)}</strong></div>
+          <div><span><i className="chart-tooltip-swatch chart-tooltip-swatch--excluded" />Não concluídas</span><strong>{numbers.format(hoveredRow.excludedCount ?? 0)}</strong></div>
+          <div><span><i className="chart-tooltip-swatch chart-tooltip-swatch--review" />Em revisão</span><strong>{numbers.format(hoveredRow.reviewCount ?? 0)}</strong></div>
+          <div><span><i className="chart-tooltip-swatch chart-tooltip-swatch--total" />Total de registros</span><strong>{numbers.format(hoveredRow.count)}</strong></div>
         </div>
       </div>,
       document.body
     )}
     <details className="chart-data-details">
       <summary>Consultar valores exatos por período</summary>
-      <div className="chart-data-table-scroll" style={{ display: "block", width: "100%", maxWidth: "100%", minWidth: 0, overflowX: "auto", overflowY: "hidden", paddingBottom: 14, boxSizing: "border-box" }}>
-        <table className="chart-data-table" style={{ width: "1325px", minWidth: "1325px", maxWidth: "none", tableLayout: "fixed", borderCollapse: "separate", borderSpacing: 0 }}>
-          <colgroup><col style={{ width: 150 }} /><col style={{ width: 175 }} /><col style={{ width: 145 }} /><col style={{ width: 195 }} /><col style={{ width: 155 }} /><col style={{ width: 185 }} /><col style={{ width: 155 }} /><col style={{ width: 165 }} /></colgroup><thead><tr><th>Período</th><th>Faturamento</th><th>Custos</th><th>Resultado líquido</th><th>Concluídas</th><th>Não concluídas</th><th>Em revisão</th><th>Total de registros</th></tr></thead>
+      <div className="chart-data-table-scroll report-data-scroll">
+        <table className="chart-data-table report-chart-data-table">
+          <colgroup><col className="report-chart-col report-chart-col--period" /><col className="report-chart-col report-chart-col--revenue" /><col className="report-chart-col report-chart-col--cost" /><col className="report-chart-col report-chart-col--profit" /><col className="report-chart-col report-chart-col--completed" /><col className="report-chart-col report-chart-col--excluded" /><col className="report-chart-col report-chart-col--review" /><col className="report-chart-col report-chart-col--total" /></colgroup><thead><tr><th>Período</th><th>Faturamento</th><th>Custos</th><th>Resultado líquido</th><th>Concluídas</th><th>Não concluídas</th><th>Em revisão</th><th>Total de registros</th></tr></thead>
           <tbody>{visible.map((row) => <tr key={row.label}>
             <th scope="row">{row.label}</th><td>{currency.format(row.revenue)}</td><td>{currency.format(row.cost)}</td><td>{currency.format(row.profit)}</td><td>{numbers.format(row.completedCount)}</td><td>{numbers.format(row.excludedCount ?? 0)}</td><td>{numbers.format(row.reviewCount ?? 0)}</td><td>{numbers.format(row.count)}</td>
           </tr>)}</tbody>
@@ -634,94 +634,148 @@ export default function ReportsPage() {
 
   return <div className="app-shell">
     <AppHeader active="reports" />
-    <main className="workspace module-workspace" style={{ maxWidth: 1500 }}>
+    <main className="workspace module-workspace report-workspace">
       <div className="breadcrumb" aria-label="Localização"><Link href="/">Início</Link><span aria-hidden="true">/</span><span aria-current="page">Relatórios</span></div>
-      <section className="module-page-heading" style={{ marginBottom: 24 }}><p className="eyebrow">INTELIGÊNCIA COMERCIAL</p><h1>Relatórios e análises</h1><p>Explore faturamento, custos, vendas, modelos e evolução por mês, semana ou ano.</p></section>
-      {status === "loading" || loading ? <section className="state-panel" aria-busy="true"><span className="loading-spinner" /><div className="state-copy"><h2>Conferindo os dados da planilha…</h2><p>Os indicadores serão calculados após o carregamento.</p></div></section> : !session?.user ? <div><ReportError message={error ?? "Entre com sua conta para acessar os dados."} /><Link className="button button--secondary button--small" href="/login">Ir para o acesso</Link></div> : error || !summary ? <div><ReportError message={error ?? "Não foi possível calcular os indicadores."} /><button className="button button--secondary button--small" onClick={() => void refresh()} type="button">Tentar novamente</button></div> : <div style={{ display: "grid", gap: 22 }}>
-        <section style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 16, flexWrap: "wrap" }}><div><h2 style={{ margin: 0, fontSize: 18, fontWeight: 750 }}>Resumo do negócio</h2><p style={{ margin: "5px 0 0", color: "#64748b", fontSize: 13 }}>Mês/ano seguem a competência das pastas anuais; semanas usam a data de emissão/renovação. Valores incompletos ficam em revisão.</p></div><div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}><button className="button button--secondary button--small" type="button" onClick={() => void refresh()} disabled={loading}><Icon name="refresh" /> Atualizar dados</button><button className="button button--primary button--small" type="button" onClick={() => exportCsv(filteredGroups)} disabled={!filteredGroups.length}>Exportar CSV</button></div></section>
-        <section aria-labelledby="renewals-title" style={{ background: "#fff", border: "1px solid #b8dfe2", borderRadius: 16, overflow: "hidden", boxShadow: "0 5px 20px rgba(15,23,42,.04)" }}>
-          <div style={{ padding: "22px 24px", display: "flex", alignItems: "end", justifyContent: "space-between", gap: 18, flexWrap: "wrap", borderBottom: "1px solid #e7edf4" }}>
-            <div><p className="eyebrow" style={{ margin: "0 0 6px" }}>PROSPECÇÃO COMERCIAL</p><h2 id="renewals-title" style={{ margin: 0, fontSize: 19, color: "#10233f" }}>Clientes com certificado vencendo no mês</h2><p style={{ margin: "6px 0 0", fontSize: 13, color: "#64748b" }}>Lista para entrar em contato e oferecer a renovação do certificado digital, ordenada pela data de vencimento.</p></div>
-            <div style={{ display: "flex", alignItems: "end", gap: 10, flexWrap: "wrap" }}>
-              <label style={{ display: "grid", gap: 6, fontSize: 12, color: "#52647a", fontWeight: 650 }}>Mês<select value={renewalMonth} onChange={(e) => setRenewalMonth(e.target.value)} style={{ minHeight: 42, border: "1px solid #cbd7e5", borderRadius: 9, padding: "0 12px", background: "#fff", color: "#10233f" }}>{MONTHS.map((month, index) => <option key={month} value={String(index + 1).padStart(2, "0")}>{month.charAt(0).toLocaleUpperCase("pt-BR") + month.slice(1)}</option>)}</select></label>
-              <label style={{ display: "grid", gap: 6, fontSize: 12, color: "#52647a", fontWeight: 650 }}>Ano<select value={renewalYear} onChange={(e) => setRenewalYear(e.target.value)} style={{ minHeight: 42, border: "1px solid #cbd7e5", borderRadius: 9, padding: "0 12px", background: "#fff", color: "#10233f" }}>{Array.from({ length: 7 }, (_, index) => String(new Date().getFullYear() - 2 + index)).map((year) => <option key={year} value={year}>{year}</option>)}</select></label>
+      <section className="module-page-heading report-page-heading"><p className="eyebrow">INTELIGÊNCIA COMERCIAL</p><h1>Relatórios e análises</h1><p>Explore faturamento, custos, vendas, modelos e evolução por mês, semana ou ano.</p></section>
+      {status === "loading" || loading ? <section className="state-panel" aria-busy="true"><span className="loading-spinner" /><div className="state-copy"><h2>Conferindo os dados da planilha…</h2><p>Os indicadores serão calculados após o carregamento.</p></div></section> : !session?.user ? <div><ReportError message={error ?? "Entre com sua conta para acessar os dados."} /><Link className="button button--secondary button--small" href="/login">Ir para o acesso</Link></div> : error || !summary ? <div><ReportError message={error ?? "Não foi possível calcular os indicadores."} /><button className="button button--secondary button--small" onClick={() => void refresh()} type="button">Tentar novamente</button></div> : <div className="report-dashboard-stack">
+        <section className="report-summary-heading"><div><h2>Resumo do negócio</h2><p>Mês/ano seguem a competência das pastas anuais; semanas usam a data de emissão/renovação. Valores incompletos ficam em revisão.</p></div><div><button className="button button--secondary button--small" type="button" onClick={() => void refresh()} disabled={loading}><Icon name="refresh" /> Atualizar dados</button><button className="button button--primary button--small" type="button" onClick={() => exportCsv(filteredGroups)} disabled={!filteredGroups.length}>Exportar CSV</button></div></section>
+        <section aria-labelledby="renewals-title" className="report-renewals-panel">
+          <div className="report-renewals-header">
+            <div className="report-renewals-copy"><p className="eyebrow">PROSPECÇÃO COMERCIAL</p><h2 id="renewals-title">Clientes com certificado vencendo no mês</h2><p>Lista para entrar em contato e oferecer a renovação do certificado digital, ordenada pela data de vencimento.</p></div>
+            <div className="report-renewals-controls">
+              <label className="report-control-label">Mês<select className="report-control-input" value={renewalMonth} onChange={(e) => setRenewalMonth(e.target.value)}>{MONTHS.map((month, index) => <option key={month} value={String(index + 1).padStart(2, "0")}>{month.charAt(0).toLocaleUpperCase("pt-BR") + month.slice(1)}</option>)}</select></label>
+              <label className="report-control-label">Ano<select className="report-control-input" value={renewalYear} onChange={(e) => setRenewalYear(e.target.value)}>{Array.from({ length: 7 }, (_, index) => String(new Date().getFullYear() - 2 + index)).map((year) => <option key={year} value={year}>{year}</option>)}</select></label>
               <button className="button button--primary button--small" type="button" onClick={() => exportRenewals(renewalRows, renewalMonth, renewalYear)} disabled={!renewalRows.length}>Exportar lista CSV</button>
             </div>
           </div>
-          <div style={{ padding: "12px 24px", background: "#f7f9fc", borderBottom: "1px solid #e7edf4", color: "#52647a", fontSize: 13 }}><strong style={{ color: "#10233f" }}>{numbers.format(renewalRows.length)}</strong> {renewalRows.length === 1 ? "cliente com vencimento" : "clientes com vencimento"} em {MONTHS[Number(renewalMonth) - 1]} de {renewalYear}.</div>
-          <div style={{ overflowX: "auto" }}><table className="records-table report-table" style={{ width: "100%", minWidth: 760 }}><thead><tr><th>Cliente</th><th>Contato</th><th>Modelo do certificado</th><th>Data de vencimento</th><th>Status / observação</th></tr></thead><tbody>{renewalRows.map((row, index) => <tr key={`${row.client}-${row.expiry}-${index}`}><td style={{ fontWeight: 650, color: "#10233f" }}>{row.client}</td><td>{row.contact || "—"}</td><td>{row.model || "—"}</td><td style={{ whiteSpace: "nowrap", fontWeight: 750, color: "#b45309" }}>{displayDate(row.expiry)}</td><td>{row.status || "—"}</td></tr>)}{!renewalRows.length && <tr><td colSpan={5} style={{ padding: 24, textAlign: "center", color: "#64748b" }}>Nenhum cliente com data de vencimento registrada para este mês. Confira também se os registros possuem o campo “Data de vencimento” preenchido.</td></tr>}</tbody></table></div>
+          <div className="report-renewals-count"><strong>{numbers.format(renewalRows.length)}</strong> {renewalRows.length === 1 ? "cliente com vencimento" : "clientes com vencimento"} em {MONTHS[Number(renewalMonth) - 1]} de {renewalYear}.</div>
+          <div className="report-table-scroll"><table className="records-table report-table report-renewals-table"><thead><tr><th>Cliente</th><th>Contato</th><th>Modelo do certificado</th><th>Data de vencimento</th><th>Status / observação</th></tr></thead><tbody>{renewalRows.map((row, index) => <tr key={`${row.client}-${row.expiry}-${index}`}><td className="report-renewals-client">{row.client}</td><td>{row.contact || "—"}</td><td>{row.model || "—"}</td><td className="report-renewals-expiry">{displayDate(row.expiry)}</td><td>{row.status || "—"}</td></tr>)}{!renewalRows.length && <tr><td colSpan={5} className="report-table-empty">Nenhum cliente com data de vencimento registrada para este mês. Confira também se os registros possuem o campo “Data de vencimento” preenchido.</td></tr>}</tbody></table></div>
         </section>
-        <section aria-label="Filtros dos gráficos e relatórios" style={{ background: "#f7f9fc", border: "1px solid #dce5ef", borderRadius: 16, padding: 20, display: "grid", gap: 14 }}>
-          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 12, flexWrap: "wrap" }}>
-            <div><h2 style={{ margin: 0, fontSize: 17 }}>Filtros de análise</h2><p style={{ margin: "4px 0 0", fontSize: 12, color: "#64748b" }}>Aplicados aos gráficos, rankings e relatórios detalhados.</p></div>
-            <span style={{ fontSize: 12, color: "#52647a" }}><strong style={{ color: "#10233f" }}>{numbers.format(filteredRows.length)}</strong> de {numbers.format(rows.length)} registros</span>
+        <section aria-label="Filtros dos gráficos e relatórios" className="report-filter-panel">
+          <div className="report-filter-heading">
+            <div className="report-filter-copy"><h2>Filtros de análise</h2><p>Aplicados aos gráficos, rankings e relatórios detalhados.</p></div>
+            <span className="report-filter-count"><strong>{numbers.format(filteredRows.length)}</strong> de {numbers.format(rows.length)} registros</span>
           </div>
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))", gap: 12 }}>
-            <label style={{ display: "grid", gap: 6, fontSize: 12, fontWeight: 650, color: "#52647a" }}>Data inicial<input type="date" value={chartDateFrom} max={chartDateTo || undefined} onChange={(e) => setChartDateFrom(e.target.value)} style={{ minHeight: 42, border: "1px solid #cbd7e5", borderRadius: 9, padding: "0 10px", background: "#fff", color: "#10233f" }} /></label>
-            <label style={{ display: "grid", gap: 6, fontSize: 12, fontWeight: 650, color: "#52647a" }}>Data final<input type="date" value={chartDateTo} min={chartDateFrom || undefined} onChange={(e) => setChartDateTo(e.target.value)} style={{ minHeight: 42, border: "1px solid #cbd7e5", borderRadius: 9, padding: "0 10px", background: "#fff", color: "#10233f" }} /></label>
-            <label style={{ display: "grid", gap: 6, fontSize: 12, fontWeight: 650, color: "#52647a" }}>Modelo do certificado<select value={chartModel} onChange={(e) => setChartModel(e.target.value)} style={{ minHeight: 42, border: "1px solid #cbd7e5", borderRadius: 9, padding: "0 10px", background: "#fff", color: "#10233f" }}><option value="all">Todos os modelos</option>{modelOptions.map((model) => <option key={model} value={model}>{model}</option>)}</select></label>
-            <label style={{ display: "grid", gap: 6, fontSize: 12, fontWeight: 650, color: "#52647a" }}>Situação financeira<select value={chartTreatment} onChange={(e) => setChartTreatment(e.target.value)} style={{ minHeight: 42, border: "1px solid #cbd5e5", borderRadius: 9, padding: "0 10px", background: "#fff", color: "#10233f" }}><option value="all">Todas as situações</option><option value="Concluída">Concluídas</option><option value="Não concluída">Não concluídas</option><option value="Revisar">A revisar</option></select></label>
+          <div className="report-filter-grid">
+            <label className="report-control-label">Data inicial<input className="report-control-input" type="date" value={chartDateFrom} max={chartDateTo || undefined} onChange={(e) => setChartDateFrom(e.target.value)} /></label>
+            <label className="report-control-label">Data final<input className="report-control-input" type="date" value={chartDateTo} min={chartDateFrom || undefined} onChange={(e) => setChartDateTo(e.target.value)} /></label>
+            <label className="report-control-label">Modelo do certificado<select className="report-control-input" value={chartModel} onChange={(e) => setChartModel(e.target.value)}><option value="all">Todos os modelos</option>{modelOptions.map((model) => <option key={model} value={model}>{model}</option>)}</select></label>
+            <label className="report-control-label">Situação financeira<select className="report-control-input" value={chartTreatment} onChange={(e) => setChartTreatment(e.target.value)}><option value="all">Todas as situações</option><option value="Concluída">Concluídas</option><option value="Não concluída">Não concluídas</option><option value="Revisar">A revisar</option></select></label>
           </div>
           <div><button className="button button--secondary button--small" type="button" onClick={() => { setChartDateFrom(""); setChartDateTo(""); setChartModel("all"); setChartTreatment("all"); setSearch(""); }}>Limpar filtros</button></div>
         </section>
-        <section aria-label="Indicadores financeiros" style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(190px, 1fr))", gap: 14 }}>
+        <section aria-label="Indicadores financeiros" className="report-kpi-grid">
           {[
-            { label: "Registros de clientes", value: numbers.format(filteredSummary.count), note: `${numbers.format(filteredSummary.completedCount)} incluídos no financeiro (exceto cancelados e não concluídos)`, color: "#10233f" },
-            { label: "Faturamento contabilizado", value: currency.format(filteredSummary.revenue), note: "Soma apenas os registros classificados para o cálculo financeiro", color: "#087443" },
-            { label: "Custos contabilizados", value: currency.format(filteredSummary.cost), note: "Custos dos registros contabilizados", color: "#b45309" },
-            { label: "Valor líquido estimado", value: currency.format(filteredSummary.profit), note: "Faturamento bruto menos custos dos registros contabilizados", color: filteredSummary.profit >= 0 ? "#86efac" : "#fca5a5", dark: true },
-            { label: "Ticket médio", value: currency.format(filteredSummary.completedCount ? filteredSummary.revenue / filteredSummary.completedCount : 0), note: "Faturamento por registro contabilizado", color: "#0f766e" },
-            { label: "Aguardando revisão", value: numbers.format(filteredSummary.reviewCount), note: "Status ausente em planilhas de 2026 ou posteriores; confira pendências financeiras nos detalhes", color: "#64748b" },
-            { label: "Datas divergentes/ausentes", value: numbers.format(filteredRows.filter((row) => row.dateIssue).length), note: "Data vazia ou fora do mês/ano da pasta", color: "#b45309" },
-          ].map((item) => <article key={item.label} style={{ background: item.dark ? "#10233f" : "#fff", border: `1px solid ${item.dark ? "#10233f" : "#dce5ef"}`, borderRadius: 14, padding: 20, boxShadow: "0 4px 14px rgba(15,23,42,.04)" }}><span style={{ color: item.dark ? "#c8d6e8" : "#52647a", fontSize: 13 }}>{item.label}</span><strong style={{ display: "block", marginTop: 10, fontSize: 25, letterSpacing: "-.04em", color: item.color }}>{item.value}</strong><small style={{ color: item.dark ? "#c8d6e8" : "#64748b" }}>{item.note}</small></article>)}
+            { label: "Registros de clientes", value: numbers.format(filteredSummary.count), note: `${numbers.format(filteredSummary.completedCount)} incluídos no financeiro (exceto cancelados e não concluídos)`, tone: "navy" },
+            { label: "Faturamento contabilizado", value: currency.format(filteredSummary.revenue), note: "Soma apenas os registros classificados para o cálculo financeiro", tone: "positive" },
+            { label: "Custos contabilizados", value: currency.format(filteredSummary.cost), note: "Custos dos registros contabilizados", tone: "warning" },
+            { label: "Valor líquido estimado", value: currency.format(filteredSummary.profit), note: "Faturamento bruto menos custos dos registros contabilizados", tone: filteredSummary.profit >= 0 ? "profit-positive" : "profit-negative" },
+            { label: "Ticket médio", value: currency.format(filteredSummary.completedCount ? filteredSummary.revenue / filteredSummary.completedCount : 0), note: "Faturamento por registro contabilizado", tone: "teal" },
+            { label: "Aguardando revisão", value: numbers.format(filteredSummary.reviewCount), note: "Status ausente em planilhas de 2026 ou posteriores; confira pendências financeiras nos detalhes", tone: "muted" },
+            { label: "Datas divergentes/ausentes", value: numbers.format(filteredRows.filter((row) => row.dateIssue).length), note: "Data vazia ou fora do mês/ano da pasta", tone: "warning" },
+          ].map((item) => <article key={item.label} className={`report-kpi-card report-kpi-card--${item.tone}`}><span>{item.label}</span><strong>{item.value}</strong><small>{item.note}</small></article>)}
         </section>
-        <section aria-labelledby="unified-chart-title" style={{ background:"#fff", border:"1px solid #dce5ef", borderRadius:18, padding:"clamp(18px,2.5vw,28px)", boxShadow:"0 8px 28px rgba(15,23,42,.05)", minWidth:0 }}>
-          <div style={{ display:"flex", justifyContent:"space-between", alignItems:"start", gap:16, flexWrap:"wrap", marginBottom:20 }}>
-            <div><p className="eyebrow" style={{margin:"0 0 6px"}}>VISÃO CONSOLIDADA</p><h2 id="unified-chart-title" style={{margin:0,fontSize:20,color:"#10233f"}}>Desempenho financeiro e comercial</h2><p style={{margin:"6px 0 0",fontSize:13,color:"#64748b"}}>Anos anteriores consolidados por ano; o ano atual detalhado mês a mês, com valores exibidos diretamente nas barras e nos pontos das linhas.</p></div>
-            <span style={{fontSize:12,color:"#64748b",background:"#f1f5f9",borderRadius:20,padding:"7px 11px"}}>{numbers.format(filteredRows.length)} registros no filtro</span>
+        <section aria-labelledby="unified-chart-title" className="report-chart-panel">
+          <div className="report-chart-heading">
+            <div className="report-chart-heading-copy"><p className="eyebrow">VISÃO CONSOLIDADA</p><h2 id="unified-chart-title">Desempenho financeiro e comercial</h2><p>Anos anteriores consolidados por ano; o ano atual detalhado mês a mês, com valores exibidos diretamente nas barras e nos pontos das linhas.</p></div>
+            <span className="report-chart-record-count">{numbers.format(filteredRows.length)} registros no filtro</span>
           </div>
           <UnifiedChart rows={monthlyChart}/>
-          {modelRanking.length > 0 && <div style={{marginTop:22,paddingTop:18,borderTop:"1px solid #e7edf4"}}>
-            <h3 style={{margin:"0 0 12px",fontSize:14,color:"#10233f"}}>Modelos com maior faturamento</h3>
-            <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(180px,1fr))",gap:10}}>
-              {modelRanking.map((item,index)=><div key={item.label} style={{display:"flex",justifyContent:"space-between",alignItems:"center",gap:10,background:"#f8fafc",borderRadius:9,padding:"10px 12px"}}><span style={{fontSize:12,color:"#52647a"}}>{index+1}. {item.label}</span><strong style={{fontSize:12,color:"#10233f",whiteSpace:"nowrap"}}>{currency.format(item.revenue)}</strong></div>)}
+          {modelRanking.length > 0 && <div className="report-model-ranking">
+            <h3 className="report-model-ranking-title">Modelos com maior faturamento</h3>
+            <div className="report-model-ranking-grid">
+              {modelRanking.map((item,index)=><div key={item.label} className="report-model-ranking-item"><span className="report-model-ranking-label">{index+1}. {item.label}</span><strong className="report-model-ranking-value">{currency.format(item.revenue)}</strong></div>)}
             </div>
           </div>}
         </section>
-        <section style={{ background: "#fff", border: "1px solid #dce5ef", borderRadius: 16, overflow: "hidden", boxShadow: "0 5px 20px rgba(15,23,42,.04)" }}>
-          <div style={{ padding: "22px 24px", display: "flex", alignItems: "end", justifyContent: "space-between", gap: 18, flexWrap: "wrap", borderBottom: "1px solid #e7edf4" }}><div><h2 style={{ margin: 0, fontSize: 18, fontWeight: 750, color: "#10233f" }}>Relatórios detalhados</h2><p style={{ margin: "6px 0 0", fontSize: 13, color: "#64748b" }}>Clique em qualquer linha para abrir os registros que formam aquele total.</p></div><div style={{ display: "flex", gap: 12, alignItems: "end", flexWrap: "wrap" }}><label style={{ display: "grid", gap: 6, minWidth: 160, fontSize: 12, color: "#52647a", fontWeight: 650 }}>Tipo de relatório<select value={dimension} onChange={(e) => { setDimension(e.target.value as ReportDimension); setSelectedLabel(null); setSearch(""); }} style={{ minHeight: 42, border: "1px solid #cbd7e5", borderRadius: 9, padding: "0 12px", background: "#fff", color: "#10233f" }}><option value="period">Por período</option><option value="model">Por modelo</option><option value="status">Por status</option></select></label>{dimension === "period" && <label style={{ display: "grid", gap: 6, minWidth: 150, fontSize: 12, color: "#52647a", fontWeight: 650 }}>Intervalo<select value={granularity} onChange={(e) => { setGranularity(e.target.value as Granularity); setSelectedLabel(null); }} style={{ minHeight: 42, border: "1px solid #cbd7e5", borderRadius: 9, padding: "0 12px", background: "#fff", color: "#10233f" }}><option value="month">Mensal</option><option value="week">Semanal</option><option value="year">Anual</option></select></label>}<label style={{ display: "grid", gap: 6, minWidth: 200, fontSize: 12, color: "#52647a", fontWeight: 650 }}>Pesquisar grupo<input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Digite para pesquisar…" style={{ minHeight: 42, border: "1px solid #cbd7e5", borderRadius: 9, padding: "0 12px", color: "#10233f" }} /></label></div></div>
-          <div style={{ padding: "12px 24px", display: "flex", justifyContent: "space-between", flexWrap: "wrap", gap: 8, background: "#f7f9fc", borderBottom: "1px solid #e7edf4", color: "#52647a", fontSize: 12 }}><span><strong style={{ color: "#10233f" }}>{filteredGroups.length}</strong> grupos · <strong style={{ color: "#10233f" }}>{rows.length}</strong> registros detalhados</span><span>{numbers.format(filteredSummary.excludedCount)} não concluídos · {numbers.format(filteredSummary.reviewCount)} para revisar · {numbers.format(filteredRows.filter((row) => row.dateIssue).length)} datas divergentes/ausentes · {numbers.format(summary.rowsIgnored)} linhas vazias/totalizadoras ignoradas</span></div>
-          <div style={{ overflowX: "auto" }}><table className="records-table report-table" style={{ width: "100%", minWidth: 800 }}><thead><tr><th>{dimensionLabels[dimension]}</th><th className="numeric-cell">Registros</th><th className="numeric-cell">Concluídos</th><th className="numeric-cell">Faturamento</th><th className="numeric-cell">Custos</th><th className="numeric-cell">Valor líquido</th><th>Abrir</th></tr></thead><tbody>{useYearGrouping ? monthlyYearGroups.map(({ year, months, total }) => <Fragment key={year}>
+        <section className="report-details-panel">
+          <div className="report-details-header"><div className="report-details-copy"><h2>Relatórios detalhados</h2><p>Clique em qualquer linha para abrir os registros que formam aquele total.</p></div><div className="report-details-controls"><label className="report-control-label report-details-control">Tipo de relatório<select className="report-control-input" value={dimension} onChange={(e) => { setDimension(e.target.value as ReportDimension); setSelectedLabel(null); setSearch(""); }}><option value="period">Por período</option><option value="model">Por modelo</option><option value="status">Por status</option></select></label>{dimension === "period" && <label className="report-control-label report-details-control">Intervalo<select className="report-control-input" value={granularity} onChange={(e) => { setGranularity(e.target.value as Granularity); setSelectedLabel(null); }}><option value="month">Mensal</option><option value="week">Semanal</option><option value="year">Anual</option></select></label>}<label className="report-control-label report-details-control report-details-search">Pesquisar grupo<input className="report-control-input" value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Digite para pesquisar…" /></label></div></div>
+          <div className="report-details-meta"><span><strong>{filteredGroups.length}</strong> grupos · <strong>{rows.length}</strong> registros detalhados</span><span>{numbers.format(filteredSummary.excludedCount)} não concluídos · {numbers.format(filteredSummary.reviewCount)} para revisar · {numbers.format(filteredRows.filter((row) => row.dateIssue).length)} datas divergentes/ausentes · {numbers.format(summary.rowsIgnored)} linhas vazias/totalizadoras ignoradas</span></div>
+          <div className="report-details-table-scroll"><table className="records-table report-table report-groups-table"><thead><tr><th>{dimensionLabels[dimension]}</th><th className="numeric-cell">Registros</th><th className="numeric-cell">Concluídos</th><th className="numeric-cell">Faturamento</th><th className="numeric-cell">Custos</th><th className="numeric-cell">Valor líquido</th><th>Abrir</th></tr></thead><tbody>{useYearGrouping ? monthlyYearGroups.map(({ year, months, total }) => <Fragment key={year}>
             <tr
               onClick={() => setExpandedReportYears((current) => current.includes(year) ? current.filter((item) => item !== year) : [...current, year])}
               onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); setExpandedReportYears((current) => current.includes(year) ? current.filter((item) => item !== year) : [...current, year]); } }}
               tabIndex={0}
               role="button"
               aria-expanded={expandedReportYears.includes(year)}
-              style={{ cursor: "pointer", background: "#eef5fa", borderTop: "2px solid #d7e4ef" }}
+              className="report-group-row report-group-row--year"
             >
-              <td style={{ fontWeight: 800, color: "#10233f", whiteSpace: "nowrap" }}><span aria-hidden="true" style={{ display: "inline-block", width: 18, color: "#087f8c" }}>{expandedReportYears.includes(year) ? "▾" : "▸"}</span>{year}<span style={{ marginLeft: 9, color: "#64748b", fontSize: 11, fontWeight: 600 }}>{months.length} {months.length === 1 ? "mês" : "meses"}</span></td>
+              <td className="report-group-year-label"><span aria-hidden="true" className="report-group-chevron">{expandedReportYears.includes(year) ? "▾" : "▸"}</span>{year}<span className="report-group-caption">{months.length} {months.length === 1 ? "mês" : "meses"}</span></td>
               <td className="numeric-cell">{numbers.format(total.count)}</td>
               <td className="numeric-cell">{numbers.format(total.completedCount)}</td>
               <td className="numeric-cell">{currency.format(total.revenue)}</td>
               <td className="numeric-cell">{currency.format(total.cost)}</td>
-              <td className="numeric-cell" style={{ fontWeight: 750, color: total.profit >= 0 ? "#087443" : "#b91c1c" }}>{currency.format(total.profit)}</td>
-              <td><span style={{ color: "#087f8c", fontSize: 12, fontWeight: 700 }}>{expandedReportYears.includes(year) ? "Ocultar meses" : "Ver meses"}</span></td>
+              <td className={`numeric-cell report-profit-cell ${total.profit >= 0 ? "is-positive" : "is-negative"}`}>{currency.format(total.profit)}</td>
+              <td><span className="report-group-action-label">{expandedReportYears.includes(year) ? "Ocultar meses" : "Ver meses"}</span></td>
             </tr>
-            {expandedReportYears.includes(year) && months.map((group) => <tr key={group.label} onClick={() => { setSelectedLabel(group.label); setDetailSearch(""); setStatusFilter("all"); }} onKeyDown={(e) => { if (e.key === "Enter") setSelectedLabel(group.label); }} tabIndex={0} role="button" aria-label={`Abrir detalhes de ${group.label}`} style={{ cursor: "pointer", background: "#fff" }}>
-              <td style={{ paddingLeft: 42, color: "#334b63", fontWeight: 650 }}>↳ {group.label}</td>
+            {expandedReportYears.includes(year) && months.map((group) => <tr key={group.label} onClick={() => { setSelectedLabel(group.label); setDetailSearch(""); setStatusFilter("all"); }} onKeyDown={(e) => { if (e.key === "Enter") setSelectedLabel(group.label); }} tabIndex={0} role="button" aria-label={`Abrir detalhes de ${group.label}`} className="report-group-row report-group-row--month">
+              <td className="report-group-month-label">↳ {group.label}</td>
               <td className="numeric-cell">{numbers.format(group.count)}</td>
               <td className="numeric-cell">{numbers.format(group.completedCount)}</td>
               <td className="numeric-cell">{currency.format(group.revenue)}</td>
               <td className="numeric-cell">{currency.format(group.cost)}</td>
-              <td className="numeric-cell" style={{ fontWeight: 650, color: group.profit >= 0 ? "#087443" : "#b91c1c" }}>{currency.format(group.profit)}</td>
+              <td className={`numeric-cell report-profit-cell ${group.profit >= 0 ? "is-positive" : "is-negative"}`}>{currency.format(group.profit)}</td>
               <td><button type="button" className="button button--secondary button--small" onClick={(e) => { e.stopPropagation(); setSelectedLabel(group.label); setDetailSearch(""); setStatusFilter("all"); }}>Ver vendas</button></td>
             </tr>)}
-          </Fragment>) : filteredGroups.map((group) => <tr key={group.label} onClick={() => { setSelectedLabel(group.label); setDetailSearch(""); setStatusFilter("all"); }} onKeyDown={(e) => { if (e.key === "Enter") setSelectedLabel(group.label); }} tabIndex={0} role="button" aria-label={`Abrir detalhes de ${group.label}`} style={{ cursor: "pointer" }}><td style={{ fontWeight: 650, color: "#10233f" }}>{group.label}</td><td className="numeric-cell">{numbers.format(group.count)}</td><td className="numeric-cell">{numbers.format(group.completedCount)}</td><td className="numeric-cell">{currency.format(group.revenue)}</td><td className="numeric-cell">{currency.format(group.cost)}</td><td className="numeric-cell" style={{ fontWeight: 650, color: group.profit >= 0 ? "#087443" : "#b91c1c" }}>{currency.format(group.profit)}</td><td><button type="button" className="button button--secondary button--small" onClick={(e) => { e.stopPropagation(); setSelectedLabel(group.label); setDetailSearch(""); setStatusFilter("all"); }}>Ver vendas</button></td></tr>)}{!filteredGroups.length && <tr><td colSpan={7} style={{ padding: 28, textAlign: "center", color: "#64748b" }}>Nenhum grupo corresponde à pesquisa.</td></tr>}</tbody><tfoot>{filteredGroups.length > 0 && <tr style={{ background: "#f7f9fc", fontWeight: 750 }}><td>Total exibido</td><td className="numeric-cell">{numbers.format(filteredGroups.reduce((n, g) => n + g.count, 0))}</td><td className="numeric-cell">{numbers.format(filteredGroups.reduce((n, g) => n + g.completedCount, 0))}</td><td className="numeric-cell">{currency.format(filteredGroups.reduce((n, g) => n + g.revenue, 0))}</td><td className="numeric-cell">{currency.format(filteredGroups.reduce((n, g) => n + g.cost, 0))}</td><td className="numeric-cell">{currency.format(filteredGroups.reduce((n, g) => n + g.profit, 0))}</td><td /></tr>}</tfoot></table></div>
+          </Fragment>) : filteredGroups.map((group) => <tr key={group.label} onClick={() => { setSelectedLabel(group.label); setDetailSearch(""); setStatusFilter("all"); }} onKeyDown={(e) => { if (e.key === "Enter") setSelectedLabel(group.label); }} tabIndex={0} role="button" aria-label={`Abrir detalhes de ${group.label}`} className="report-group-row"><td className="report-group-label">{group.label}</td><td className="numeric-cell">{numbers.format(group.count)}</td><td className="numeric-cell">{numbers.format(group.completedCount)}</td><td className="numeric-cell">{currency.format(group.revenue)}</td><td className="numeric-cell">{currency.format(group.cost)}</td><td className={`numeric-cell report-profit-cell ${group.profit >= 0 ? "is-positive" : "is-negative"}`}>{currency.format(group.profit)}</td><td><button type="button" className="button button--secondary button--small" onClick={(e) => { e.stopPropagation(); setSelectedLabel(group.label); setDetailSearch(""); setStatusFilter("all"); }}>Ver vendas</button></td></tr>)}{!filteredGroups.length && <tr><td colSpan={7} className="report-table-empty">Nenhum grupo corresponde à pesquisa.</td></tr>}</tbody><tfoot>{filteredGroups.length > 0 && <tr className="report-groups-total-row"><td>Total exibido</td><td className="numeric-cell">{numbers.format(filteredGroups.reduce((n, g) => n + g.count, 0))}</td><td className="numeric-cell">{numbers.format(filteredGroups.reduce((n, g) => n + g.completedCount, 0))}</td><td className="numeric-cell">{currency.format(filteredGroups.reduce((n, g) => n + g.revenue, 0))}</td><td className="numeric-cell">{currency.format(filteredGroups.reduce((n, g) => n + g.cost, 0))}</td><td className="numeric-cell">{currency.format(filteredGroups.reduce((n, g) => n + g.profit, 0))}</td><td /></tr>}</tfoot></table></div>
         </section>
       </div>}
     </main>
-    {selectedLabel && <div role="dialog" aria-modal="true" aria-labelledby="detail-title" style={{ position: "fixed", inset: 0, zIndex: 1000, background: "rgba(15,23,42,.48)", display: "flex", justifyContent: "center", alignItems: "center", padding: 18 }} onMouseDown={(e) => { if (e.target === e.currentTarget) setSelectedLabel(null); }}><section style={{ width: "min(1200px, 100%)", maxHeight: "90vh", overflow: "auto", background: "#fff", borderRadius: 16, boxShadow: "0 24px 80px rgba(0,0,0,.25)" }}><header style={{ position: "sticky", top: 0, zIndex: 1, background: "#fff", padding: "20px 24px", borderBottom: "1px solid #e7edf4", display: "flex", justifyContent: "space-between", alignItems: "center", gap: 16 }}><div><p style={{ margin: "0 0 5px", color: "#087f8c", fontSize: 11, fontWeight: 800, letterSpacing: ".12em" }}>DETALHAMENTO DO GRUPO</p><h2 id="detail-title" style={{ margin: 0, fontSize: 22 }}>{selectedLabel}</h2><p style={{ margin: "5px 0 0", color: "#64748b", fontSize: 13 }}>{selectedRows.length} registros encontrados · valores financeiros apenas para vendas concluídas</p></div><button className="button button--secondary button--small" type="button" onClick={() => setSelectedLabel(null)}>Fechar ✕</button></header><div style={{ padding: 24, display: "grid", gap: 16 }}><div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))", gap: 12 }}>{[{ label: "Vendas concluídas", value: numbers.format(selectedRows.filter((r) => r.completed).length) }, { label: "Faturamento bruto", value: currency.format(selectedRows.reduce((n, r) => n + r.revenue, 0)) }, { label: "Custos", value: currency.format(selectedRows.reduce((n, r) => n + r.cost, 0)) }, { label: "Valor líquido", value: currency.format(selectedRows.reduce((n, r) => n + r.profit, 0)) }].map((item) => <div key={item.label} style={{ background: "#f7f9fc", border: "1px solid #e7edf4", borderRadius: 12, padding: 15 }}><span style={{ color: "#64748b", fontSize: 12 }}>{item.label}</span><strong style={{ display: "block", marginTop: 7, fontSize: 20, color: "#10233f" }}>{item.value}</strong></div>)}</div><div style={{ display: "flex", flexWrap: "wrap", gap: 10 }}><input value={detailSearch} onChange={(e) => setDetailSearch(e.target.value)} placeholder="Pesquisar cliente, contato, modelo ou status…" style={{ minHeight: 40, flex: "1 1 260px", border: "1px solid #cbd7e5", borderRadius: 9, padding: "0 12px" }} /><select value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)} style={{ minHeight: 40, border: "1px solid #cbd7e5", borderRadius: 9, padding: "0 12px" }}><option value="all">Todas as situações</option><option value="Concluída">Concluídas</option><option value="Não concluída">Não concluídas</option><option value="Revisar">A revisar</option></select><button className="button button--secondary button--small" type="button" onClick={() => { const headers = ["Cliente","Contato","Data","Modelo","Status","Situação financeira","Data divergente/ausente","Valor financeiro ausente","Faturamento bruto","Custo","Valor líquido"]; const body = selectedRows.map((r) => [r.client,r.contact,r.date,r.model,r.status,r.treatment,r.dateIssue ? "Sim" : "Não",r.financialIssue ? "Sim" : "Não",r.revenue.toFixed(2),r.cost.toFixed(2),r.profit.toFixed(2)]); const csv = [headers,...body].map((line) => line.map((v) => `"${String(v).replace(/"/g,'""')}"`).join(";")).join("\r\n"); const url = URL.createObjectURL(new Blob(["\uFEFF",csv],{type:"text/csv;charset=utf-8"})); const a = document.createElement("a"); a.href = url; a.download = `detalhamento-${selectedLabel.replace(/[^a-z0-9]+/gi,"-").toLowerCase()}.csv`; a.click(); URL.revokeObjectURL(url); }}>Exportar detalhes CSV</button></div><div style={{ overflowX: "auto" }}><table className="records-table report-table" style={{ width: "100%", minWidth: 1050 }}><thead><tr><th>Cliente</th><th>Data emissão/renovação</th><th>Modelo</th><th>Status</th><th>Situação</th><th>Qualidade dos dados</th><th className="numeric-cell">Faturamento bruto</th><th className="numeric-cell">Custo</th><th className="numeric-cell">Valor líquido</th></tr></thead><tbody>{selectedRows.map((row) => <tr key={row.id}><td style={{ fontWeight: 650 }}>{row.client}</td><td>{row.date}</td><td>{textValue(row.model)}</td><td><span className={`sale-status-badge ${saleStatusClass(row.status)}`}>{saleStatusLabel(row.status)}</span></td><td><span style={{ display: "inline-block", borderRadius: 20, padding: "4px 8px", fontSize: 11, background: row.treatment === "Concluída" ? "#dcfce7" : row.treatment === "Revisar" ? "#f1f5f9" : "#ffedd5", color: row.treatment === "Concluída" ? "#166534" : row.treatment === "Revisar" ? "#475569" : "#9a3412" }}>{row.treatment}</span></td><td>{row.dateIssue && <span style={{ display: "inline-block", margin: "2px", borderRadius: 6, padding: "3px 6px", fontSize: 10, background: "#ffedd5", color: "#9a3412" }}>Data divergente/ausente</span>}{row.financialIssue && <span style={{ display: "inline-block", margin: "2px", borderRadius: 6, padding: "3px 6px", fontSize: 10, background: "#fee2e2", color: "#991b1b" }}>Valor financeiro ausente</span>}{!row.dateIssue && !row.financialIssue && <span style={{ color: "#64748b" }}>—</span>}</td><td className="numeric-cell">{currency.format(row.revenue)}</td><td className="numeric-cell">{currency.format(row.cost)}</td><td className="numeric-cell">{currency.format(row.profit)}</td></tr>)}{!selectedRows.length && <tr><td colSpan={9} style={{ padding: 24, textAlign: "center", color: "#64748b" }}>Nenhum registro encontrado com esses filtros.</td></tr>}</tbody></table></div></div></section></div>}
+    {selectedLabel && <div
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="detail-title"
+      className="report-detail-backdrop"
+      onMouseDown={(e) => { if (e.target === e.currentTarget) setSelectedLabel(null); }}
+    >
+      <section className="report-detail-dialog">
+        <header className="report-detail-header">
+          <div>
+            <p className="report-detail-eyebrow">DETALHAMENTO DO GRUPO</p>
+            <h2 id="detail-title">{selectedLabel}</h2>
+            <p className="report-detail-subtitle">{selectedRows.length} registros encontrados · valores financeiros apenas para vendas concluídas</p>
+          </div>
+          <button className="button button--secondary button--small" type="button" onClick={() => setSelectedLabel(null)}>Fechar ✕</button>
+        </header>
+        <div className="report-detail-content">
+          <div className="report-detail-kpis">
+            {[{ label: "Vendas concluídas", value: numbers.format(selectedRows.filter((r) => r.completed).length) }, { label: "Faturamento bruto", value: currency.format(selectedRows.reduce((n, r) => n + r.revenue, 0)) }, { label: "Custos", value: currency.format(selectedRows.reduce((n, r) => n + r.cost, 0)) }, { label: "Valor líquido", value: currency.format(selectedRows.reduce((n, r) => n + r.profit, 0)) }].map((item) => <div key={item.label} className="report-detail-kpi"><span>{item.label}</span><strong>{item.value}</strong></div>)}
+          </div>
+          <div className="report-detail-toolbar">
+            <input className="report-detail-search" value={detailSearch} onChange={(e) => setDetailSearch(e.target.value)} placeholder="Pesquisar cliente, contato, modelo ou status…" />
+            <select className="report-detail-status-filter" value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)}>
+              <option value="all">Todas as situações</option><option value="Concluída">Concluídas</option><option value="Não concluída">Não concluídas</option><option value="Revisar">A revisar</option>
+            </select>
+            <button className="button button--secondary button--small" type="button" onClick={() => {
+              const headers = ["Cliente","Contato","Data","Modelo","Status","Situação financeira","Data divergente/ausente","Valor financeiro ausente","Faturamento bruto","Custo","Valor líquido"];
+              const body = selectedRows.map((r) => [r.client,r.contact,r.date,r.model,r.status,r.treatment,r.dateIssue ? "Sim" : "Não",r.financialIssue ? "Sim" : "Não",r.revenue.toFixed(2),r.cost.toFixed(2),r.profit.toFixed(2)]);
+              const csv = [headers,...body].map((line) => line.map((v) => `"${String(v).replace(/"/g,'""')}"`).join(";")).join("\r\n");
+              const url = URL.createObjectURL(new Blob(["\uFEFF",csv],{type:"text/csv;charset=utf-8"}));
+              const a = document.createElement("a"); a.href = url; a.download = `detalhamento-${selectedLabel.replace(/[^a-z0-9]+/gi,"-").toLowerCase()}.csv`; a.click(); URL.revokeObjectURL(url);
+            }}>Exportar detalhes CSV</button>
+          </div>
+          <div className="report-detail-table-wrap">
+            <table className="records-table report-table report-detail-table">
+              <thead><tr><th>Cliente</th><th>Data emissão/renovação</th><th>Modelo</th><th>Status</th><th>Situação</th><th>Qualidade dos dados</th><th className="numeric-cell">Faturamento bruto</th><th className="numeric-cell">Custo</th><th className="numeric-cell">Valor líquido</th></tr></thead>
+              <tbody>
+                {selectedRows.map((row) => <tr key={row.id}>
+                  <td className="report-detail-client">{row.client}</td><td>{row.date}</td><td>{textValue(row.model)}</td>
+                  <td><span className={`sale-status-badge ${saleStatusClass(row.status)}`}>{saleStatusLabel(row.status)}</span></td>
+                  <td><span className={`report-treatment-badge ${row.treatment === "Concluída" ? "report-treatment--complete" : row.treatment === "Revisar" ? "report-treatment--review" : "report-treatment--pending"}`}>{row.treatment}</span></td>
+                  <td className="report-data-quality">
+                    {row.dateIssue && <span className="report-data-issue report-data-issue--date">Data divergente/ausente</span>}
+                    {row.financialIssue && <span className="report-data-issue report-data-issue--financial">Valor financeiro ausente</span>}
+                    {!row.dateIssue && !row.financialIssue && <span className="report-data-quality__empty">—</span>}
+                  </td>
+                  <td className="numeric-cell">{currency.format(row.revenue)}</td><td className="numeric-cell">{currency.format(row.cost)}</td><td className="numeric-cell">{currency.format(row.profit)}</td>
+                </tr>)}
+                {!selectedRows.length && <tr><td colSpan={9} className="report-detail-empty">Nenhum registro encontrado com esses filtros.</td></tr>}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+    </div>}
     <HelpFaq topic="relatorios" />
   </div>;
 }

@@ -254,12 +254,7 @@ function RecordForm({
                   disabled={!values["Data de emissão/renovação"]}
                   aria-readonly="true"
                   title="Calculado automaticamente: um ano após a emissão."
-                  style={{
-                    opacity: 0.55,
-                    cursor: "not-allowed",
-                    backgroundColor: "var(--input-disabled-bg, #e5e7eb)",
-                    color: "var(--input-disabled-color, #6b7280)",
-                  }}
+                  className="record-expiry-readonly"
                 />
               ) : header === "Status / Observação" ? (
                 <select
@@ -467,7 +462,7 @@ export function RecordManagement({ mode }: { mode: ManagementMode }) {
   }
 
   return (
-    <div className="management-content">
+    <div className={`management-content management-content--${mode}`}>
       {!canEdit && (
         <div className="access-notice" role="status">
           Sua conta tem acesso de consulta. Peça ao administrador para incluir seu e-mail

@@ -5,3 +5,8 @@
 @import "./visual/themes.css";
 @import "./visual/motion.css";
 @import "./visual/responsive.css";
+@import "./visual/reports.css";
+@import "./visual/forms.css";
+@import "./visual/management.css";
+@import "./visual/dashboard.css";
+@import "./visual/login.css";
