@@ -1,0 +1,15 @@
+/* Campos calculados e somente leitura do cadastro/edição. */
+.record-expiry-readonly:disabled,
+.record-expiry-readonly[readonly] {
+  border-color: var(--line-strong);
+  background: color-mix(in srgb, var(--canvas) 78%, var(--surface));
+  color: var(--muted-strong, var(--muted));
+  cursor: not-allowed;
+  opacity: .82;
+}
+:root[data-theme="dark"] .record-expiry-readonly:disabled,
+:root[data-theme="dark"] .record-expiry-readonly[readonly] {
+  border-color: #3a5265;
+  background: #172b3b;
+  color: #a9bac8;
+}
