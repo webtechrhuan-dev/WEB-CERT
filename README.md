@@ -11,6 +11,7 @@ Aplicação interna para cadastro, consulta, edição, relatórios e gestão de 
 - `/registros` — consulta de registros.
 - `/relatorios` — indicadores financeiros e relatórios por período/status.
 - Anexos da venda — upload, listagem e download de arquivos `.p12` e `.pfx` dentro da edição de uma venda.
+- Auditoria — registro de eventos comerciais e de certificados na coleção `audit_events`; consulta paginada disponível somente para administradores em `GET /api/admin/audit`.
 
 ## Dados e persistência
 
@@ -26,7 +27,7 @@ Aplicação interna para cadastro, consulta, edição, relatórios e gestão de 
 - Usuários de bootstrap: `rhuan` (administrador), `arthur` e `wesley` (editores). O bootstrap só cria contas quando as variáveis de senha correspondentes estão configuradas com pelo menos 16 caracteres; valores existentes não são sobrescritos.
 - `AUTH_SECRET` e `MONGODB_URI` são necessários para autenticação.
 - Consultar vendas e baixar anexos exige sessão autenticada. Alterar vendas e enviar anexos exige papel `editor` ou `admin`.
-- Upload aceita somente extensão `.p12` ou `.pfx`, até 10 MB por arquivo.
+- Upload aceita somente extensão `.p12` ou `.pfx`, até 10 MB por arquivo, e verifica o marcador ASN.1 DER inicial do contêiner PKCS#12. Essa checagem estrutural não substitui uma validação criptográfica completa do certificado.
 - Segredos devem existir apenas nas variáveis de ambiente do servidor/Vercel. Nunca incluir valores reais em commits ou no bundle do navegador.
 
 ## Variáveis de ambiente
@@ -66,7 +67,7 @@ Os testes unitários devem usar dados sintéticos e mocks; não devem modificar 
 ## Limitações conhecidas / próximos controles
 
 - A tela de administração completa de usuários ainda precisa ser implementada.
-- Auditoria persistente de ações de usuários ainda precisa ser concluída.
+- A trilha básica de auditoria está implementada para criação/edição/exclusão de vendas e upload/download de certificados. Ainda faltam a interface administrativa de consulta, filtros avançados e alertas para falhas de gravação da auditoria.
 - Backup independente e restauração ainda dependem de configuração operacional no Atlas e de ensaio de recuperação.
 - Paginação no acesso ao MongoDB precisa ser aplicada nos endpoints de consulta para volumes maiores.
 - A exclusão de uma venda e a retenção/limpeza de anexos relacionados precisam de política explícita antes de habilitar exclusões em massa.
