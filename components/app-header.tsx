@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { AuthControl } from "@/components/auth-control";
+import { AdminNavLink } from "@/components/admin-nav-link";
 import { Icon } from "@/components/icon";
 import { ThemeToggle } from "@/components/theme-toggle";
 
@@ -17,7 +18,7 @@ const menu = [
 ];
 
 export function AppHeader({ active }: AppHeaderProps) {
-  const visibleMenu = menu;
+  const visibleMenu = menu.filter((item) => !("adminOnly" in item && item.adminOnly));
   const activeItem = menu.find((item) => item.key === active) ?? menu[0];
   return (
     <>
@@ -74,6 +75,7 @@ export function AppHeader({ active }: AppHeaderProps) {
               {item.label}
             </Link>
           ))}
+          <AdminNavLink active={active === "audit"} />
         </div>
       </nav>
     </>
