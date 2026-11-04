@@ -239,42 +239,42 @@ function UnifiedChart({ rows }: { rows: Group[] }) {
   });
 
   return <div className="unified-chart">
-    <div className="chart-key-panel" style={{ display: "grid", gap: 18, margin: "0 0 18px", padding: "18px 20px", border: "1px solid #dbe5ef", borderRadius: 14, background: "linear-gradient(180deg,#fbfdff 0%,#f4f8fc 100%)" }}>
-      <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 12, flexWrap: "wrap" }}>
+    <section className="chart-key-panel report-chart-legend" aria-label="Legenda e instruções do gráfico">
+      <header className="report-chart-legend__header">
         <div>
-          <strong style={{ display: "block", color: "#10233f", fontSize: 15 }}>Legenda do gráfico</strong>
-          <p style={{ margin: "4px 0 0", color: "#52647a", fontSize: 12, lineHeight: 1.5 }}>Cada cor identifica uma informação. As colunas mostram dinheiro; as linhas mostram quantidade de vendas.</p>
+          <strong className="report-chart-legend__title">Legenda do gráfico</strong>
+          <p className="report-chart-legend__intro">Cada cor identifica uma informação. As colunas mostram dinheiro; as linhas mostram quantidade de vendas.</p>
         </div>
-        <span style={{ color: "#52647a", background: "#e8eff6", borderRadius: 20, padding: "6px 10px", fontSize: 11, fontWeight: 700 }}>Clique em uma legenda para ocultar ou exibir</span>
-      </div>
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(260px,1fr))", gap: 18 }}>
-        <div style={{ display: "grid", alignContent: "start", gap: 10 }}>
-          <div style={{ color: "#087c9f", fontSize: 11, fontWeight: 800, letterSpacing: ".08em" }}>COLUNAS · EIXO ESQUERDO · VALORES EM R$</div>
-          <div style={{ display: "grid", gap: 8 }}>
-            {financial.map((item) => <button key={item.key} type="button" className={"chart-legend-item" + (isVisible(item.key) ? "" : " is-muted")} aria-pressed={isVisible(item.key)} onClick={() => toggle(item.key)} style={{ display: "flex", alignItems: "center", gap: 10, width: "100%", minHeight: 42, padding: "8px 11px", border: "1px solid #dce5ef", borderRadius: 9, background: isVisible(item.key) ? "#fff" : "#f1f5f9", color: isVisible(item.key) ? "#20364d" : "#8291a2", textAlign: "left", cursor: "pointer" }}>
-              <span aria-hidden="true" style={{ width: 13, height: 24, flex: "0 0 13px", borderRadius: 4, background: item.color, boxShadow: "0 1px 3px rgba(15,23,42,.18)" }} />
-              <span style={{ display: "grid", gap: 2 }}><strong style={{ fontSize: 13 }}>{item.label}</strong><small style={{ fontSize: 11, color: "inherit" }}>{item.key === "revenue" ? "Total bruto vendido no período" : item.key === "cost" ? "Soma dos custos das vendas" : "Faturamento menos custos"}</small></span>
-              <span style={{ marginLeft: "auto", fontSize: 10, fontWeight: 750 }}>{isVisible(item.key) ? "VISÍVEL" : "OCULTA"}</span>
+        <span className="report-chart-legend__hint">Clique em uma legenda para ocultar ou exibir</span>
+      </header>
+      <div className="report-chart-legend__groups">
+        <section className="report-chart-legend__group" aria-label="Séries financeiras">
+          <h3 className="report-chart-legend__eyebrow">COLUNAS · EIXO ESQUERDO · VALORES EM R$</h3>
+          <div className="report-chart-legend__items">
+            {financial.map((item) => <button key={item.key} type="button" className={"chart-legend-item report-chart-legend__item" + (isVisible(item.key) ? "" : " is-muted")} aria-pressed={isVisible(item.key)} onClick={() => toggle(item.key)} style={{ "--legend-color": item.color } as CSSProperties}>
+              <span aria-hidden="true" className="report-chart-legend__swatch report-chart-legend__swatch--bar" />
+              <span className="report-chart-legend__copy"><strong>{item.label}</strong><small>{item.key === "revenue" ? "Total bruto vendido no período" : item.key === "cost" ? "Soma dos custos das vendas" : "Faturamento menos custos"}</small></span>
+              <span className="report-chart-legend__state">{isVisible(item.key) ? "VISÍVEL" : "OCULTA"}</span>
             </button>)}
           </div>
-        </div>
-        <div style={{ display: "grid", alignContent: "start", gap: 10 }}>
-          <div style={{ color: "#087c9f", fontSize: 11, fontWeight: 800, letterSpacing: ".08em" }}>LINHAS E PONTOS · EIXO DIREITO · QUANTIDADE</div>
-          <div style={{ display: "grid", gap: 8 }}>
-            {series.map((item) => <button key={item.key} type="button" className={"chart-legend-item" + (isVisible(item.key) ? "" : " is-muted")} aria-pressed={isVisible(item.key)} onClick={() => toggle(item.key)} style={{ display: "flex", alignItems: "center", gap: 10, width: "100%", minHeight: 42, padding: "8px 11px", border: "1px solid #dce5ef", borderRadius: 9, background: isVisible(item.key) ? "#fff" : "#f1f5f9", color: isVisible(item.key) ? "#20364d" : "#8291a2", textAlign: "left", cursor: "pointer" }}>
-              <span aria-hidden="true" style={{ position: "relative", width: 26, height: 12, flex: "0 0 26px", borderTop: "3px solid " + item.color }}><span style={{ position: "absolute", top: -7, left: 8, width: 10, height: 10, borderRadius: "50%", background: item.color, border: "2px solid #fff", boxShadow: "0 0 0 1px " + item.color }} /></span>
-              <span style={{ display: "grid", gap: 2 }}><strong style={{ fontSize: 13 }}>{item.label}</strong><small style={{ fontSize: 11, color: "inherit" }}>{item.key === "completed" ? "Vendas com status concluído" : item.key === "excluded" ? "Canceladas ou não concluídas" : "Registros que precisam de revisão"}</small></span>
-              <span style={{ marginLeft: "auto", fontSize: 10, fontWeight: 750 }}>{isVisible(item.key) ? "VISÍVEL" : "OCULTA"}</span>
+        </section>
+        <section className="report-chart-legend__group" aria-label="Séries de quantidade">
+          <h3 className="report-chart-legend__eyebrow">LINHAS E PONTOS · EIXO DIREITO · QUANTIDADE</h3>
+          <div className="report-chart-legend__items">
+            {series.map((item) => <button key={item.key} type="button" className={"chart-legend-item report-chart-legend__item" + (isVisible(item.key) ? "" : " is-muted")} aria-pressed={isVisible(item.key)} onClick={() => toggle(item.key)} style={{ "--legend-color": item.color } as CSSProperties}>
+              <span aria-hidden="true" className="report-chart-legend__swatch report-chart-legend__swatch--line"><i /></span>
+              <span className="report-chart-legend__copy"><strong>{item.label}</strong><small>{item.key === "completed" ? "Vendas com status concluído" : item.key === "excluded" ? "Canceladas ou não concluídas" : "Registros que precisam de revisão"}</small></span>
+              <span className="report-chart-legend__state">{isVisible(item.key) ? "VISÍVEL" : "OCULTA"}</span>
             </button>)}
           </div>
-        </div>
+        </section>
       </div>
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(220px,1fr))", gap: 10, paddingTop: 14, borderTop: "1px solid #dbe5ef" }}>
-        <div style={{ fontSize: 12, lineHeight: 1.55, color: "#52647a" }}><strong style={{ color: "#10233f" }}>Como ler as colunas:</strong> em cada período, as três colunas coloridas representam faturamento, custos e resultado líquido. A altura corresponde ao valor em reais.</div>
-        <div style={{ fontSize: 12, lineHeight: 1.55, color: "#52647a" }}><strong style={{ color: "#10233f" }}>Como ler as linhas:</strong> cada linha liga os pontos da mesma situação ao longo dos períodos. O ponto indica quantos registros existem naquela situação.</div>
-        <div style={{ fontSize: 12, lineHeight: 1.55, color: "#52647a" }}><strong style={{ color: "#10233f" }}>Eixos e períodos:</strong> escala esquerda = dinheiro (R$); escala direita = quantidade de registros. O nome abaixo identifica o mês ou ano analisado.</div>
-      </div>
-    </div>
+      <footer className="report-chart-legend__reading-guide">
+        <p><strong>Como ler as colunas:</strong> em cada período, as três colunas coloridas representam faturamento, custos e resultado líquido. A altura corresponde ao valor em reais.</p>
+        <p><strong>Como ler as linhas:</strong> cada linha liga os pontos da mesma situação ao longo dos períodos. O ponto indica quantos registros existem naquela situação.</p>
+        <p><strong>Eixos e períodos:</strong> escala esquerda = dinheiro (R$); escala direita = quantidade de registros. O nome abaixo identifica o mês ou ano analisado.</p>
+      </footer>
+    </section>
     <div className="unified-chart-scroll" role="region" aria-label="Gráfico com rolagem horizontal; use Shift e a roda do mouse ou a barra inferior para navegar" tabIndex={0} style={{ display: "block", width: "100%", maxWidth: "100%", minWidth: 0, flex: "1 1 0", overflowX: "scroll", overflowY: "hidden", boxSizing: "border-box" }}>
       <svg role="img" aria-label="Gráfico combinado de faturamento, custos, resultado e quantidade de registros por período" viewBox={"0 0 " + width + " " + height} className="unified-chart-svg" style={{ width: width + "px", minWidth: width + "px" }} onMouseLeave={() => setHoveredRow(null)}>
         <defs>
