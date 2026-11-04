@@ -1,5 +1,4 @@
 import Link from "next/link";
-import { auth } from "@/auth";
 import { AuthControl } from "@/components/auth-control";
 import { Icon } from "@/components/icon";
 import { ThemeToggle } from "@/components/theme-toggle";
@@ -17,10 +16,9 @@ const menu = [
   { label: "Auditoria", href: "/auditoria", icon: "shield" as const, key: "audit", adminOnly: true },
 ];
 
-export async function AppHeader({ active }: AppHeaderProps) {
-  const session = await auth();
-  const visibleMenu = menu.filter((item) => !("adminOnly" in item && item.adminOnly) || session?.user?.isAdmin === true);
-  const activeItem = visibleMenu.find((item) => item.key === active) ?? visibleMenu[0];
+export function AppHeader({ active }: AppHeaderProps) {
+  const visibleMenu = menu;
+  const activeItem = menu.find((item) => item.key === active) ?? menu[0];
   return (
     <>
       <header className="topbar">
