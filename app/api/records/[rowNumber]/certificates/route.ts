@@ -89,6 +89,12 @@ export async function POST(request: Request, context: { params: Promise<{ rowNum
       return jsonError("INVALID_CERTIFICATE_TYPE", "Envie somente arquivos de certificado .p12 ou .pfx.", 415);
     }
 
+    const bytes = Buffer.from(await file.arrayBuffer());
+    // PKCS#12 é codificado como ASN.1 DER e começa por uma estrutura SEQUENCE.
+    if (bytes.length < 4 || bytes[0] !== 0x30) {
+      return jsonError("INVALID_CERTIFICATE_CONTENT", "O conteúdo não parece ser um arquivo PKCS#12 válido.", 415);
+    }
+
     const uploadedAt = new Date();
     const bucket = await getCertificatesBucket();
     const upload = bucket.openUploadStream(originalName, {
@@ -102,7 +108,6 @@ export async function POST(request: Request, context: { params: Promise<{ rowNum
       } satisfies CertificateMetadata,
     });
 
-    const bytes = Buffer.from(await file.arrayBuffer());
     await new Promise<void>((resolve, reject) => {
       upload.once("error", reject);
       upload.once("finish", resolve);
