@@ -40,7 +40,7 @@ function apiErrorMessage(value: unknown): string | null {
 
 const PERIOD_FIELDS = ["Ano da planilha", "Mês da planilha"] as const;
 const MONTH_NAMES = ["janeiro", "fevereiro", "março", "abril", "maio", "junho", "julho", "agosto", "setembro", "outubro", "novembro", "dezembro"];
-const STATUS_OPTIONS = ["Cancelado", "não concluido", "Orçamento/oferta enviada ao cliente", "Emitido", "Pendente instalar", "Instalado", "Concluido"] as const;
+const STATUS_OPTIONS = ["Cancelado", "não concluido", "Emitido", "Pendente instalar", "Instalado", "Concluido"] as const;
 
 function normalizeStatus(value: string): string {
   const normalized = value
