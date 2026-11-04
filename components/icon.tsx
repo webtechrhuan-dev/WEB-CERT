@@ -13,6 +13,7 @@ export type IconName =
   | "refresh"
   | "search"
   | "spreadsheet"
+  | "shield"
   | "trash"
   | "users";
 
@@ -93,6 +94,12 @@ const paths: Record<IconName, React.ReactNode> = {
       <path d="M15 21V9" />
       <path d="M9 3v6" />
       <path d="M15 3v6" />
+    </>
+  ),
+  shield: (
+    <>
+      <path d="M12 22s8-4 8-11V5l-8-3-8 3v6c0 7 8 11 8 11Z" />
+      <path d="m9 12 2 2 4-4" />
     </>
   ),
   trash: (
