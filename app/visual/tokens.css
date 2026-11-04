@@ -1,0 +1,42 @@
+/* WEB-CERT / Design tokens — fonte única para a nova camada visual */
+:root {
+  --wc-color-brand: var(--brand-600, #087c9f);
+  --wc-color-brand-strong: var(--brand-800, #103550);
+  --wc-color-accent: var(--brand-400, #30c4d5);
+  --wc-color-canvas: var(--canvas, #f3f6f9);
+  --wc-color-surface: var(--surface, #fff);
+  --wc-color-surface-soft: #f7fafc;
+  --wc-color-text: var(--ink, #172b3b);
+  --wc-color-muted: var(--muted, #647586);
+  --wc-color-border: var(--line, #e2e9ef);
+  --wc-color-border-strong: var(--line-strong, #d4dfe8);
+  --wc-color-positive: var(--success, #16774a);
+  --wc-color-warning: var(--warning, #895712);
+  --wc-color-danger: var(--danger, #a83838);
+  --wc-shadow-xs: 0 1px 2px rgb(15 38 57 / 5%);
+  --wc-shadow-sm: 0 3px 10px rgb(15 38 57 / 6%), 0 1px 2px rgb(15 38 57 / 3%);
+  --wc-shadow-md: 0 10px 28px rgb(15 38 57 / 8%), 0 3px 8px rgb(15 38 57 / 4%);
+  --wc-shadow-lg: 0 22px 54px rgb(15 38 57 / 13%), 0 6px 16px rgb(15 38 57 / 5%);
+  --wc-radius-xs: 6px;
+  --wc-radius-sm: 9px;
+  --wc-radius-md: 13px;
+  --wc-radius-lg: 18px;
+  --wc-radius-xl: 24px;
+  --wc-space-1: 4px; --wc-space-2: 8px; --wc-space-3: 12px;
+  --wc-space-4: 16px; --wc-space-5: 20px; --wc-space-6: 24px;
+  --wc-space-8: 32px; --wc-space-10: 40px; --wc-space-12: 48px;
+  --wc-ease-standard: cubic-bezier(.2,.7,.2,1);
+  --wc-ease-emphasis: cubic-bezier(.16,1,.3,1);
+  --wc-duration-fast: 140ms;
+  --wc-duration-normal: 220ms;
+  --wc-duration-slow: 420ms;
+  --wc-focus-shadow: 0 0 0 3px rgb(5 168 195 / 18%);
+}
+:root[data-theme="dark"] {
+  --wc-color-surface-soft: #172b3b;
+  --wc-shadow-xs: 0 1px 2px rgb(0 0 0 / 20%);
+  --wc-shadow-sm: 0 4px 12px rgb(0 0 0 / 20%);
+  --wc-shadow-md: 0 12px 30px rgb(0 0 0 / 28%);
+  --wc-shadow-lg: 0 24px 58px rgb(0 0 0 / 38%);
+  --wc-focus-shadow: 0 0 0 3px rgb(62 194 211 / 22%);
+}
