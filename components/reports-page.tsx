@@ -395,13 +395,13 @@ function UnifiedChart({ rows }: { rows: Group[] }) {
         <div className="chart-hover-tooltip__eyebrow">RESUMO DO PERÍODO</div>
         <div className="chart-hover-tooltip__heading">{hoveredRow.label}</div>
         <div className="chart-hover-tooltip__grid">
-          <div><span><i style={{ background: colors.revenue }} />Faturamento</span><strong>{currency.format(hoveredRow.revenue)}</strong></div>
-          <div><span><i style={{ background: colors.cost }} />Custos</span><strong>{currency.format(hoveredRow.cost)}</strong></div>
-          <div><span><i style={{ background: colors.profit }} />Resultado líquido</span><strong>{currency.format(hoveredRow.profit)}</strong></div>
-          <div><span><i style={{ background: colors.completed }} />Concluídas</span><strong>{numbers.format(hoveredRow.completedCount)}</strong></div>
-          <div><span><i style={{ background: colors.excluded }} />Não concluídas</span><strong>{numbers.format(hoveredRow.excludedCount ?? 0)}</strong></div>
-          <div><span><i style={{ background: colors.review }} />Em revisão</span><strong>{numbers.format(hoveredRow.reviewCount ?? 0)}</strong></div>
-          <div><span><i style={{ background: "#64748b" }} />Total de registros</span><strong>{numbers.format(hoveredRow.count)}</strong></div>
+          <div><span><i className="chart-tooltip-swatch chart-tooltip-swatch--revenue" />Faturamento</span><strong>{currency.format(hoveredRow.revenue)}</strong></div>
+          <div><span><i className="chart-tooltip-swatch chart-tooltip-swatch--cost" />Custos</span><strong>{currency.format(hoveredRow.cost)}</strong></div>
+          <div><span><i className="chart-tooltip-swatch chart-tooltip-swatch--profit" />Resultado líquido</span><strong>{currency.format(hoveredRow.profit)}</strong></div>
+          <div><span><i className="chart-tooltip-swatch chart-tooltip-swatch--completed" />Concluídas</span><strong>{numbers.format(hoveredRow.completedCount)}</strong></div>
+          <div><span><i className="chart-tooltip-swatch chart-tooltip-swatch--excluded" />Não concluídas</span><strong>{numbers.format(hoveredRow.excludedCount ?? 0)}</strong></div>
+          <div><span><i className="chart-tooltip-swatch chart-tooltip-swatch--review" />Em revisão</span><strong>{numbers.format(hoveredRow.reviewCount ?? 0)}</strong></div>
+          <div><span><i className="chart-tooltip-swatch chart-tooltip-swatch--total" />Total de registros</span><strong>{numbers.format(hoveredRow.count)}</strong></div>
         </div>
       </div>,
       document.body
@@ -410,7 +410,7 @@ function UnifiedChart({ rows }: { rows: Group[] }) {
       <summary>Consultar valores exatos por período</summary>
       <div className="chart-data-table-scroll report-data-scroll">
         <table className="chart-data-table report-chart-data-table">
-          <colgroup><col style={{ width: 150 }} /><col style={{ width: 175 }} /><col style={{ width: 145 }} /><col style={{ width: 195 }} /><col style={{ width: 155 }} /><col style={{ width: 185 }} /><col style={{ width: 155 }} /><col style={{ width: 165 }} /></colgroup><thead><tr><th>Período</th><th>Faturamento</th><th>Custos</th><th>Resultado líquido</th><th>Concluídas</th><th>Não concluídas</th><th>Em revisão</th><th>Total de registros</th></tr></thead>
+          <colgroup><col className="report-chart-col report-chart-col--period" /><col className="report-chart-col report-chart-col--revenue" /><col className="report-chart-col report-chart-col--cost" /><col className="report-chart-col report-chart-col--profit" /><col className="report-chart-col report-chart-col--completed" /><col className="report-chart-col report-chart-col--excluded" /><col className="report-chart-col report-chart-col--review" /><col className="report-chart-col report-chart-col--total" /></colgroup><thead><tr><th>Período</th><th>Faturamento</th><th>Custos</th><th>Resultado líquido</th><th>Concluídas</th><th>Não concluídas</th><th>Em revisão</th><th>Total de registros</th></tr></thead>
           <tbody>{visible.map((row) => <tr key={row.label}>
             <th scope="row">{row.label}</th><td>{currency.format(row.revenue)}</td><td>{currency.format(row.cost)}</td><td>{currency.format(row.profit)}</td><td>{numbers.format(row.completedCount)}</td><td>{numbers.format(row.excludedCount ?? 0)}</td><td>{numbers.format(row.reviewCount ?? 0)}</td><td>{numbers.format(row.count)}</td>
           </tr>)}</tbody>
