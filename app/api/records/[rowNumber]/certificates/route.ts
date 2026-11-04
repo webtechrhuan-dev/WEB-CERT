@@ -1,5 +1,6 @@
 import { requireAccess } from "@/lib/server/access";
 import { apiErrorResponse } from "@/lib/server/api-errors";
+import { writeAuditEvent } from "@/lib/server/audit-log";
 import { getMongoDb } from "@/lib/server/mongodb";
 import {
   getCertificatesBucket,
@@ -114,7 +115,8 @@ export async function POST(request: Request, context: { params: Promise<{ rowNum
       upload.end(bytes);
     });
 
-    return Response.json({ ok: true, id: String(upload.id), name: originalName }, {
+    const auditRecorded = await writeAuditEvent({ actor: access.login, action: "certificate.uploaded", entity: "certificate", entityId: String(upload.id), metadata: { rowNumber, fileName: originalName, size: file.size } });
+    return Response.json({ ok: true, id: String(upload.id), name: originalName, auditRecorded }, {
       status: 201,
       headers: { "Cache-Control": "no-store" },
     });
