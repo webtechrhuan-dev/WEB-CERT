@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { AppSessionProvider } from "@/components/session-provider";
 import { KeyboardShortcuts } from "@/components/keyboard-shortcuts";
 import "./globals.css";
+import "./quality-layer.css";
 
 export const metadata: Metadata = {
   title: "Certificados Manager",
@@ -16,7 +17,15 @@ export default function RootLayout({
   return (
     <html lang="pt-BR" suppressHydrationWarning>
       <head>
-        <script dangerouslySetInnerHTML={{ __html: `try { var savedTheme = localStorage.getItem("web-cert-theme"); var initialTheme = savedTheme === "dark" ? "dark" : "light"; document.documentElement.dataset.theme = initialTheme; document.documentElement.style.colorScheme = initialTheme; } catch (_) { document.documentElement.dataset.theme = "light"; }` }} />
+        <script dangerouslySetInnerHTML={{ __html: `try {
+  var savedTheme = localStorage.getItem("web-cert-theme");
+  var initialTheme = savedTheme === "dark" ? "dark" : "light";
+  document.documentElement.dataset.theme = initialTheme;
+  document.documentElement.style.colorScheme = initialTheme;
+} catch (_) {
+  document.documentElement.dataset.theme = "light";
+  document.documentElement.style.colorScheme = "light";
+}` }} />
       </head>
       <body>
         <AppSessionProvider><KeyboardShortcuts />{children}</AppSessionProvider>
