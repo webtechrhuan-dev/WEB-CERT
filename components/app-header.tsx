@@ -1,10 +1,11 @@
 import Link from "next/link";
+import { auth } from "@/auth";
 import { AuthControl } from "@/components/auth-control";
 import { Icon } from "@/components/icon";
 import { ThemeToggle } from "@/components/theme-toggle";
 
 type AppHeaderProps = {
-  active: "home" | "records" | "register" | "edit" | "reports";
+  active: "home" | "records" | "register" | "edit" | "reports" | "audit";
 };
 
 const menu = [
@@ -13,6 +14,7 @@ const menu = [
   { label: "Cadastros", href: "/cadastros", icon: "users" as const, key: "register" },
 
   { label: "Relatórios", href: "/relatorios", icon: "chart" as const, key: "reports" },
+  { label: "Auditoria", href: "/auditoria", icon: "shield" as const, key: "audit", adminOnly: true },
 ];
 
 export function AppHeader({ active }: AppHeaderProps) {
@@ -49,7 +51,7 @@ export function AppHeader({ active }: AppHeaderProps) {
       </header>
       <nav className="primary-nav" aria-label="Menu principal">
         <div className="primary-nav-inner">
-          {menu.slice(0, 2).map((item) => (
+          {visibleMenu.slice(0, 2).map((item) => (
             <Link
               aria-current={active === item.key ? "page" : undefined}
               className={`primary-nav-link${active === item.key ? " is-active" : ""}`}
@@ -61,7 +63,7 @@ export function AppHeader({ active }: AppHeaderProps) {
             </Link>
           ))}
           <span className="primary-nav-divider" aria-hidden="true" />
-          {menu.slice(2).map((item) => (
+          {visibleMenu.slice(2).map((item) => (
             <Link
               aria-current={active === item.key ? "page" : undefined}
               className={`primary-nav-link${active === item.key ? " is-active" : ""}`}
