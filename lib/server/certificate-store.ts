@@ -68,12 +68,13 @@ export async function readCertificateData(): Promise<WorkbookData> {
   return { headers: HEADERS, count: records.length, records, source: "mongodb", version: new Date().toISOString() };
 }
 
-export async function createCertificate(values: WorkbookCell[]): Promise<void> {
+export async function createCertificate(values: WorkbookCell[]): Promise<number> {
   const db = await getMongoDb();
   await ensureStorageIndexes();
   const rowNumber = await nextRowNumber();
   const now = new Date();
   await db.collection(collection).insertOne({ rowNumber, values: normalizeValues(values), createdAt: now, updatedAt: now, version: 1 });
+  return rowNumber;
 }
 
 export async function updateCertificate(rowNumber: number, values: WorkbookCell[], expectedVersion?: string): Promise<boolean> {
