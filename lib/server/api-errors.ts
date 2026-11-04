@@ -94,6 +94,9 @@ function errorResponse(code: string, message: string, status: number): Response 
 }
 
 export function apiErrorResponse(error: unknown, route: string): Response {
+  if (error instanceof Error && error.message.includes("MONGODB_CERTIFICATES_URI não está configurada")) {
+    return errorResponse("CERTIFICATE_STORAGE_NOT_CONFIGURED", "O armazenamento separado de certificados ainda não está configurado no servidor.", 503);
+  }
   if (error instanceof AccessError) {
     const details = accessMessages[error.code];
     return errorResponse(error.code, details.message, details.status);
