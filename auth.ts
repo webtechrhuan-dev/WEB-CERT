@@ -71,6 +71,19 @@ async function ensureInitialUsers(): Promise<void> {
   }
 }
 
+
+/** Revalida a senha do usuário autenticado para operações destrutivas. */
+export async function verifyReauthentication(username: string, password: string): Promise<boolean> {
+  if (!authConfigured || !username || !password || password.length > 200) return false;
+  await ensureInitialUsers();
+  const db = await getMongoDb();
+  const user = await db.collection<UserDocument>("users").findOne({ username: username.trim().toLowerCase() });
+  if (!user) return false;
+  const candidate = Buffer.from(passwordHash(password, user.salt), "hex");
+  const expected = Buffer.from(user.passwordHash, "hex");
+  return candidate.length === expected.length && timingSafeEqual(candidate, expected);
+}
+
 export const authConfigured = Boolean(process.env.AUTH_SECRET && process.env.MONGODB_URI);
 
 // Compatibility for older access checks; this fixed local username allowlist is not GitHub OAuth.
