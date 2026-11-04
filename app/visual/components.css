@@ -1,0 +1,68 @@
+/* Componentes — estados consistentes, hierarquia e profundidade */
+:where(.module-card,.records-toolbar,.table-panel,.record-form,.unified-chart,
+ .chart-key-panel,.chart-data-details,.report-panel,.management-content,.state-panel,
+ .access-notice,.selected-record-form--inline,.login-panel) {
+  border-radius: var(--wc-radius-md);
+  box-shadow: var(--wc-shadow-sm);
+  transition: border-color var(--wc-duration-normal) ease,
+    box-shadow var(--wc-duration-normal) var(--wc-ease-standard),
+    background-color var(--wc-duration-normal) ease,
+    transform var(--wc-duration-normal) var(--wc-ease-standard);
+}
+:where(.module-card--available,.record-picker-row,.chart-legend-item,.button,
+ .theme-toggle,.search-clear,.pagination button) {
+  transition: transform var(--wc-duration-fast) var(--wc-ease-standard),
+    color var(--wc-duration-fast) ease, background-color var(--wc-duration-fast) ease,
+    border-color var(--wc-duration-fast) ease, box-shadow var(--wc-duration-fast) ease;
+}
+.module-card--available:hover { transform: translateY(-3px); box-shadow: var(--wc-shadow-md); }
+.module-card--available:active { transform: translateY(-1px) scale(.995); }
+:where(.records-toolbar,.table-panel,.record-form,.unified-chart,.report-panel):hover {
+  border-color: var(--line-strong);
+}
+:where(.button--primary,.login-submit) {
+  box-shadow: 0 3px 9px rgb(7 89 121 / 16%);
+  transition: transform var(--wc-duration-fast) ease, box-shadow var(--wc-duration-fast) ease,
+    filter var(--wc-duration-fast) ease;
+}
+:where(.button--primary,.login-submit):hover:not(:disabled) {
+  transform: translateY(-1px); box-shadow: 0 8px 18px rgb(7 89 121 / 22%); filter: saturate(1.08);
+}
+:where(.button--primary,.login-submit):active:not(:disabled) { transform: translateY(1px) scale(.99); }
+:where(input,select,textarea) {
+  transition: border-color var(--wc-duration-fast) ease, background-color var(--wc-duration-fast) ease,
+    box-shadow var(--wc-duration-fast) ease;
+}
+:where(input,select,textarea):focus-visible {
+  outline: 0; border-color: var(--focus); box-shadow: var(--wc-focus-shadow);
+}
+:where(.search-control,.login-input-wrap):focus-within {
+  border-color: var(--focus); box-shadow: var(--wc-focus-shadow);
+}
+:where(.records-table,.report-table,.chart-data-table) { border-collapse: separate; border-spacing: 0; }
+:where(.records-table,.report-table,.chart-data-table) tbody tr {
+  transition: background-color var(--wc-duration-fast) ease;
+}
+:where(.records-table,.report-table,.chart-data-table) tbody tr:hover td { background: #f1f8fa; }
+:where(.records-table,.report-table,.chart-data-table) td { font-variant-numeric: tabular-nums; }
+:where(.count-value,.report-summary-card strong,.chart-data-table td.numeric-cell) {
+  font-variant-numeric: tabular-nums lining-nums;
+}
+:where(.record-form,.records-toolbar,.report-filter,.filters-panel,.filter-panel) {
+  border-color: var(--line); background: var(--surface);
+}
+:where(.record-form-field input,.record-form-field select,.record-form-field textarea,
+ .report-filter input,.report-filter select,.period-filter-bar select) {
+  min-height: 42px; border-radius: var(--wc-radius-sm);
+}
+:where(.record-form-field label,.record-form-field > span,.search-label) {
+  letter-spacing: .005em; line-height: 1.4;
+}
+:where(.sale-status-badge,.source-badge,.nav-coming-soon) { white-space: nowrap; }
+:where(.wc-help-dialog,.wc-legend-dialog,[role="dialog"] > section) {
+  border: 1px solid var(--line); border-radius: var(--wc-radius-lg); box-shadow: var(--wc-shadow-lg);
+}
+:where(.chart-bar) { transform-box: fill-box; transform-origin: center bottom; transition: filter 160ms ease, opacity 160ms ease; }
+.chart-bar:hover { filter: drop-shadow(0 5px 7px rgb(8 32 51 / 18%)) brightness(1.06); }
+:where(.chart-legend-item):hover { transform: translateY(-1px); }
+:where(.chart-legend-item:focus-visible,.record-picker-row:focus-visible) { outline-offset: 3px; }
