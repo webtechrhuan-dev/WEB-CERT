@@ -4269,3 +4269,22 @@ body {
   border-color: #2a4052 !important;
   box-shadow: 0 14px 34px rgb(0 0 0 / 28%), 0 2px 8px rgb(0 0 0 / 18%) !important;
 }
+
+
+/* Logomarca oficial no cabeçalho */
+.brand-logo {
+  display: block;
+  flex: 0 0 auto;
+  width: 124px;
+  max-width: 100%;
+  height: 42px;
+  object-fit: contain;
+  object-position: left center;
+}
+@media (max-width: 640px) {
+  .brand-lockup { gap: 10px; }
+  .brand-logo { width: 104px; height: 36px; }
+}
+@media (max-width: 420px) {
+  .brand-logo { width: 88px; height: 30px; }
+}
