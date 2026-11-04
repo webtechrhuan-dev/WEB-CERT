@@ -1,39 +1,48 @@
-# Certificados Manager
+# WEB-CERT — Gestão de certificados digitais | Web Tech
 
-Aplicação interna da Web Tech para consulta, cadastro, edição e relatórios sobre os registros da planilha de certificados. O Excel versionado no GitHub continua sendo a fonte permanente; não há banco de dados tradicional.
+Aplicação interna para cadastro, consulta, edição, relatórios e gestão de arquivos de certificados digitais. A aplicação usa Next.js App Router, TypeScript, Auth.js e MongoDB Atlas. A hospedagem é feita na Vercel.
 
 ## Módulos
 
-- `/` — menu principal.
-- `/registros` — consulta da planilha real, pesquisa e paginação.
-- `/cadastros` — inclusão de registro com validação e publicação de uma nova versão.
-- `/editar` — pesquisa e edição de campos de um registro existente.
-- `/relatorios` — agregações reais por ano/mês, modelo ou status/observação, com totais dos valores numéricos de faturamento e custo.
+- `/` — painel inicial.
+- `/login` — autenticação interna.
+- `/cadastros` — cadastro de vendas.
+- `/editar` — consulta por ano/mês, pesquisa por cliente e edição inline.
+- `/registros` — consulta de registros.
+- `/relatorios` — indicadores financeiros e relatórios por período/status.
+- Anexos da venda — upload, listagem e download de arquivos `.p12` e `.pfx` dentro da edição de uma venda.
 
-O cadastro permite campos vazios, mas exige ao menos um campo preenchido. Ano deve ter quatro dígitos, datas alteradas devem estar no formato `AAAA-MM-DD` e valores monetários devem ser números não negativos. Duplicidade não é bloqueada: não foi definida uma chave de negócio. Não há exclusão de registros.
+## Dados e persistência
 
-## Configuração para usar
+- A base comercial principal usa a variável `MONGODB_URI` e o banco definido por `MONGODB_DB` (padrão `web_cert`). A coleção `certificates` contém os registros de venda.
+- Os arquivos binários de certificados são armazenados separadamente em MongoDB Atlas/GridFS, usando `MONGODB_CERTIFICATES_URI` e `MONGODB_CERTIFICATES_DB` (padrão `certificates_store`). Não se deve apontar essa URI para o cluster comercial se a intenção for manter os arquivos isolados.
+- Cada arquivo recebe metadados de associação ao `rowNumber` da venda, nome original, usuário e data de envio.
+- Não armazene senhas dos arquivos PFX/P12 no banco, em logs ou em variáveis de ambiente.
+- O sistema não deve usar o filesystem efêmero da Vercel como armazenamento permanente.
 
-Copie `.env.example` para `.env.local` apenas para desenvolvimento e configure as credenciais no ambiente do servidor. Em Vercel, use **Project Settings → Environment Variables**; nunca exponha esses valores em componentes client, repositórios ou logs.
+## Acesso e segurança
 
-### Login com GitHub
+- A autenticação usa usuário e senha internos, com hash scrypt e salt aleatório persistidos na coleção `users` do banco principal.
+- Usuários de bootstrap: `rhuan` (administrador), `arthur` e `wesley` (editores). O bootstrap só cria contas quando as variáveis de senha correspondentes estão configuradas com pelo menos 16 caracteres; valores existentes não são sobrescritos.
+- `AUTH_SECRET` e `MONGODB_URI` são necessários para autenticação.
+- Consultar vendas e baixar anexos exige sessão autenticada. Alterar vendas e enviar anexos exige papel `editor` ou `admin`.
+- Upload aceita somente extensão `.p12` ou `.pfx`, até 10 MB por arquivo.
+- Segredos devem existir apenas nas variáveis de ambiente do servidor/Vercel. Nunca incluir valores reais em commits ou no bundle do navegador.
 
-1. Em GitHub → **Settings → Developer settings → OAuth Apps**, crie um OAuth App para o sistema.
-2. Configure a Homepage URL como `https://web-cert-five.vercel.app` e o callback como `https://web-cert-five.vercel.app/api/auth/callback/github`. Para desenvolvimento, use `http://localhost:3000/api/auth/callback/github`.
-3. Configure `AUTH_GITHUB_ID` e `AUTH_GITHUB_SECRET` na Vercel, junto com o `AUTH_SECRET` já gerado.
-4. Defina `AUTH_ALLOWED_GITHUB_LOGINS` com os logins permitidos, separados por vírgulas. `AUTH_EDITOR_GITHUB_LOGINS` concede permissão de edição aos logins listados; os demais ficam como consulta. Uma allowlist vazia mantém a API fechada.
+## Variáveis de ambiente
 
-A autenticação atual usa usuário e senha internos armazenados com hash no MongoDB. Não use credenciais padrão; configure senhas únicas e fortes no ambiente do servidor para bootstrap de contas novas.
+Copie `.env.example` para `.env.local` apenas no desenvolvimento e preencha os valores localmente. Em produção, configure no painel da Vercel:
 
-### Planilha no GitHub
+- `AUTH_SECRET`
+- `MONGODB_URI` e `MONGODB_DB`
+- `MONGODB_CERTIFICATES_URI` e `MONGODB_CERTIFICATES_DB`
+- `BOOTSTRAP_RHUAN_PASSWORD`, `BOOTSTRAP_ARTHUR_PASSWORD`, `BOOTSTRAP_WESLEY_PASSWORD` (somente para provisionar contas ainda inexistentes)
 
-1. Configure `GITHUB_OWNER`, `GITHUB_REPO`, `GITHUB_BRANCH` e `GITHUB_DATA_PATH` apontando ao repositório, branch e caminho real da planilha. O valor de exemplo do caminho aponta para a raiz; ajuste se o arquivo estiver numa subpasta.
-2. Crie um fine-grained token com permissão **Contents: read and write**, limitado apenas ao repositório da planilha, e configure como `GITHUB_TOKEN` no ambiente seguro do servidor/Vercel.
-3. O token da planilha não substitui o login da aplicação. A planilha foi removida da versão atual deste repositório. Como ela esteve versionada anteriormente, os dados ainda podem estar acessíveis no histórico Git enquanto o repositório permanecer público. Torne o repositório privado imediatamente e purgue o histórico antigo com procedimento controlado; rotacione quaisquer segredos que tenham sido commitados.
+As variáveis `EXCEL_FILE_PATH` e `GITHUB_*` são compatibilidade/documentação de fluxos anteriores; não representam a fonte principal do cadastro atual.
 
-A API lê a versão atual do branch, identifica o commit esperado e publica o workbook atualizado por novos objetos Git e um commit. A referência do branch é atualizada sem `force`; versões obsoletas ou corridas são rejeitadas e exigem recarregar antes de tentar novamente. O token nunca é enviado ao navegador. O histórico de commits é rastreável, mas não substitui backup independente. Branch protection, permissões do token, limites e disponibilidade do GitHub continuam sendo dependências externas.
+## Desenvolvimento e validação
 
-## Desenvolvimento e verificações
+Requisitos: Node.js compatível com a versão do Next.js do projeto e npm.
 
 ```sh
 npm ci
@@ -43,14 +52,26 @@ npm test
 npm run build
 ```
 
-Sem configuração GitHub, o ambiente de desenvolvimento consegue ler o arquivo local `CERTIFICADOS_UNIFICADOS_2024-2026.xlsx` (ou `EXCEL_FILE_PATH`) para análise; gravações continuam bloqueadas. Em produção, ausência da integração GitHub impede a leitura da fonte permanente. A autenticação Microsoft também precisa estar configurada antes de consultar qualquer dado via API.
+Os testes unitários devem usar dados sintéticos e mocks; não devem modificar o banco de produção nem carregar arquivos reais de clientes. Testes de integração com MongoDB devem usar um banco isolado e credenciais próprias.
 
-Os testes de cadastro e edição trabalham somente em memória e não publicam commits. A integração remota e o login GitHub precisam ser habilitados e verificados após configurar os segredos e as allowlists na Vercel.
+## Implantação e operação
 
-## Segurança e implantação
+1. Configure as variáveis de ambiente de produção na Vercel.
+2. Verifique conectividade e permissões do cluster comercial e do cluster de arquivos.
+3. Confirme que o usuário de banco tem acesso mínimo necessário às coleções.
+4. Execute CI (typecheck, testes e build) antes de integrar na `main`.
+5. Valide autenticação, cadastro, edição, relatórios, upload e download em preview com dados de teste.
+6. Configure backup independente para os dois bancos, incluindo política de retenção e teste de restauração.
 
-As rotas `/api/records` e `/api/records/[rowNumber]` exigem sessão autenticada; gravações também exigem função `editor`. O app aplica cabeçalhos HTTP de segurança e rejeita a senha padrão `12345678`. As respostas não são cacheadas, as falhas não revelam caminhos internos, tokens ou valores do workbook e os logs não incluem células.
+## Limitações conhecidas / próximos controles
 
-Não use o filesystem temporário da Vercel como armazenamento. A planilha local do workspace não garante disponibilidade em produção. Antes de publicar, configure o OAuth do GitHub, domínio/callback, usuários permitidos, variáveis de ambiente e uma política de backup/recuperação.
+- A tela de administração completa de usuários ainda precisa ser implementada.
+- Auditoria persistente de ações de usuários ainda precisa ser concluída.
+- Backup independente e restauração ainda dependem de configuração operacional no Atlas e de ensaio de recuperação.
+- Paginação no acesso ao MongoDB precisa ser aplicada nos endpoints de consulta para volumes maiores.
+- A exclusão de uma venda e a retenção/limpeza de anexos relacionados precisam de política explícita antes de habilitar exclusões em massa.
+- A presença das variáveis de ambiente e a conectividade dos clusters devem ser verificadas no projeto Vercel; este repositório não contém nem deve conter credenciais.
 
-O arquivo oficial da logo não está no workspace; consulte [public/brand/README.md](./public/brand/README.md). O protótipo `Layout/index.html` não está presente e não foi recriado.
+## Identidade visual
+
+A interface utiliza a identidade visual Web Tech. Não inclua arquivos de logo ou credenciais de clientes sem autorização e origem confirmada.
