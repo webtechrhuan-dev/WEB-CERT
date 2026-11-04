@@ -26,7 +26,7 @@ export function AppHeader({ active }: AppHeaderProps) {
             className="brand-lockup"
             href="/"
           >
-            <span className="brand-name">WEB TECH</span>
+            <img className="brand-logo" src="/web-tech-logo.svg" alt="Web Tech" />
             <span className="brand-divider" aria-hidden="true" />
             <span className="product-name">
               Certificados <strong>Manager</strong>
