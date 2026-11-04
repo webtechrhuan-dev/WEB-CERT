@@ -4453,3 +4453,71 @@ body {
 @media(max-width:390px){.login-page--premium{padding-inline:12px}.login-showcase{padding-inline:20px}.login-panel--premium{padding-inline:20px}.login-feature-list{grid-template-columns:minmax(0,1fr)}.login-showcase-footer{flex-wrap:wrap}}
 @media(max-height:760px) and (min-width:761px){.login-layout{min-height:620px}.login-showcase-copy{margin-top:38px}.login-feature-list{padding-top:24px}.login-showcase-footer{margin-top:22px}}
 @media(prefers-reduced-motion:reduce){.login-layout,.login-submit,.login-input-wrap,.login-submit-spinner{animation:none!important;transition:none!important}}
+
+/* Refinamento incremental: alternância de tema, dicas e microinterações */
+.theme-toggle { position:relative; overflow:hidden; }
+.theme-toggle-icon { display:grid; place-items:center; transition:transform .35s cubic-bezier(.2,.8,.2,1); }
+.theme-toggle:hover .theme-toggle-icon { transform:rotate(-18deg) scale(1.08); }
+.theme-toggle:active .theme-toggle-icon { transform:rotate(18deg) scale(.92); }
+.theme-toggle-icon svg { display:block; width:16px; height:16px; }
+html { transition: background-color .24s ease, color .24s ease; }
+body, .app-shell, .workspace, .content-panel, .table-panel, .record-form, .login-layout,
+.login-panel--premium, .login-input-wrap, .login-panel-security, .login-tips {
+  transition: background-color .24s ease, border-color .24s ease, color .24s ease, box-shadow .24s ease;
+}
+.login-panel--premium { position:relative; isolation:isolate; }
+.login-panel--premium::after {
+  position:absolute; z-index:-1; top:0; right:0; left:0; height:2px;
+  background:linear-gradient(90deg,#1b4a83,#08a9c0,#54d8df);
+  content:"";
+}
+.login-showcase-brand { transition:transform .3s ease, box-shadow .3s ease; }
+.login-showcase-brand:hover { transform:translateY(-2px); box-shadow:0 18px 38px rgb(0 0 0 / 19%),inset 0 1px 0 #fff; }
+.login-feature { transition:transform .22s ease; }
+.login-feature:hover { transform:translateX(4px); }
+.login-feature-icon { transition:background-color .2s ease, border-color .2s ease, transform .2s ease; }
+.login-feature:hover .login-feature-icon { transform:scale(1.06); background:rgb(34 143 169 / 30%); border-color:rgb(111 217 229 / 50%); }
+.login-tips {
+  margin-top:18px;
+  border:1px solid #dce9ee;
+  border-radius:11px;
+  background:linear-gradient(145deg,#f8fbfc,#f2f8fa);
+  color:#4d6878;
+  overflow:hidden;
+}
+.login-tips summary {
+  display:flex; min-height:45px; align-items:center; gap:9px;
+  padding:0 13px; color:#31566a; cursor:pointer;
+  font-size:11px; font-weight:750; list-style:none;
+}
+.login-tips summary::-webkit-details-marker { display:none; }
+.login-tips-bulb {
+  display:grid; width:23px; height:23px; place-items:center;
+  border-radius:7px; background:#e0f4f6; color:#078ba5; font-size:14px;
+}
+.login-tips-chevron { width:15px; height:15px; margin-left:auto; transition:transform .2s ease; }
+.login-tips[open] .login-tips-chevron { transform:rotate(180deg); }
+.login-tips-content {
+  display:grid; gap:9px; padding:0 14px 13px 45px;
+  animation:login-tips-in .2s ease both;
+}
+.login-tips-content p { margin:0; color:#708391; font-size:10px; line-height:1.55; }
+.login-tips-content strong { color:#36596b; }
+@keyframes login-tips-in { from { opacity:0; transform:translateY(-4px); } to { opacity:1; transform:translateY(0); } }
+:root[data-theme="dark"] .login-tips { border-color:#344e60; background:linear-gradient(145deg,#192f40,#162b3b); color:#d5e4eb; }
+:root[data-theme="dark"] .login-tips summary { color:#d7e8ef; }
+:root[data-theme="dark"] .login-tips-bulb { background:#214657; color:#78dce4; }
+:root[data-theme="dark"] .login-tips-content p { color:#a9bdc9; }
+:root[data-theme="dark"] .login-tips-content strong { color:#e1edf2; }
+:root[data-theme="dark"] .login-panel--premium::after { background:linear-gradient(90deg,#3275b5,#18bfd0,#72e1e4); }
+:root[data-theme="dark"] .login-showcase-brand:hover { box-shadow:0 18px 38px rgb(0 0 0 / 28%),inset 0 1px 0 #fff; }
+@media(max-width:760px) {
+  .login-tips { margin-top:14px; }
+  .login-tips-content { padding-left:14px; }
+}
+@media(prefers-reduced-motion:reduce) {
+  .theme-toggle-icon,.login-showcase-brand,.login-feature,.login-feature-icon,.login-tips-chevron,
+  body,.app-shell,.workspace,.content-panel,.table-panel,.record-form,.login-layout,
+  .login-panel--premium,.login-input-wrap,.login-panel-security,.login-tips { transition:none!important; }
+  .login-tips-content { animation:none!important; }
+}
