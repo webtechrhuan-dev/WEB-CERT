@@ -184,3 +184,12 @@
  .report-summary-heading > div:last-child { width:100%; }
  .report-summary-heading > div:last-child .button { flex:1 1 auto; }
 }
+
+/* Indicadores, gráfico consolidado e tabela de grupos */
+.report-kpi-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(190px,1fr)); gap:14px; }
+.report-chart-panel { min-width:0; padding:clamp(18px,2.5vw,28px); border:1px solid var(--line); border-radius:18px; background:var(--surface); box-shadow:var(--wc-shadow-md); }
+.report-details-panel { overflow:hidden; border:1px solid var(--line); border-radius:16px; background:var(--surface); box-shadow:var(--wc-shadow-sm); }
+:root[data-theme="dark"] .report-chart-panel,
+:root[data-theme="dark"] .report-details-panel { border-color:#30485a; background:#122536; }
+@media(max-width:620px) { .report-kpi-grid { grid-template-columns:repeat(2,minmax(0,1fr)); gap:9px; } .report-chart-panel { padding:15px; } }
+@media(max-width:390px) { .report-kpi-grid { grid-template-columns:minmax(0,1fr); } }
