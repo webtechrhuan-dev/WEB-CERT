@@ -462,7 +462,7 @@ export function RecordManagement({ mode }: { mode: ManagementMode }) {
   }
 
   return (
-    <div className="management-content">
+    <div className={`management-content management-content--${mode}`}>
       {!canEdit && (
         <div className="access-notice" role="status">
           Sua conta tem acesso de consulta. Peça ao administrador para incluir seu e-mail
