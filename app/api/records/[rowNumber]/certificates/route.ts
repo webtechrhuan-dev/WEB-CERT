@@ -1,4 +1,3 @@
-import { Readable } from "node:stream";
 import { requireAccess } from "@/lib/server/access";
 import { apiErrorResponse } from "@/lib/server/api-errors";
 import { getMongoDb } from "@/lib/server/mongodb";
@@ -103,10 +102,11 @@ export async function POST(request: Request, context: { params: Promise<{ rowNum
       } satisfies CertificateMetadata,
     });
 
+    const bytes = Buffer.from(await file.arrayBuffer());
     await new Promise<void>((resolve, reject) => {
       upload.once("error", reject);
       upload.once("finish", resolve);
-      upload.end(Buffer.from(awaitFileBytes(file)));
+      upload.end(bytes);
     });
 
     return Response.json({ ok: true, id: String(upload.id), name: originalName }, {
@@ -118,6 +118,3 @@ export async function POST(request: Request, context: { params: Promise<{ rowNum
   }
 }
 
-async function awaitFileBytes(file: File): Promise<Uint8Array> {
-  return new Uint8Array(await file.arrayBuffer());
-}
