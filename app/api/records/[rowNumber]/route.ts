@@ -1,4 +1,5 @@
 import { requireAccess } from "@/lib/server/access";
+import { verifyReauthentication } from "@/auth";
 import { apiErrorResponse } from "@/lib/server/api-errors";
 import { readCertificateData, updateCertificate } from "@/lib/server/certificate-store";
 import { validateRecordInput, valuesFromInput } from "@/lib/server/record-validation";
@@ -27,11 +28,16 @@ export async function PATCH(request: Request, context: { params: Promise<{ rowNu
 
 export async function DELETE(request: Request, context: { params: Promise<{ rowNumber: string }> }) {
   try {
-    await requireAccess("editor");
+    const access = await requireAccess("editor");
     const rowNumber = Number((await context.params).rowNumber);
     if (!Number.isSafeInteger(rowNumber) || rowNumber < 2) throw new Error("RECORD_NOT_FOUND");
     const body = await request.json().catch(() => null);
     if (typeof body?.expectedVersion !== "string") throw new Error("RECORD_CONFLICT");
+    const username = typeof body?.username === "string" ? body.username.trim().toLowerCase() : "";
+    const password = typeof body?.password === "string" ? body.password : "";
+    if (!username || username !== access.login.toLowerCase() || !password || !(await verifyReauthentication(username, password))) {
+      return Response.json({ error: { code: "REAUTHENTICATION_FAILED", message: "Usuário ou senha incorretos. A venda não foi excluída." } }, { status: 401, headers: { "Cache-Control": "no-store" } });
+    }
     const { deleteCertificate } = await import("@/lib/server/certificate-store");
     await deleteCertificate(rowNumber, body.expectedVersion);
     return Response.json({ ok: true, deleted: true }, { headers: { "Cache-Control": "no-store" } });
