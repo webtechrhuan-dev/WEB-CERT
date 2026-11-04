@@ -3,6 +3,7 @@ import { apiErrorResponse } from "@/lib/server/api-errors";
 import { readCertificateData, createCertificate } from "@/lib/server/certificate-store";
 import { WORKBOOK_HEADERS } from "@/lib/workbook-types";
 import { validateRecordInput, valuesFromInput } from "@/lib/server/record-validation";
+import { writeAuditEvent } from "@/lib/server/audit-log";
 
 export const runtime = "nodejs";
 
@@ -37,7 +38,7 @@ export async function GET() {
 
 export async function POST(request: Request) {
   try {
-    await requireAccess("editor");
+    const access = await requireAccess("editor");
     const contentLength = Number(request.headers.get("content-length") ?? 0);
     if (contentLength > 512_000) return Response.json({ error: { code: "PAYLOAD_TOO_LARGE", message: "Requisição muito grande." } }, { status: 413, headers: { "Cache-Control": "no-store" } });
     const body = await request.json();
@@ -58,8 +59,9 @@ export async function POST(request: Request) {
     if (typeof selectedMonth !== "string" || !MONTH_NAMES.includes(selectedMonth)) {
       throw new Error("INVALID_INPUT");
     }
-    await createCertificate(values);
-    return Response.json({ ok: true, headers: WORKBOOK_HEADERS }, { status: 201, headers: { "Cache-Control": "no-store" } });
+    const rowNumber = await createCertificate(values);
+    const auditRecorded = await writeAuditEvent({ actor: access.login, action: "sale.created", entity: "sale", entityId: String(rowNumber) });
+    return Response.json({ ok: true, rowNumber, auditRecorded, headers: WORKBOOK_HEADERS }, { status: 201, headers: { "Cache-Control": "no-store" } });
   } catch (e) {
     return apiErrorResponse(e, "api/records");
   }
