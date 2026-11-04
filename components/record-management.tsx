@@ -4,6 +4,7 @@ import { useMemo, useState, type FormEvent } from "react";
 import Link from "next/link";
 import { useSession } from "next-auth/react";
 import { Icon } from "@/components/icon";
+import { CertificateFiles } from "@/components/certificate-files";
 import { saleStatusClass, saleStatusLabel } from "@/lib/sale-status";
 import { useWorkbookData } from "@/lib/client/use-workbook-data";
 import { WORKBOOK_HEADERS } from "@/lib/workbook-types";
@@ -566,7 +567,10 @@ export function RecordManagement({ mode }: { mode: ManagementMode }) {
                                 <button className="button button--secondary button--small" onClick={() => setSelectedRow(null)} type="button">Fechar</button>
                               </div>
                               {canEdit && canPersist ? (
-                                <RecordForm key={`edit-${record.rowNumber}-${data.version}`} mode="edit" record={record} version={record.version ?? ""} onSaved={handleSaved} allowDelete={canEdit && data.source === "mongodb"} />
+                                <>
+                                  <RecordForm key={`edit-${record.rowNumber}-${data.version}`} mode="edit" record={record} version={record.version ?? ""} onSaved={handleSaved} allowDelete={canEdit && data.source === "mongodb"} />
+                                  {data.source === "mongodb" && <CertificateFiles rowNumber={record.rowNumber} canUpload={canEdit} />}
+                                </>
                               ) : (
                                 <p className="empty-state">{canEdit ? "A edição será habilitada quando a fonte estiver configurada." : "Edição disponível apenas para usuários autorizados como editores."}</p>
                               )}
