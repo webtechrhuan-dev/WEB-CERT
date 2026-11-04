@@ -57,6 +57,18 @@ export default function LoginPage() {
             <p>Entre com suas credenciais para continuar no Certificados Manager.</p>
           </div>
           <LoginButton />
+          <details className="login-tips">
+            <summary>
+              <span className="login-tips-bulb" aria-hidden="true">✦</span>
+              Dicas rápidas para entrar
+              <svg className="login-tips-chevron" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="m6 9 6 6 6-6" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/></svg>
+            </summary>
+            <div className="login-tips-content">
+              <p><strong>Usuário:</strong> informe o usuário exatamente como foi cadastrado pela administração.</p>
+              <p><strong>Senha:</strong> confira se o Caps Lock está desligado. Use o ícone de olho para conferir o que digitou.</p>
+              <p><strong>Problemas de acesso?</strong> Solicite à administração a conferência ou redefinição das suas credenciais.</p>
+            </div>
+          </details>
           <div className="login-panel-security">
             <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M12 3 19 6v5c0 4.5-2.8 7.8-7 10-4.2-2.2-7-5.5-7-10V6l7-3Z" stroke="currentColor" strokeWidth="1.7" strokeLinejoin="round"/><path d="m9 12 2 2 4-4" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round"/></svg>
             <span><strong>Seus dados protegidos</strong><small>Acesso exclusivo aos usuários cadastrados no sistema.</small></span>
