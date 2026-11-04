@@ -314,3 +314,85 @@
   .report-chart-record-count { white-space: normal; }
   .report-model-ranking-grid { grid-template-columns: minmax(0,1fr); }
 }
+
+
+/* Cartões financeiros e relatório tabular detalhado */
+.report-kpi-card {
+  display: grid;
+  min-width: 0;
+  min-height: 142px;
+  align-content: start;
+  gap: 9px;
+  padding: 19px;
+  border: 1px solid var(--line);
+  border-radius: 15px;
+  background: var(--surface);
+  box-shadow: var(--wc-shadow-sm);
+  transition: transform var(--wc-duration-normal) var(--wc-ease-standard), box-shadow var(--wc-duration-normal) var(--wc-ease-standard), border-color var(--wc-duration-fast) var(--wc-ease-standard);
+}
+.report-kpi-card:hover { transform: translateY(-2px); border-color: var(--brand-400); box-shadow: var(--wc-shadow-md); }
+.report-kpi-card > span { color: var(--muted); font-size: 12px; font-weight: 750; line-height: 1.45; }
+.report-kpi-card > strong { display: block; color: var(--kpi-value-color, var(--ink)); font-size: clamp(20px,2vw,26px); font-weight: 850; letter-spacing: -.045em; line-height: 1.2; overflow-wrap: anywhere; font-variant-numeric: tabular-nums; }
+.report-kpi-card > small { color: var(--muted); font-size: 10px; line-height: 1.55; }
+.report-kpi-card--navy > strong { color: var(--ink); }
+.report-kpi-card--positive > strong { color: #16804d; }
+.report-kpi-card--warning > strong { color: #b7791f; }
+.report-kpi-card--teal > strong { color: #0f817f; }
+.report-kpi-card--muted > strong { color: var(--muted-strong, var(--muted)); }
+.report-kpi-card--profit-positive { border-color: #1b8060; background: linear-gradient(145deg,#102f3e,#123e48); }
+.report-kpi-card--profit-positive > span,
+.report-kpi-card--profit-positive > small { color: #c0d9e0; }
+.report-kpi-card--profit-positive > strong { color: #9ce8bd; }
+.report-kpi-card--profit-negative { border-color: #91464c; background: linear-gradient(145deg,#3d202c,#512a32); }
+.report-kpi-card--profit-negative > span,
+.report-kpi-card--profit-negative > small { color: #f2c7c9; }
+.report-kpi-card--profit-negative > strong { color: #ffc0c0; }
+.report-details-header { display:flex; align-items:flex-end; justify-content:space-between; gap:18px; flex-wrap:wrap; padding:22px 24px; border-bottom:1px solid var(--line); }
+.report-details-copy h2 { margin:0; color:var(--ink); font-size:18px; font-weight:850; letter-spacing:-.02em; }
+.report-details-copy p { margin:6px 0 0; color:var(--muted); font-size:12px; line-height:1.55; }
+.report-details-controls { display:flex; align-items:flex-end; gap:12px; flex-wrap:wrap; }
+.report-details-control { min-width:145px; }
+.report-details-search { min-width:200px; }
+.report-details-meta { display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px; padding:12px 24px; border-bottom:1px solid var(--line); background:var(--canvas); color:var(--muted); font-size:11px; line-height:1.6; }
+.report-details-meta strong { color:var(--ink); font-weight:850; }
+.report-details-table-scroll { width:100%; overflow-x:auto; }
+.report-groups-table { width:100%; min-width:800px; }
+.report-group-row { cursor:pointer; transition:background-color var(--wc-duration-fast) var(--wc-ease-standard); }
+.report-group-row:focus-visible { outline:3px solid var(--focus); outline-offset:-3px; }
+.report-group-row--year td { background:#edf5fa; border-top:2px solid #d2e2ec; font-weight:750; }
+.report-group-row--month td { background:var(--surface); }
+.report-group-year-label { color:var(--ink); font-weight:850; white-space:nowrap; }
+.report-group-chevron { display:inline-block; width:18px; color:var(--brand-600); }
+.report-group-caption { margin-left:9px; color:var(--muted); font-size:11px; font-weight:650; }
+.report-group-action-label { color:var(--brand-600); font-size:11px; font-weight:800; }
+.report-group-month-label { padding-left:42px !important; color:var(--ink); font-weight:700; }
+.report-group-label { color:var(--ink); font-weight:750; }
+.report-profit-cell { font-weight:800 !important; font-variant-numeric:tabular-nums; }
+.report-profit-cell.is-positive { color:#16804d !important; }
+.report-profit-cell.is-negative { color:#c24141 !important; }
+.report-groups-total-row td { background:var(--canvas); color:var(--ink); font-weight:850; border-top:2px solid var(--line-strong); }
+:root[data-theme="dark"] .report-kpi-card { border-color:#30485a; background:#172d3e; }
+:root[data-theme="dark"] .report-kpi-card--positive > strong { color:#91e0b1; }
+:root[data-theme="dark"] .report-kpi-card--warning > strong { color:#ffd08a; }
+:root[data-theme="dark"] .report-kpi-card--teal > strong { color:#75d8d1; }
+:root[data-theme="dark"] .report-kpi-card--profit-positive { border-color:#276b61; background:linear-gradient(145deg,#123a3e,#174b4a); }
+:root[data-theme="dark"] .report-kpi-card--profit-negative { border-color:#79434c; background:linear-gradient(145deg,#3a2634,#4b2c38); }
+:root[data-theme="dark"] .report-details-header { border-bottom-color:#30485a; }
+:root[data-theme="dark"] .report-details-meta { border-bottom-color:#30485a; background:#172d3e; }
+:root[data-theme="dark"] .report-group-row--year td { background:#1b3547; border-top-color:#365267; }
+:root[data-theme="dark"] .report-group-row--month td { background:#122536; }
+:root[data-theme="dark"] .report-group-year-label,
+:root[data-theme="dark"] .report-group-label,
+:root[data-theme="dark"] .report-group-month-label { color:#e2edf4; }
+:root[data-theme="dark"] .report-profit-cell.is-positive { color:#91e0b1 !important; }
+:root[data-theme="dark"] .report-profit-cell.is-negative { color:#ffaaaa !important; }
+:root[data-theme="dark"] .report-groups-total-row td { background:#1b3547; border-top-color:#365267; color:#e5edf4; }
+@media (max-width: 760px) {
+  .report-kpi-card { min-height:130px; padding:14px; gap:8px; }
+  .report-details-header { align-items:stretch; padding:17px; }
+  .report-details-controls { width:100%; }
+  .report-details-control { flex:1 1 145px; }
+  .report-details-search { flex-basis:100%; }
+  .report-details-meta { padding:11px 17px; }
+}
+@media (prefers-reduced-motion: reduce) { .report-kpi-card,.report-group-row { transition:none; } }
