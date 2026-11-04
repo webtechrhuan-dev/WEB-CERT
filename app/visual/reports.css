@@ -193,3 +193,93 @@
 :root[data-theme="dark"] .report-details-panel { border-color:#30485a; background:#122536; }
 @media(max-width:620px) { .report-kpi-grid { grid-template-columns:repeat(2,minmax(0,1fr)); gap:9px; } .report-chart-panel { padding:15px; } }
 @media(max-width:390px) { .report-kpi-grid { grid-template-columns:minmax(0,1fr); } }
+
+
+/* Prospecção de vencimentos e filtros analíticos */
+.report-renewals-panel,
+.report-filter-panel {
+  min-width: 0;
+  overflow: hidden;
+  border: 1px solid var(--line);
+  border-radius: var(--wc-radius-lg);
+  background: var(--surface);
+  box-shadow: var(--wc-shadow-sm);
+}
+.report-renewals-header {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 18px;
+  flex-wrap: wrap;
+  padding: 22px 24px;
+  border-bottom: 1px solid var(--line);
+}
+.report-renewals-copy { min-width: 0; max-width: 760px; }
+.report-renewals-copy .eyebrow { margin: 0 0 6px; }
+.report-renewals-copy h2 { margin: 0; color: var(--ink); font-size: 19px; letter-spacing: -.02em; }
+.report-renewals-copy > p:last-child { margin: 6px 0 0; color: var(--muted); font-size: 13px; line-height: 1.6; }
+.report-renewals-controls { display: flex; align-items: flex-end; gap: 10px; flex-wrap: wrap; }
+.report-control-label {
+  display: grid;
+  min-width: 0;
+  gap: 6px;
+  color: var(--muted-strong, var(--muted));
+  font-size: 12px;
+  font-weight: 700;
+}
+.report-control-input {
+  width: 100%;
+  min-width: 0;
+  min-height: 42px;
+  padding: 0 11px;
+  border: 1px solid var(--line-strong);
+  border-radius: 9px;
+  background: var(--surface);
+  color: var(--ink);
+  font: inherit;
+  font-size: 13px;
+  transition: border-color var(--wc-duration-fast) var(--wc-ease-standard), box-shadow var(--wc-duration-fast) var(--wc-ease-standard);
+}
+.report-control-input:focus-visible { outline: 0; border-color: var(--focus); box-shadow: var(--wc-focus-shadow); }
+.report-renewals-controls .report-control-label { min-width: 112px; }
+.report-renewals-count {
+  padding: 12px 24px;
+  border-bottom: 1px solid var(--line);
+  background: var(--canvas);
+  color: var(--muted-strong, var(--muted));
+  font-size: 13px;
+}
+.report-renewals-count strong,
+.report-filter-count strong { color: var(--ink); font-weight: 850; font-variant-numeric: tabular-nums; }
+.report-table-scroll { width: 100%; overflow-x: auto; }
+.report-renewals-table { width: 100%; min-width: 760px; }
+.report-renewals-client { color: var(--ink); font-weight: 700; }
+.report-renewals-expiry { color: var(--warning); font-weight: 800; white-space: nowrap; }
+.report-table-empty { padding: 24px; color: var(--muted); text-align: center; }
+.report-filter-panel { display: grid; gap: 14px; padding: 20px; background: var(--canvas); }
+.report-filter-heading { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
+.report-filter-copy h2 { margin: 0; color: var(--ink); font-size: 17px; }
+.report-filter-copy p { margin: 4px 0 0; color: var(--muted); font-size: 12px; line-height: 1.5; }
+.report-filter-count { color: var(--muted-strong, var(--muted)); font-size: 12px; }
+.report-filter-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 12px; }
+:root[data-theme="dark"] .report-renewals-panel,
+:root[data-theme="dark"] .report-filter-panel { border-color: #30485a; background: #122536; }
+:root[data-theme="dark"] .report-renewals-header { border-bottom-color: #30485a; }
+:root[data-theme="dark"] .report-renewals-copy h2,
+:root[data-theme="dark"] .report-filter-copy h2,
+:root[data-theme="dark"] .report-renewals-count strong,
+:root[data-theme="dark"] .report-filter-count strong { color: #e5edf4; }
+:root[data-theme="dark"] .report-control-input { border-color: #3a5265; background: #102333; color: #e5edf4; }
+:root[data-theme="dark"] .report-renewals-count { border-bottom-color: #30485a; background: #172d3e; }
+:root[data-theme="dark"] .report-renewals-expiry { color: #ffd08a; }
+@media (max-width: 640px) {
+  .report-renewals-header { align-items: stretch; padding: 17px; }
+  .report-renewals-controls { width: 100%; }
+  .report-renewals-controls .report-control-label { flex: 1 1 120px; }
+  .report-renewals-count { padding: 11px 17px; }
+  .report-filter-panel { padding: 15px; }
+  .report-filter-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+}
+@media (max-width: 390px) {
+  .report-filter-grid { grid-template-columns: minmax(0, 1fr); }
+}
