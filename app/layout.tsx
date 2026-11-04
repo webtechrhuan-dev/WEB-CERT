@@ -3,6 +3,7 @@ import { AppSessionProvider } from "@/components/session-provider";
 import { KeyboardShortcuts } from "@/components/keyboard-shortcuts";
 import "./globals.css";
 import "./quality-layer.css";
+import "./visual-system.css";
 
 export const metadata: Metadata = {
   title: "Certificados Manager",
