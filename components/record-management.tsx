@@ -567,13 +567,11 @@ export function RecordManagement({ mode }: { mode: ManagementMode }) {
                                 <button className="button button--secondary button--small" onClick={() => setSelectedRow(null)} type="button">Fechar</button>
                               </div>
                               {canEdit && canPersist ? (
-                                <>
-                                  <RecordForm key={`edit-${record.rowNumber}-${data.version}`} mode="edit" record={record} version={record.version ?? ""} onSaved={handleSaved} allowDelete={canEdit && data.source === "mongodb"} />
-                                  {data.source === "mongodb" && <CertificateFiles rowNumber={record.rowNumber} canUpload={canEdit} />}
-                                </>
+                                <RecordForm key={`edit-${record.rowNumber}-${data.version}`} mode="edit" record={record} version={record.version ?? ""} onSaved={handleSaved} allowDelete={canEdit && data.source === "mongodb"} />
                               ) : (
                                 <p className="empty-state">{canEdit ? "A edição será habilitada quando a fonte estiver configurada." : "Edição disponível apenas para usuários autorizados como editores."}</p>
                               )}
+                              {data.source === "mongodb" && <CertificateFiles rowNumber={record.rowNumber} canUpload={canEdit} />}
                             </div>
                           )}
                         </div>
