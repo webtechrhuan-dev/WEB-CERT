@@ -7,10 +7,10 @@ type Topic = "home" | "cadastros" | "vendas" | "relatorios";
 type Item = { question: string; answer: string };
 type Shortcut = { key: string; label: string };
 const SHORTCUTS: Record<Topic, Shortcut[]> = {
-  home: [{key:"Insert",label:"Abrir novo cadastro"},{key:"F8",label:"Abrir relatórios"},{key:"F9",label:"Abrir gestão de vendas"},{key:"Alt + F10",label:"Abrir cadastros"},{key:"Alt + F3",label:"Ir para pesquisa (quando disponível)"},{key:"Ctrl + S",label:"Salvar formulário aberto"},{key:"Esc",label:"Fechar janela ou diálogo"}],
-  cadastros: [{key:"Insert",label:"Abrir a tela de novo cadastro"},{key:"Ctrl + S",label:"Salvar cadastro"},{key:"F8",label:"Abrir relatórios"},{key:"F9",label:"Abrir gestão de vendas"},{key:"Esc",label:"Fechar janela ou diálogo"}],
-  vendas: [{key:"F2",label:"Selecionar/abrir a primeira venda ou a venda selecionada"},{key:"Alt + F3",label:"Focar a pesquisa de cliente"},{key:"F4",label:"Focar o campo de status na edição aberta"},{key:"Insert",label:"Abrir novo cadastro"},{key:"Ctrl + S",label:"Salvar edição"},{key:"F8",label:"Abrir relatórios"},{key:"Esc",label:"Fechar janela ou diálogo"}],
-  relatorios: [{key:"F9",label:"Abrir gestão de vendas"},{key:"Insert",label:"Abrir novo cadastro"},{key:"Alt + F10",label:"Abrir cadastros"},{key:"Esc",label:"Fechar janela ou diálogo"}]
+  home: [{key:"Insert",label:"Abrir novo cadastro"},{key:"F8",label:"Abrir relatórios"},{key:"F9",label:"Abrir gestão de vendas"},{key:"Alt + F10",label:"Abrir cadastros"},{key:"Alt + F3",label:"Ir para pesquisa (quando disponível)"},{key:"Ctrl + S",label:"Salvar formulário aberto"},{key:"Esc",label:"Fechar a janela de ajuda/legenda aberta"}],
+  cadastros: [{key:"Insert",label:"Abrir a tela de novo cadastro"},{key:"Ctrl + S",label:"Salvar cadastro"},{key:"F8",label:"Abrir relatórios"},{key:"F9",label:"Abrir gestão de vendas"},{key:"Esc",label:"Fechar a janela de ajuda/legenda aberta"}],
+  vendas: [{key:"F2",label:"Selecionar/abrir a primeira venda ou a venda selecionada"},{key:"Alt + F3",label:"Focar a pesquisa de cliente"},{key:"F4",label:"Focar o campo de status na edição aberta"},{key:"Insert",label:"Abrir novo cadastro"},{key:"Ctrl + S",label:"Salvar edição"},{key:"F8",label:"Abrir relatórios"},{key:"Esc",label:"Fechar a janela de ajuda/legenda aberta"}],
+  relatorios: [{key:"F9",label:"Abrir gestão de vendas"},{key:"Insert",label:"Abrir novo cadastro"},{key:"Alt + F10",label:"Abrir cadastros"},{key:"Esc",label:"Fechar a janela de ajuda/legenda aberta"}]
 };
 const CONTENT: Record<Topic, { title: string; intro: string; items: Item[] }> = {
   home: { title: "Ajuda do sistema", intro: "Informações para navegar pelo WEB-CERT.", items: [
