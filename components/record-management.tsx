@@ -126,26 +126,35 @@ function RecordForm({
   const [conflict, setConflict] = useState(false);
   const [saving, setSaving] = useState(false);
   const [deleting, setDeleting] = useState(false);
+  const [reauthOpen, setReauthOpen] = useState(false);
+  const [reauthUsername, setReauthUsername] = useState("");
+  const [reauthPassword, setReauthPassword] = useState("");
 
   async function deleteRecord() {
     if (!record || !allowDelete || deleting || saving) return;
-    const clientIndex = WORKBOOK_HEADERS.indexOf("Cliente");
-    const client = valueAsText(record.values[clientIndex]) || "Cliente não identificado";
-    const confirmed = window.confirm(
-      `ATENÇÃO: esta ação é permanente.\\n\\nA venda de "${client}" (registro ${record.rowNumber}) será excluída definitivamente do banco de dados.\\n\\nNão será possível recuperar este registro. Deseja continuar?`,
-    );
-    if (!confirmed) return;
+    setError(null);
+    setReauthUsername("");
+    setReauthPassword("");
+    setReauthOpen(true);
+  }
 
+  async function confirmDelete() {
+    if (!record || !reauthUsername.trim() || !reauthPassword || deleting) {
+      setError("Informe seu usuário e sua senha para confirmar a exclusão.");
+      return;
+    }
     setError(null);
     setDeleting(true);
     try {
       const response = await fetch(`/api/records/${record.rowNumber}`, {
         method: "DELETE",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ expectedVersion: version }),
+        body: JSON.stringify({ expectedVersion: version, username: reauthUsername.trim(), password: reauthPassword }),
       });
       const body: unknown = await response.json();
-      if (!response.ok) throw new Error(apiErrorMessage(body) ?? "Não foi possível excluir a venda.");
+      if (!response.ok) throw new Error(apiErrorMessage(body) ?? "Não foi possível validar suas credenciais.");
+      setReauthOpen(false);
+      setReauthPassword("");
       onSaved("Venda excluída permanentemente do banco de dados.");
     } catch (deleteError) {
       setError(deleteError instanceof Error ? deleteError.message : "Não foi possível excluir a venda.");
@@ -314,6 +323,23 @@ function RecordForm({
         >
           Recarregar versão atual
         </button>
+      )}
+      {reauthOpen && (
+        <div className="reauth-overlay" role="presentation">
+          <section className="reauth-dialog" role="dialog" aria-modal="true" aria-labelledby="delete-auth-title">
+            <div className="reauth-dialog-heading">
+              <span className="reauth-warning-icon"><Icon name="alert" /></span>
+              <div><h3 id="delete-auth-title">Confirmar exclusão permanente</h3><p>Esta venda será removida definitivamente do banco de dados. Confirme sua identidade para continuar.</p></div>
+            </div>
+            <label className="record-form-field"><span>Usuário</span><input autoComplete="username" value={reauthUsername} onChange={(event) => setReauthUsername(event.target.value)} placeholder="Seu usuário de acesso" /></label>
+            <label className="record-form-field"><span>Senha</span><input autoComplete="current-password" type="password" value={reauthPassword} onChange={(event) => setReauthPassword(event.target.value)} placeholder="Digite sua senha novamente" onKeyDown={(event) => { if (event.key === "Enter") { event.preventDefault(); void confirmDelete(); } }} /></label>
+            <p className="reauth-security-note">A senha é validada no servidor e não é armazenada. Somente o usuário atualmente conectado pode confirmar a exclusão.</p>
+            <div className="form-actions">
+              <button className="button button--secondary" type="button" disabled={deleting} onClick={() => { setReauthOpen(false); setReauthPassword(""); }}>Cancelar</button>
+              <button className="button button--danger" type="button" disabled={deleting || !reauthUsername.trim() || !reauthPassword} onClick={() => void confirmDelete()}><Icon name="trash" /> {deleting ? "Validando e excluindo…" : "Confirmar exclusão"}</button>
+            </div>
+          </section>
+        </div>
       )}
       <div className="form-actions">
         {mode === "edit" && allowDelete && (
