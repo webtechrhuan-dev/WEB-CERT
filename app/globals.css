@@ -3540,7 +3540,7 @@ body {
   --wc-shadow-raised: 0 18px 42px rgb(0 0 0 / 34%);
   --wc-shadow-focus: 0 0 0 4px rgb(52 190 210 / 16%), 0 10px 25px rgb(0 0 0 / 20%);
 }
-:root[data-theme="dark"] html,
+:root[data-theme="dark"],
 :root[data-theme="dark"] body { background: var(--canvas); color: var(--ink); }
 :root[data-theme="dark"] body {
   background:
@@ -3730,3 +3730,401 @@ body {
   .theme-toggle span { display: none; }
 }
 :root[data-theme="dark"] ::selection { background: rgb(49 177 197 / 30%); color: #f4fbff; }
+
+
+/* =========================================================
+   WEB-CERT THEME AUDIT — cobertura visual consistente
+   Corrige superfícies fixas, cabeçalho, relatórios, diálogos
+   e componentes compartilhados nos dois temas.
+   ========================================================= */
+
+/* O cabeçalho usa --brand-950 como superfície. Não clarear
+   essa variável no tema escuro, pois ela também define o topo. */
+:root[data-theme="dark"] .topbar {
+  background: #101d2a !important;
+  color: #e8f2f7 !important;
+  border-bottom: 1px solid #263b4c;
+  box-shadow: 0 8px 24px rgb(0 0 0 / 28%);
+}
+:root[data-theme="dark"] .topbar::before {
+  background: linear-gradient(90deg, #24527a 0%, #087f9f 55%, #25c1d1 100%);
+}
+:root[data-theme="dark"] .brand-name { color: #52d1df; }
+:root[data-theme="dark"] .brand-divider,
+:root[data-theme="dark"] .topbar-separator { background: #344b5d; }
+:root[data-theme="dark"] .product-name { color: #e4eef4; }
+:root[data-theme="dark"] .product-name strong { color: #a9bbc8; }
+:root[data-theme="dark"] .topbar-meta,
+:root[data-theme="dark"] .environment-indicator { color: #a9bbc8; }
+:root[data-theme="dark"] .topbar-section { color: #b9d0dc; }
+:root[data-theme="dark"] .topbar-section svg { color: #5bc8d6; }
+
+/* Base de documento: corrige a regra antiga que tentava selecionar
+   um html descendente de :root (o próprio :root já é html). */
+:root[data-theme="dark"],
+:root[data-theme="dark"] body {
+  min-height: 100%;
+  background-color: #0b1420 !important;
+  color: #e5edf4;
+}
+:root[data-theme="dark"] body {
+  background-image:
+    radial-gradient(ellipse at 7% 0%, rgb(11 132 164 / 10%), transparent 34rem),
+    linear-gradient(180deg, #0d1926 0%, #0a131e 100%) !important;
+}
+:root[data-theme="dark"] .app-shell { background: transparent; color: #e5edf4; }
+:root[data-theme="dark"] .workspace { color: #e5edf4; }
+:root[data-theme="dark"] .breadcrumb,
+:root[data-theme="dark"] .breadcrumb a { color: #9aabba; }
+:root[data-theme="dark"] .breadcrumb [aria-current="page"] { color: #d7e4ec; }
+:root[data-theme="dark"] .module-page-heading h1,
+:root[data-theme="dark"] .page-heading h1,
+:root[data-theme="dark"] .title-row h1,
+:root[data-theme="dark"] .dashboard-hero h1 { color: #e8f1f6; }
+:root[data-theme="dark"] .module-page-heading > p:not(.eyebrow),
+:root[data-theme="dark"] .page-description { color: #9aabba; }
+
+/* Superfícies e painéis compartilhados por início, cadastro,
+   gestão, consulta e relatórios. */
+:root[data-theme="dark"] .records-toolbar,
+:root[data-theme="dark"] .table-panel,
+:root[data-theme="dark"] .content-panel,
+:root[data-theme="dark"] .management-content,
+:root[data-theme="dark"] .record-form,
+:root[data-theme="dark"] .period-filter-bar,
+:root[data-theme="dark"] .table-toolbar,
+:root[data-theme="dark"] .table-footer,
+:root[data-theme="dark"] .record-picker,
+:root[data-theme="dark"] .selected-record-form,
+:root[data-theme="dark"] .chart-key-panel,
+:root[data-theme="dark"] .chart-data-details,
+:root[data-theme="dark"] .unified-chart,
+:root[data-theme="dark"] .state-panel,
+:root[data-theme="dark"] .access-notice,
+:root[data-theme="dark"] .record-period-group,
+:root[data-theme="dark"] .module-card,
+:root[data-theme="dark"] .dashboard-note,
+:root[data-theme="dark"] .empty-state {
+  background-color: #111f2d;
+  border-color: #2a4052;
+  color: #dce7ee;
+  box-shadow: 0 10px 28px rgb(0 0 0 / 22%), inset 0 1px 0 rgb(255 255 255 / 2%);
+}
+:root[data-theme="dark"] .panel-heading,
+:root[data-theme="dark"] .table-toolbar,
+:root[data-theme="dark"] .records-toolbar,
+:root[data-theme="dark"] .period-filter-bar,
+:root[data-theme="dark"] .chart-key-panel,
+:root[data-theme="dark"] .chart-data-details {
+  background: linear-gradient(145deg, #142433, #101d2a);
+  border-color: #2a4052;
+}
+:root[data-theme="dark"] .panel-heading,
+:root[data-theme="dark"] .table-heading h2,
+:root[data-theme="dark"] .table-heading h3,
+:root[data-theme="dark"] .section-heading h2,
+:root[data-theme="dark"] .panel-heading h2,
+:root[data-theme="dark"] .panel-heading h3,
+:root[data-theme="dark"] .dashboard-note strong,
+:root[data-theme="dark"] .count-value { color: #e5edf4; }
+:root[data-theme="dark"] .table-heading p,
+:root[data-theme="dark"] .section-heading p:not(.eyebrow),
+:root[data-theme="dark"] .form-help,
+:root[data-theme="dark"] .dashboard-note p,
+:root[data-theme="dark"] .count-label { color: #9aabba; }
+
+/* Cabeçalho de navegação e estados. */
+:root[data-theme="dark"] .primary-nav {
+  background: #101d2a;
+  border-bottom-color: #293b4b;
+  box-shadow: 0 4px 18px rgb(0 0 0 / 22%);
+}
+:root[data-theme="dark"] .primary-nav-link { color: #a9bac8; }
+:root[data-theme="dark"] .primary-nav-link:hover:not(.is-disabled) { color: #70d2df; background: #17303e; }
+:root[data-theme="dark"] .primary-nav-link.is-active { color: #69d2df; background: #142b39; }
+:root[data-theme="dark"] .primary-nav-divider { background: #304658; }
+
+/* Campos de formulário e filtros: cobre também elementos sem classe. */
+:root[data-theme="dark"] :where(input:not([type="checkbox"]):not([type="radio"]), select, textarea) {
+  color-scheme: dark;
+  color: #e5edf4;
+  background-color: #0d1a27;
+  border-color: #3a5062;
+}
+:root[data-theme="dark"] :where(input, select, textarea)::placeholder { color: #8296a6; opacity: 1; }
+:root[data-theme="dark"] :where(input, select, textarea):focus {
+  border-color: #36b9cc;
+  outline-color: rgb(54 185 204 / 30%);
+  box-shadow: 0 0 0 3px rgb(54 185 204 / 13%);
+}
+:root[data-theme="dark"] :where(input, select, textarea):disabled,
+:root[data-theme="dark"] :where(input, select, textarea)[readonly] {
+  color: #9aabba;
+  background-color: #1a2a38;
+  border-color: #34495a;
+}
+:root[data-theme="dark"] option { color: #e5edf4; background: #111f2d; }
+:root[data-theme="dark"] .record-form-field label,
+:root[data-theme="dark"] .record-form-field > span,
+:root[data-theme="dark"] .search-label { color: #c4d2dc; }
+:root[data-theme="dark"] .search-control,
+:root[data-theme="dark"] .search-control input { background: #0d1a27; border-color: #3a5062; color: #e5edf4; }
+:root[data-theme="dark"] .record-form-field input:disabled,
+:root[data-theme="dark"] .record-form-field select:disabled { background: #1b2b39; color: #90a2b1; }
+
+/* Consulta, gestão de vendas e tabelas. */
+:root[data-theme="dark"] .record-period-heading,
+:root[data-theme="dark"] .records-table th,
+:root[data-theme="dark"] .report-table th,
+:root[data-theme="dark"] .chart-data-table th,
+:root[data-theme="dark"] .table-title-icon,
+:root[data-theme="dark"] .count-icon {
+  background: #1a2c3b;
+  color: #c5d6e1;
+  border-color: #31495c;
+}
+:root[data-theme="dark"] .records-table td,
+:root[data-theme="dark"] .report-table td,
+:root[data-theme="dark"] .chart-data-table td {
+  color: #d5e0e8;
+  border-bottom-color: #263a4b;
+}
+:root[data-theme="dark"] .records-table tbody tr:hover td,
+:root[data-theme="dark"] .report-table tbody tr:hover td,
+:root[data-theme="dark"] .chart-data-table tbody tr:hover td { background: #172c3a; }
+:root[data-theme="dark"] .record-picker-row { color: #d7e2ea; border-bottom-color: #263a4b; }
+:root[data-theme="dark"] .record-picker-row:hover { background: #172d3b; }
+:root[data-theme="dark"] .record-picker-row.is-selected { background: #173542; }
+:root[data-theme="dark"] .selected-record-form--inline { background: #132a38; border-color: #286074; }
+:root[data-theme="dark"] .table-footer,
+:root[data-theme="dark"] .pagination { color: #b8c8d3; }
+:root[data-theme="dark"] .empty-value { color: #8398a8; }
+:root[data-theme="dark"] .button--secondary,
+:root[data-theme="dark"] .button--pagination {
+  color: #c6d8e4;
+  border-color: #3a5062;
+  background: #172838;
+}
+:root[data-theme="dark"] .button--secondary:hover:not(:disabled),
+:root[data-theme="dark"] .button--pagination:hover:not(:disabled) { background: #20394a; border-color: #4a7588; }
+:root[data-theme="dark"] .button--pagination:disabled { background: #142230; color: #718596; }
+
+/* Dashboard e cards de navegação. */
+:root[data-theme="dark"] .dashboard-hero {
+  background: linear-gradient(112deg, #0b2033 0%, #0d2d46 62%, #0c3a50 100%);
+  border-color: #28516a;
+}
+:root[data-theme="dark"] .module-card--available { background: linear-gradient(150deg, #142635, #101e2b); }
+:root[data-theme="dark"] .module-card--planned { background: #142230; }
+:root[data-theme="dark"] .module-card-description { color: #9aabba; }
+:root[data-theme="dark"] .module-icon { background: #153542; border-color: #285363; color: #63cbd8; }
+:root[data-theme="dark"] .module-icon--muted { background: #202e3a; border-color: #344553; color: #8da0ae; }
+:root[data-theme="dark"] .module-card-action { background: #162d3b; border-color: #30495a; color: #6dcbd8; }
+:root[data-theme="dark"] .dashboard-note-icon { background: #1a2d3a; border-color: #344c5d; color: #91b6c5; }
+
+/* Relatórios: sobrescreve cores fixas que estavam inline no JSX.
+   A correção cobre prospecção, filtros, KPIs, gráficos, rankings,
+   relatórios detalhados e a janela de detalhamento. */
+:root[data-theme="dark"] .module-workspace section[aria-labelledby="renewals-title"],
+:root[data-theme="dark"] .module-workspace section[aria-label="Filtros dos gráficos e relatórios"],
+:root[data-theme="dark"] .module-workspace section[aria-label="Indicadores financeiros"],
+:root[data-theme="dark"] .module-workspace section[aria-labelledby="unified-chart-title"],
+:root[data-theme="dark"] .module-workspace section:has(> div > table.report-table) {
+  background: #111f2d !important;
+  color: #e1ebf2 !important;
+  border: 1px solid #2a4052 !important;
+  box-shadow: 0 10px 28px rgb(0 0 0 / 22%) !important;
+}
+:root[data-theme="dark"] .module-workspace section[aria-labelledby="renewals-title"] > div:first-child,
+:root[data-theme="dark"] .module-workspace section[aria-labelledby="renewals-title"] > div:nth-child(2),
+:root[data-theme="dark"] .module-workspace section:has(> div > table.report-table) > div:first-child,
+:root[data-theme="dark"] .module-workspace section:has(> div > table.report-table) > div:nth-child(2) {
+  background: #142433 !important;
+  border-color: #2a4052 !important;
+  color: #bdcbd5 !important;
+}
+:root[data-theme="dark"] .module-workspace #renewals-title,
+:root[data-theme="dark"] .module-workspace #unified-chart-title,
+:root[data-theme="dark"] .module-workspace section:has(> div > table.report-table) h2,
+:root[data-theme="dark"] .module-workspace section[aria-label="Filtros dos gráficos e relatórios"] h2 {
+  color: #e5edf4 !important;
+}
+:root[data-theme="dark"] .module-workspace section[aria-labelledby="renewals-title"] p:not(.eyebrow),
+:root[data-theme="dark"] .module-workspace section[aria-labelledby="unified-chart-title"] p,
+:root[data-theme="dark"] .module-workspace section[aria-label="Filtros dos gráficos e relatórios"] p,
+:root[data-theme="dark"] .module-workspace section:has(> div > table.report-table) p,
+:root[data-theme="dark"] .module-workspace section[aria-label="Filtros dos gráficos e relatórios"] label {
+  color: #a9bac8 !important;
+}
+:root[data-theme="dark"] .module-workspace section[aria-labelledby="renewals-title"] select,
+:root[data-theme="dark"] .module-workspace section[aria-label="Filtros dos gráficos e relatórios"] input,
+:root[data-theme="dark"] .module-workspace section[aria-label="Filtros dos gráficos e relatórios"] select,
+:root[data-theme="dark"] .module-workspace section:has(> div > table.report-table) input,
+:root[data-theme="dark"] .module-workspace section:has(> div > table.report-table) select {
+  color: #e5edf4 !important;
+  background: #0d1a27 !important;
+  border-color: #3a5062 !important;
+}
+:root[data-theme="dark"] .module-workspace section[aria-labelledby="renewals-title"] > div:nth-child(2) {
+  background: #1a2b39 !important;
+}
+:root[data-theme="dark"] .module-workspace section[aria-labelledby="renewals-title"] > div:nth-child(2) strong,
+:root[data-theme="dark"] .module-workspace section:has(> div > table.report-table) > div:nth-child(2) strong {
+  color: #e5edf4 !important;
+}
+:root[data-theme="dark"] .module-workspace section[aria-label="Indicadores financeiros"] > article {
+  background: linear-gradient(145deg, #172b3b, #112130) !important;
+  border-color: #30495b !important;
+  box-shadow: 0 8px 22px rgb(0 0 0 / 22%) !important;
+}
+:root[data-theme="dark"] .module-workspace section[aria-label="Indicadores financeiros"] > article > span,
+:root[data-theme="dark"] .module-workspace section[aria-label="Indicadores financeiros"] > article > small {
+  color: #aebfcb !important;
+}
+:root[data-theme="dark"] .module-workspace section[aria-label="Indicadores financeiros"] > article > strong { color: #e6f0f5 !important; }
+:root[data-theme="dark"] .module-workspace section[aria-label="Indicadores financeiros"] > article:nth-child(2) > strong { color: #65d69d !important; }
+:root[data-theme="dark"] .module-workspace section[aria-label="Indicadores financeiros"] > article:nth-child(3) > strong { color: #f0bf70 !important; }
+:root[data-theme="dark"] .module-workspace section[aria-label="Indicadores financeiros"] > article:nth-child(5) > strong { color: #62d1ca !important; }
+:root[data-theme="dark"] .module-workspace section[aria-labelledby="unified-chart-title"] > div:first-child span {
+  background: #1b3040 !important;
+  color: #b9cbd6 !important;
+}
+:root[data-theme="dark"] .module-workspace .chart-legend-item {
+  background: #172838 !important;
+  color: #dce7ee !important;
+  border-color: #354d60 !important;
+}
+:root[data-theme="dark"] .module-workspace .chart-legend-item.is-muted {
+  background: #101d29 !important;
+  color: #8397a7 !important;
+}
+:root[data-theme="dark"] .module-workspace .chart-legend-item small { color: inherit !important; }
+:root[data-theme="dark"] .module-workspace .chart-key-panel strong,
+:root[data-theme="dark"] .module-workspace .chart-key-panel h3,
+:root[data-theme="dark"] .module-workspace .chart-data-details strong { color: #e4edf3 !important; }
+:root[data-theme="dark"] .module-workspace .chart-key-panel p,
+:root[data-theme="dark"] .module-workspace .chart-data-details p { color: #a9bac8 !important; }
+:root[data-theme="dark"] .module-workspace .unified-chart-svg rect[fill="#f8fafc"] { fill: #122230 !important; }
+:root[data-theme="dark"] .module-workspace .unified-chart-svg line[stroke="#e3eaf2"] { stroke: #304556 !important; }
+:root[data-theme="dark"] .module-workspace .unified-chart-svg line[stroke="#94a3b8"] { stroke: #73899a !important; }
+:root[data-theme="dark"] .module-workspace .chart-axis-label,
+:root[data-theme="dark"] .module-workspace .chart-category-label { fill: #a9bbc9 !important; }
+:root[data-theme="dark"] .module-workspace .chart-hover-tooltip {
+  color: #e5edf4;
+  background: rgb(17 31 45 / 98%) !important;
+  border-color: #385266 !important;
+  box-shadow: 0 18px 42px rgb(0 0 0 / 38%);
+}
+:root[data-theme="dark"] .module-workspace section:has(> div > table.report-table) tr[style*="background"] {
+  background: #172b3a !important;
+}
+:root[data-theme="dark"] .module-workspace section:has(> div > table.report-table) td[style*="color"] {
+  color: #d7e3eb !important;
+}
+:root[data-theme="dark"] .module-workspace section:has(> div > table.report-table) tfoot tr {
+  background: #1a2c3b !important;
+}
+:root[data-theme="dark"] .module-workspace [role="dialog"] > section {
+  color: #e5edf4 !important;
+  background: #111f2d !important;
+  border: 1px solid #30485a !important;
+}
+:root[data-theme="dark"] .module-workspace [role="dialog"] > section > header {
+  color: #e5edf4 !important;
+  background: #142433 !important;
+  border-color: #30485a !important;
+}
+:root[data-theme="dark"] .module-workspace [role="dialog"] > section h2,
+:root[data-theme="dark"] .module-workspace [role="dialog"] > section h3 { color: #e5edf4 !important; }
+:root[data-theme="dark"] .module-workspace [role="dialog"] > section p,
+:root[data-theme="dark"] .module-workspace [role="dialog"] > section span { color: #b4c4cf; }
+:root[data-theme="dark"] .module-workspace [role="dialog"] > section > div > div > div {
+  background: #172b3a !important;
+  border-color: #30485a !important;
+}
+:root[data-theme="dark"] .module-workspace [role="dialog"] > section input,
+:root[data-theme="dark"] .module-workspace [role="dialog"] > section select {
+  color: #e5edf4 !important;
+  background: #0d1a27 !important;
+  border-color: #3a5062 !important;
+}
+
+/* Cores semânticas: preservar leitura dos status em ambos os temas. */
+:root[data-theme="dark"] .status-tag,
+:root[data-theme="dark"] .sale-status-badge { border-color: transparent; }
+:root[data-theme="dark"] .sale-status--emitido { color: #8bd7f3; background: #17374a; }
+:root[data-theme="dark"] .sale-status--pendente { color: #f2cd83; background: #44351e; }
+:root[data-theme="dark"] .sale-status--instalado { color: #9fc5ff; background: #203957; }
+:root[data-theme="dark"] .sale-status--concluido { color: #83e0ae; background: #173d30; }
+:root[data-theme="dark"] .sale-status--nao-concluido { color: #f3b77c; background: #49301e; }
+:root[data-theme="dark"] .sale-status--cancelado { color: #ff9a9a; background: #48252b; }
+
+/* Ajuda flutuante, central de ajuda, atalhos e diálogos. */
+:root[data-theme="dark"] .wc-help-trigger,
+:root[data-theme="dark"] .wc-legend-trigger {
+  color: #73d4e2 !important;
+  background: #142838 !important;
+  border: 1px solid #3b596d !important;
+  box-shadow: 0 8px 22px rgb(0 0 0 / 32%) !important;
+}
+:root[data-theme="dark"] .wc-help-trigger:hover,
+:root[data-theme="dark"] .wc-legend-trigger:hover { background: #1b394b !important; border-color: #4b8295 !important; }
+:root[data-theme="dark"] .wc-help-backdrop { background: rgb(2 8 14 / 76%) !important; }
+:root[data-theme="dark"] .wc-help-dialog {
+  color: #e5edf4 !important;
+  background: #111f2d !important;
+  border: 1px solid #30485a !important;
+  box-shadow: 0 28px 80px rgb(0 0 0 / 55%) !important;
+}
+:root[data-theme="dark"] .wc-help-dialog-header,
+:root[data-theme="dark"] .wc-help-footer { background: #142433 !important; border-color: #30485a !important; }
+:root[data-theme="dark"] .wc-help-dialog h2,
+:root[data-theme="dark"] .wc-help-dialog h3,
+:root[data-theme="dark"] .wc-help-dialog h4 { color: #e5edf4 !important; }
+:root[data-theme="dark"] .wc-help-dialog p,
+:root[data-theme="dark"] .wc-help-dialog small,
+:root[data-theme="dark"] .wc-help-dialog span { color: #b4c4cf; }
+:root[data-theme="dark"] .wc-help-item,
+:root[data-theme="dark"] .wc-help-question,
+:root[data-theme="dark"] .wc-help-shortcuts,
+:root[data-theme="dark"] .wc-help-legend-list,
+:root[data-theme="dark"] .wc-help-shortcut { background: #172b3a !important; border-color: #30485a !important; color: #dce7ee !important; }
+:root[data-theme="dark"] .wc-help-question:hover { background: #1c3545 !important; }
+:root[data-theme="dark"] .wc-help-shortcut kbd { color: #8ce0e8; background: #102532; border-color: #3c596b; }
+:root[data-theme="dark"] .wc-help-close { color: #d5e2ea; background: #1a3040; border-color: #3b5365; }
+
+/* Login e estados de carregamento/erro. */
+:root[data-theme="dark"] .login-page {
+  background: radial-gradient(ellipse at 18% 18%, rgb(6 151 181 / 14%), transparent 36rem), linear-gradient(140deg, #0b1622, #101e2c);
+}
+:root[data-theme="dark"] .login-panel,
+:root[data-theme="dark"] .login-brand-stage {
+  color: #e5edf4;
+  border-color: #2c4355;
+  background: linear-gradient(155deg, #142433, #101d2a);
+  box-shadow: 0 28px 70px rgb(0 0 0 / 34%), inset 0 1px 0 rgb(255 255 255 / 3%);
+}
+:root[data-theme="dark"] .login-panel > p:not(.eyebrow),
+:root[data-theme="dark"] .login-setup-notice { color: #a6b8c6; }
+:root[data-theme="dark"] .state-copy h2 { color: #e5edf4; }
+:root[data-theme="dark"] .state-copy p { color: #a9bac8; }
+
+/* Melhor adaptação para telas menores sem quebrar a navegação. */
+@media (max-width: 900px) {
+  .topbar-inner { width: min(100% - 32px, 1540px); gap: 14px; }
+  .topbar-meta { gap: 12px; }
+}
+@media (max-width: 680px) {
+  .topbar-inner { min-height: 64px; align-items: center; flex-wrap: wrap; padding-block: 10px; }
+  .topbar-meta { width: 100%; justify-content: space-between; flex-wrap: wrap; }
+  .environment-indicator { display: none; }
+  .topbar-separator { display: none; }
+  .primary-nav-inner { overflow-x: auto; scrollbar-width: thin; }
+  .primary-nav-link { flex: 0 0 auto; }
+  .login-theme-control { top: 12px; right: 12px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  :root[data-theme="dark"] *,
+  :root[data-theme="dark"] *::before,
+  :root[data-theme="dark"] *::after { scroll-behavior: auto !important; }
+}
