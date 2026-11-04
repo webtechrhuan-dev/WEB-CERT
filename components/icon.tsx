@@ -13,6 +13,7 @@ export type IconName =
   | "refresh"
   | "search"
   | "spreadsheet"
+  | "trash"
   | "users";
 
 const paths: Record<IconName, React.ReactNode> = {
