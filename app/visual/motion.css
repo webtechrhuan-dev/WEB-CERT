@@ -1,0 +1,23 @@
+/* Motion system — movimento curto, intencional e sem animar propriedades caras */
+@keyframes wc-enter-up { from { opacity: 0; translate: 0 12px; } to { opacity: 1; translate: 0 0; } }
+@keyframes wc-enter-scale { from { opacity: 0; scale: .975; } to { opacity: 1; scale: 1; } }
+@keyframes wc-sheen { to { background-position: 200% 0; } }
+@keyframes wc-orbit-pulse { 0%,100% { box-shadow: 0 0 0 0 rgb(35 190 202 / 0%); } 50% { box-shadow: 0 0 0 8px rgb(35 190 202 / 9%); } }
+@keyframes wc-skeleton-shimmer { to { background-position: -200% 0; } }
+.workspace > :where(.page-heading,.module-page-heading,.dashboard-hero,.modules-section,
+ .records-toolbar,.table-panel,.record-form,.management-content,.unified-chart,.report-panel,
+ .state-panel,.period-filter-bar) { animation: wc-enter-up 440ms var(--wc-ease-emphasis) both; }
+.workspace > :nth-child(2) { animation-delay: 45ms; }
+.workspace > :nth-child(3) { animation-delay: 90ms; }
+.workspace > :nth-child(4) { animation-delay: 135ms; }
+.module-grid > .module-card { animation: wc-enter-scale 380ms var(--wc-ease-emphasis) both; }
+.module-grid > .module-card:nth-child(2) { animation-delay: 45ms; }
+.module-grid > .module-card:nth-child(3) { animation-delay: 90ms; }
+.module-grid > .module-card:nth-child(4) { animation-delay: 135ms; }
+.topbar::before { background-size: 200% 100%; animation: wc-sheen 10s linear infinite; }
+.environment-dot { animation: wc-orbit-pulse 2.8s ease-in-out infinite; }
+:where(.loading,.skeleton) {
+  background-image: linear-gradient(100deg, transparent 20%, rgb(130 160 177 / 12%) 45%, transparent 70%);
+  background-size: 200% 100%; animation: wc-skeleton-shimmer 1.7s linear infinite;
+}
+.wc-help-backdrop,[role="dialog"] { animation: wc-enter-scale 180ms var(--wc-ease-standard) both; }
