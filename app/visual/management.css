@@ -1,0 +1,185 @@
+/* Gestão de vendas e cadastro — camada visual consolidada. */
+.management-content { gap: 20px; }
+.management-content .content-panel {
+  border-color: var(--line);
+  border-radius: var(--wc-radius-lg, 16px);
+  background: var(--surface);
+  box-shadow: var(--wc-shadow-sm);
+}
+.management-content .panel-heading {
+  align-items: center;
+  gap: 18px;
+  padding: 22px 24px;
+  border-bottom-color: var(--line);
+  background: linear-gradient(180deg, color-mix(in srgb, var(--surface) 94%, var(--brand-100)) 0%, var(--surface) 100%);
+}
+.management-content .panel-heading h2 { color: var(--ink); font-size: 16px; letter-spacing: -.02em; }
+.management-content .panel-heading p { color: var(--muted); font-size: 12px; line-height: 1.6; }
+.management-content .record-count {
+  padding: 6px 10px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: var(--canvas);
+  color: var(--muted-strong, var(--muted));
+  font-size: 11px;
+  font-weight: 650;
+  font-variant-numeric: tabular-nums;
+}
+.management-content .record-form { padding: 24px; }
+.management-content .record-form-grid {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 18px 20px;
+}
+.management-content .record-form-field {
+  gap: 8px;
+  color: var(--muted-strong, var(--muted));
+  font-size: 11px;
+  font-weight: 650;
+  line-height: 1.4;
+}
+.management-content .record-form-field input,
+.management-content .record-form-field select,
+.management-content .period-filter-bar select {
+  width: 100%;
+  min-width: 0;
+  min-height: 44px;
+  padding: 0 12px;
+  border: 1px solid var(--line-strong);
+  border-radius: var(--wc-radius-sm, 9px);
+  background-color: var(--surface);
+  color: var(--ink);
+  font: inherit;
+  font-size: 13px;
+  font-weight: 450;
+}
+.management-content .record-form-field input:hover,
+.management-content .record-form-field select:hover,
+.management-content .period-filter-bar select:hover { border-color: var(--brand-400); }
+.management-content .record-form-field input::placeholder { color: var(--muted); opacity: .72; }
+.management-content .form-help {
+  margin-top: 18px;
+  padding: 12px 14px;
+  border: 1px solid var(--line);
+  border-radius: var(--wc-radius-sm, 9px);
+  background: var(--canvas);
+  color: var(--muted);
+  font-size: 11px;
+  line-height: 1.65;
+}
+.management-content .form-actions { gap: 10px; margin-top: 22px; }
+.management-content .form-message { margin-inline: 24px; }
+.management-content .access-notice {
+  border-color: color-mix(in srgb, var(--brand-400) 30%, var(--line));
+  border-radius: var(--wc-radius-md, 12px);
+  background: color-mix(in srgb, var(--brand-100) 48%, var(--surface));
+  color: var(--ink);
+}
+.management-content .period-filter-bar {
+  grid-template-columns: repeat(2, minmax(190px, 280px)) auto;
+  align-items: end;
+  justify-content: start;
+  gap: 16px;
+  padding: 22px 24px;
+  border-bottom: 1px solid var(--line);
+  background: var(--surface);
+}
+.management-content .period-filter-bar .record-form-field { margin: 0; }
+.management-content .period-filter-clear { min-height: 44px; }
+.management-content .period-filter-empty {
+  margin: 0;
+  padding: 30px 24px;
+  border-top: 1px solid var(--line);
+  background: var(--canvas);
+  color: var(--muted);
+  font-size: 13px;
+  line-height: 1.65;
+  text-align: center;
+}
+.management-content .management-search { max-width: 640px; margin: 20px 24px; }
+.management-content .search-label { color: var(--muted-strong, var(--muted)); font-size: 11px; font-weight: 650; }
+.management-content .record-picker { border-top-color: var(--line); }
+.management-content .record-period-group + .record-period-group { border-top: 8px solid var(--canvas); }
+.management-content .record-period-heading {
+  gap: 12px;
+  padding: 13px 24px;
+  border-bottom-color: var(--line);
+  background: var(--canvas);
+  color: var(--ink);
+}
+.management-content .record-period-heading strong { color: var(--brand-600); font-size: 13px; }
+.management-content .record-picker-row {
+  min-height: 64px;
+  grid-template-columns: 82px minmax(150px, 1.2fr) minmax(130px, .8fr) auto 18px;
+  gap: 16px;
+  padding: 11px 24px;
+  border-bottom-color: var(--line);
+  background: var(--surface);
+  color: var(--muted);
+  font-size: 12px;
+}
+.management-content .record-picker-row:hover,
+.management-content .record-picker-row.is-selected {
+  background: color-mix(in srgb, var(--brand-100) 42%, var(--surface));
+}
+.management-content .record-picker-row strong { color: var(--ink); font-size: 13px; }
+.management-content .record-picker-number { color: var(--muted); font-size: 10px; }
+.management-content .selected-record-form--inline {
+  border-bottom-color: var(--line);
+  background: var(--canvas);
+  box-shadow: inset 3px 0 var(--brand-500);
+}
+.management-content .selected-record-form--inline .panel-heading { background: var(--canvas); }
+.management-content .empty-state { color: var(--muted); }
+:root[data-theme="dark"] .management-content .panel-heading {
+  background: linear-gradient(180deg, color-mix(in srgb, var(--surface) 90%, var(--brand-900)) 0%, var(--surface) 100%);
+}
+:root[data-theme="dark"] .management-content .record-form-field input,
+:root[data-theme="dark"] .management-content .record-form-field select,
+:root[data-theme="dark"] .management-content .period-filter-bar select {
+  border-color: var(--line-strong);
+  background: var(--surface);
+  color: var(--ink);
+  color-scheme: dark;
+}
+:root[data-theme="dark"] .management-content .form-help,
+:root[data-theme="dark"] .management-content .period-filter-empty,
+:root[data-theme="dark"] .management-content .record-period-heading {
+  border-color: var(--line);
+  background: var(--canvas);
+  color: var(--muted);
+}
+:root[data-theme="dark"] .management-content .record-picker-row { border-color: var(--line); background: var(--surface); }
+:root[data-theme="dark"] .management-content .record-picker-row:hover,
+:root[data-theme="dark"] .management-content .record-picker-row.is-selected {
+  background: color-mix(in srgb, var(--brand-800) 35%, var(--surface));
+}
+:root[data-theme="dark"] .management-content .access-notice {
+  border-color: color-mix(in srgb, var(--brand-400) 35%, var(--line));
+  background: color-mix(in srgb, var(--brand-900) 65%, var(--surface));
+  color: var(--ink);
+}
+@media (max-width: 900px) {
+  .management-content .record-form-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .management-content .period-filter-bar { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .management-content .period-filter-clear { grid-column: 1 / -1; justify-self: start; }
+}
+@media (max-width: 640px) {
+  .management-content { gap: 14px; }
+  .management-content .panel-heading { align-items: flex-start; flex-direction: column; padding: 18px; }
+  .management-content .record-form { padding: 18px; }
+  .management-content .record-form-grid { grid-template-columns: minmax(0, 1fr); gap: 14px; }
+  .management-content .period-filter-bar { grid-template-columns: minmax(0, 1fr); padding: 18px; }
+  .management-content .period-filter-clear { grid-column: auto; width: 100%; }
+  .management-content .management-search { margin: 16px 18px; }
+  .management-content .record-picker-row {
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: 5px 10px;
+    padding: 13px 16px;
+  }
+  .management-content .record-picker-number { grid-column: 1; }
+  .management-content .record-picker-row strong { grid-column: 1; white-space: normal; }
+  .management-content .record-picker-row > span:nth-of-type(2) { grid-column: 1; }
+  .management-content .record-picker-row .sale-status-badge { grid-column: 2; grid-row: 1 / span 3; }
+  .management-content .record-period-heading { padding-inline: 16px; }
+  .management-content .form-message { margin-inline: 18px; }
+}
