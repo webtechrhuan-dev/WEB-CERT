@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { AuthControl } from "@/components/auth-control";
 import { Icon } from "@/components/icon";
+import { ThemeToggle } from "@/components/theme-toggle";
 
 type AppHeaderProps = {
   active: "home" | "records" | "register" | "edit" | "reports";
@@ -41,6 +42,7 @@ export function AppHeader({ active }: AppHeaderProps) {
               <Icon name={activeItem.icon} />
               {active === "home" ? "Menu principal" : activeItem.label}
             </span>
+            <ThemeToggle />
             <AuthControl />
           </div>
         </div>
