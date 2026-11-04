@@ -21,6 +21,22 @@ export function KeyboardShortcuts() {
         }
         return;
       }
+      // F4 é uma ação contextual de edição: precisa funcionar mesmo com o foco
+      // dentro de um input/select do formulário aberto.
+      if (event.key === "F4" && !event.ctrlKey && !event.metaKey && !event.altKey && !event.shiftKey) {
+        if (pathname !== "/editar") return;
+        const editor = document.querySelector<HTMLElement>(".selected-record-form");
+        const statusField = editor
+          ? Array.from(editor.querySelectorAll<HTMLLabelElement>(".record-form-field"))
+              .find((label) => label.querySelector("span")?.textContent?.trim() === "Status / Observação")
+              ?.querySelector<HTMLSelectElement>("select")
+          : null;
+        if (statusField) {
+          event.preventDefault();
+          statusField.focus();
+        }
+        return;
+      }
       if (editing || event.ctrlKey || event.metaKey || event.shiftKey) return;
 
       const go = (path: string) => { event.preventDefault(); router.push(path); };
@@ -43,10 +59,6 @@ export function KeyboardShortcuts() {
           if (!event.altKey) return;
           event.preventDefault();
           document.querySelector<HTMLInputElement>(".management-search input, input[type='search']")?.focus();
-          break;
-        case "F4":
-          event.preventDefault();
-          document.querySelectorAll<HTMLSelectElement>(".selected-record-form .record-form-grid select")[3]?.focus();
           break;
         case "F8":
           go("/relatorios");
