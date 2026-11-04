@@ -39,7 +39,7 @@ O contador de linha é incrementado atomicamente. A edição compara a versão e
 - `components/certificate-files.tsx`: interface de upload, listagem e download exibida na edição da venda.
 - `lib/server/certificates-mongodb.ts`: cliente MongoDB separado, GridFS, validação de ObjectId e limite de 10 MB.
 
-O arquivo é associado ao `rowNumber` da venda no campo `metadata` do GridFS. A listagem retorna apenas metadados; o binário só é transmitido pela rota autenticada de download. Extensões aceitas: `.p12` e `.pfx`. O servidor normaliza o nome e registra usuário/data de envio.
+O arquivo é associado ao `rowNumber` da venda no campo `metadata` do GridFS. A listagem retorna apenas metadados; o binário só é transmitido pela rota autenticada de download. Extensões aceitas: `.p12` e `.pfx`. O servidor normaliza o nome e registra usuário/data de envio. A validação inicial confere extensão, tamanho e marcador ASN.1 DER (0x30); isso não substitui a validação criptográfica completa do conteúdo.
 
 ### Variáveis de ambiente
 
@@ -56,7 +56,7 @@ A aplicação principal continua funcional sem a configuração opcional do clus
 - Configurar limite de requisição e monitoramento de falhas de upload/download.
 - Confirmar isolamento de rede e usuário de banco com privilégios mínimos.
 
-## Relatórios e regras financeiras
+## Auditoria operacional\n\n- `lib/server/audit-log.ts` grava eventos na coleção `audit_events`, sem armazenar valores das vendas, senhas, tokens ou bytes dos arquivos.\n- Eventos instrumentados: `sale.created`, `sale.updated`, `sale.deleted`, `certificate.uploaded` e `certificate.downloaded`.\n- `GET /api/admin/audit` exige papel `admin` e oferece paginação por cursor ObjectId (limite de 1 a 100 por página).\n- A gravação da auditoria é best-effort: uma indisponibilidade é registrada em log sanitizado e não converte uma operação comercial já concluída em falha falsa. A interface administrativa, alertas e reconciliação de eventos ainda precisam ser construídos.\n\n## Relatórios e regras financeiras
 
 - A lógica de agregação está em `lib/reporting.ts`.
 - Os registros elegíveis financeiramente excluem `Cancelado` e `não concluido`.
