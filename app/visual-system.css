@@ -1,0 +1,257 @@
+/* WEB-CERT · Visual system v2
+   Tokens semânticos, superfícies, estados, motion e responsividade.
+   Mantém a folha legada como compatibilidade enquanto os módulos migram para tokens. */
+
+:root {
+  color-scheme: light;
+  --wc-bg: #f2f6fa;
+  --wc-surface: #ffffff;
+  --wc-surface-raised: #ffffff;
+  --wc-surface-muted: #f6f9fb;
+  --wc-text: #142b3d;
+  --wc-text-soft: #536a7b;
+  --wc-text-faint: #788d9c;
+  --wc-border: #dce6ed;
+  --wc-border-strong: #c8d7e1;
+  --wc-brand: #087f9f;
+  --wc-brand-strong: #075c7d;
+  --wc-accent: #11b8c9;
+  --wc-ring: rgb(10 166 194 / 24%);
+  --wc-shadow-1: 0 1px 2px rgb(12 38 58 / 4%), 0 5px 14px rgb(12 38 58 / 4%);
+  --wc-shadow-2: 0 8px 24px rgb(12 38 58 / 7%), 0 2px 6px rgb(12 38 58 / 3%);
+  --wc-shadow-3: 0 18px 48px rgb(8 30 48 / 13%), 0 5px 14px rgb(8 30 48 / 5%);
+  --wc-radius-card: 15px;
+  --wc-radius-control: 9px;
+  --wc-motion: cubic-bezier(.2,.75,.25,1);
+  --wc-fast: 150ms;
+  --wc-normal: 230ms;
+}
+
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --wc-bg: #0b1722;
+  --wc-surface: #122333;
+  --wc-surface-raised: #172b3b;
+  --wc-surface-muted: #1a3041;
+  --wc-text: #e7f0f5;
+  --wc-text-soft: #b2c4d0;
+  --wc-text-faint: #8da3b2;
+  --wc-border: #2b4152;
+  --wc-border-strong: #3a5366;
+  --wc-brand: #55c5d5;
+  --wc-brand-strong: #82d9e3;
+  --wc-accent: #3cc9d5;
+  --wc-ring: rgb(60 201 213 / 22%);
+  --wc-shadow-1: 0 1px 2px rgb(0 0 0 / 18%), 0 5px 14px rgb(0 0 0 / 13%);
+  --wc-shadow-2: 0 10px 28px rgb(0 0 0 / 23%), 0 2px 7px rgb(0 0 0 / 15%);
+  --wc-shadow-3: 0 20px 52px rgb(0 0 0 / 34%), 0 5px 14px rgb(0 0 0 / 20%);
+}
+
+/* Base + consistência de controles */
+html { background: var(--wc-bg); scroll-padding-top: 18px; }
+body { background: var(--wc-bg); color: var(--wc-text); }
+:where(button, input, select, textarea) { accent-color: var(--wc-brand); }
+:where(input, select, textarea) {
+  transition: border-color var(--wc-fast) ease, background-color var(--wc-fast) ease,
+    box-shadow var(--wc-fast) ease, color var(--wc-fast) ease;
+}
+:where(input, select, textarea):focus-visible {
+  outline: 0;
+  border-color: var(--wc-brand) !important;
+  box-shadow: 0 0 0 3px var(--wc-ring) !important;
+}
+:where(button, a, input, select, textarea, [role="button"]) {
+  -webkit-tap-highlight-color: transparent;
+}
+:where(button, [role="button"]) { touch-action: manipulation; }
+::selection { background: rgb(20 178 198 / 24%); }
+
+/* Navegação e cabeçalho */
+.topbar {
+  isolation: isolate;
+  box-shadow: 0 5px 22px rgb(4 20 34 / 13%);
+}
+.topbar::before {
+  height: 3px;
+  background-size: 200% 100%;
+  animation: wc-gradient-flow 9s linear infinite;
+}
+.primary-nav {
+  position: relative;
+  z-index: 3;
+  box-shadow: 0 4px 14px rgb(13 39 57 / 3%);
+}
+.primary-nav-link {
+  transition: color var(--wc-normal) var(--wc-motion), background var(--wc-normal) ease;
+}
+.primary-nav-link:not(.is-disabled)::before {
+  position: absolute; inset: 5px 3px; z-index: -1;
+  border-radius: 7px; background: var(--wc-ring);
+  content: ""; opacity: 0; transform: scale(.96);
+  transition: opacity var(--wc-fast) ease, transform var(--wc-fast) var(--wc-motion);
+}
+.primary-nav-link:hover:not(.is-disabled)::before { opacity: 1; transform: scale(1); }
+.primary-nav-link.is-active::after { height: 3px; }
+
+/* Superfícies e cartões */
+:where(.module-card, .records-toolbar, .table-panel, .record-form, .unified-chart,
+  .management-content, .chart-key-panel, .state-panel, .empty-state) {
+  border-radius: var(--wc-radius-card);
+  box-shadow: var(--wc-shadow-1);
+  transition: border-color var(--wc-normal) ease, box-shadow var(--wc-normal) var(--wc-motion),
+    background-color var(--wc-normal) ease, transform var(--wc-normal) var(--wc-motion);
+}
+.module-card--available:hover {
+  transform: translateY(-4px);
+  box-shadow: var(--wc-shadow-2);
+}
+:where(.records-toolbar, .table-panel, .record-form, .unified-chart, .management-content):hover {
+  border-color: var(--wc-border-strong);
+}
+.dashboard-hero {
+  border-radius: 20px;
+  box-shadow: 0 18px 42px rgb(7 34 53 / 17%);
+}
+.dashboard-hero::before {
+  position: absolute; inset: -45% auto auto 55%; width: 430px; height: 430px;
+  border: 1px solid rgb(135 222 231 / 12%); border-radius: 50%;
+  box-shadow: 0 0 0 28px rgb(135 222 231 / 4%), 0 0 0 58px rgb(135 222 231 / 3%);
+  content: ""; pointer-events: none;
+}
+
+/* Botões: feedback tátil e hierarquia */
+.button, .theme-toggle, .auth-control-link, .auth-signout {
+  transition: transform var(--wc-fast) var(--wc-motion), box-shadow var(--wc-fast) ease,
+    border-color var(--wc-fast) ease, background-color var(--wc-fast) ease, filter var(--wc-fast) ease;
+}
+.button:hover:not(:disabled) { transform: translateY(-1px); }
+.button:active:not(:disabled) { transform: translateY(1px) scale(.985); }
+.button--primary:hover:not(:disabled) {
+  box-shadow: 0 7px 18px rgb(7 99 132 / 24%);
+  filter: saturate(1.08) brightness(1.04);
+}
+:where(.theme-toggle, .auth-control-link, .auth-signout):hover { transform: translateY(-1px); }
+
+/* Formulários */
+:where(.search-control, .login-input-wrap, .form-field, .record-form-field) {
+  transition: border-color var(--wc-fast) ease, box-shadow var(--wc-fast) ease,
+    background-color var(--wc-fast) ease;
+}
+.search-control:focus-within, .login-input-wrap:focus-within {
+  box-shadow: 0 0 0 3px var(--wc-ring), var(--wc-shadow-1);
+}
+:where(input, select, textarea)::placeholder { color: var(--wc-text-faint); opacity: .82; }
+
+/* Tabelas: leitura, foco e hover */
+:where(.records-table, .report-table, .chart-data-table) {
+  border-collapse: separate;
+  border-spacing: 0;
+}
+:where(.records-table, .report-table, .chart-data-table) tbody tr {
+  transition: background-color var(--wc-fast) ease, box-shadow var(--wc-fast) ease;
+}
+:where(.records-table, .report-table, .chart-data-table) tbody tr:hover {
+  box-shadow: inset 3px 0 0 var(--wc-accent);
+}
+:where(.records-table, .report-table, .chart-data-table) td {
+  transition: background-color var(--wc-fast) ease, color var(--wc-fast) ease;
+}
+
+/* Tema escuro sem depender das cores hardcoded dos estilos antigos */
+:root[data-theme="dark"] body,
+:root[data-theme="dark"] .workspace { color: var(--wc-text); }
+:root[data-theme="dark"] .primary-nav,
+:root[data-theme="dark"] .records-toolbar,
+:root[data-theme="dark"] .table-panel,
+:root[data-theme="dark"] .record-form,
+:root[data-theme="dark"] .unified-chart,
+:root[data-theme="dark"] .management-content,
+:root[data-theme="dark"] .module-card,
+:root[data-theme="dark"] .search-control,
+:root[data-theme="dark"] .button--secondary {
+  border-color: var(--wc-border);
+  background-color: var(--wc-surface);
+  color: var(--wc-text);
+}
+:root[data-theme="dark"] .primary-nav-link { color: var(--wc-text-soft); }
+:root[data-theme="dark"] .primary-nav-link.is-active,
+:root[data-theme="dark"] .primary-nav-link:hover:not(.is-disabled) { color: var(--wc-brand); }
+:root[data-theme="dark"] :where(.page-heading h1, .section-heading h2, .table-heading h2,
+  .module-card-topline strong, .count-value, .search-label, .count-label) { color: var(--wc-text); }
+:root[data-theme="dark"] :where(.page-description, .section-heading p:not(.eyebrow),
+  .module-card-description, .table-heading p, .count-value span) { color: var(--wc-text-soft); }
+:root[data-theme="dark"] .module-card--planned { background: #142635; }
+:root[data-theme="dark"] .module-icon,
+:root[data-theme="dark"] .count-icon,
+:root[data-theme="dark"] .table-title-icon {
+  border-color: #315064; background: #1b3a4d; color: #69d0dc;
+}
+:root[data-theme="dark"] .search-control:focus-within { background: #142b3b; }
+:root[data-theme="dark"] .button--secondary:hover:not(:disabled) { background: #1b3547; }
+:root[data-theme="dark"] .dashboard-note {
+  border-color: var(--wc-border); background: var(--wc-surface-muted);
+}
+:root[data-theme="dark"] .dashboard-note p,
+:root[data-theme="dark"] .dashboard-note strong { color: var(--wc-text-soft); }
+:root[data-theme="dark"] .source-badge {
+  border-color: #315064; background: #18394b; color: #a5e3e9;
+}
+
+/* Animações discretas, com entrada escalonada por área */
+@keyframes wc-gradient-flow { to { background-position: 200% 0; } }
+@keyframes wc-rise-in {
+  from { opacity: 0; transform: translate3d(0, 12px, 0); }
+  to { opacity: 1; transform: translate3d(0, 0, 0); }
+}
+@keyframes wc-soft-pop {
+  0% { opacity: 0; transform: scale(.975) translateY(5px); }
+  100% { opacity: 1; transform: scale(1) translateY(0); }
+}
+@keyframes wc-pulse-ring {
+  0%, 100% { box-shadow: 0 0 0 0 rgb(31 190 199 / 0%); }
+  50% { box-shadow: 0 0 0 7px rgb(31 190 199 / 9%); }
+}
+.workspace > :where(.page-heading, .module-page-heading, .dashboard-hero,
+  .modules-section, .records-toolbar, .table-panel, .management-content,
+  .record-form, .unified-chart, .state-panel) {
+  animation: wc-rise-in 480ms var(--wc-motion) both;
+}
+.workspace > :nth-child(2) { animation-delay: 45ms; }
+.workspace > :nth-child(3) { animation-delay: 90ms; }
+.workspace > :nth-child(4) { animation-delay: 135ms; }
+.module-grid > .module-card { animation: wc-soft-pop 420ms var(--wc-motion) both; }
+.module-grid > .module-card:nth-child(2) { animation-delay: 55ms; }
+.module-grid > .module-card:nth-child(3) { animation-delay: 100ms; }
+.module-grid > .module-card:nth-child(4) { animation-delay: 145ms; }
+.environment-dot { animation: wc-pulse-ring 2.8s ease-in-out infinite; }
+
+/* Scrollbars mais discretas, sem esconder a navegação horizontal */
+:where(.table-scroll, .table-scroll-region, .unified-chart-scroll, .primary-nav-inner) {
+  scrollbar-width: thin;
+  scrollbar-color: var(--wc-border-strong) transparent;
+}
+:where(.table-scroll, .table-scroll-region, .unified-chart-scroll)::-webkit-scrollbar { height: 8px; width: 8px; }
+:where(.table-scroll, .table-scroll-region, .unified-chart-scroll)::-webkit-scrollbar-thumb {
+  border: 2px solid transparent; border-radius: 20px;
+  background: var(--wc-border-strong); background-clip: padding-box;
+}
+
+/* Telas menores */
+@media (max-width: 760px) {
+  .dashboard-hero { border-radius: 16px; }
+  :where(.module-card, .records-toolbar, .table-panel, .record-form, .unified-chart) {
+    border-radius: 13px;
+  }
+  .module-card--available:hover { transform: none; }
+}
+@media (hover: none) {
+  .module-card--available:hover, .button:hover:not(:disabled) { transform: none; }
+}
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: .01ms !important;
+    animation-iteration-count: 1 !important;
+    scroll-behavior: auto !important;
+    transition-duration: .01ms !important;
+  }
+}
