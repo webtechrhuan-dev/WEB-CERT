@@ -396,3 +396,22 @@
   .report-details-meta { padding:11px 17px; }
 }
 @media (prefers-reduced-motion: reduce) { .report-kpi-card,.report-group-row { transition:none; } }
+
+
+/* Marcadores da tooltip e colunas da tabela do gráfico */
+.chart-hover-tooltip__grid i.chart-tooltip-swatch { display:inline-block; width:8px; height:8px; flex:0 0 8px; border-radius:50%; }
+.chart-tooltip-swatch--revenue { background:#0e9aa7; }
+.chart-tooltip-swatch--cost { background:#f0a34a; }
+.chart-tooltip-swatch--profit { background:#4778e8; }
+.chart-tooltip-swatch--completed { background:#16a477; }
+.chart-tooltip-swatch--excluded { background:#e58b42; }
+.chart-tooltip-swatch--review { background:#8b6be8; }
+.chart-tooltip-swatch--total { background:#64748b; }
+.report-chart-col--period { width:150px; }
+.report-chart-col--revenue { width:175px; }
+.report-chart-col--cost { width:145px; }
+.report-chart-col--profit { width:195px; }
+.report-chart-col--completed { width:155px; }
+.report-chart-col--excluded { width:185px; }
+.report-chart-col--review { width:155px; }
+.report-chart-col--total { width:165px; }
