@@ -1,0 +1,61 @@
+/* Tema claro/escuro: componentes com superfícies semânticas, sem depender de hacks inline */
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --wc-color-surface-soft: #172b3b;
+}
+:root[data-theme="dark"] body,
+:root[data-theme="dark"] .app-shell { background: var(--canvas); color: var(--ink); }
+:root[data-theme="dark"] :where(.primary-nav,.module-card,.records-toolbar,.table-panel,
+ .record-form,.unified-chart,.chart-data-details,.content-panel,.management-content,
+ .report-panel,.state-panel,.access-notice,.empty-state,.period-filter-bar,
+ .selected-record-form--inline,.record-picker--grouped) {
+  background-color: var(--surface);
+  border-color: var(--line);
+  color: var(--ink);
+}
+:root[data-theme="dark"] :where(.module-card--planned,.dashboard-note,.period-filter-empty,
+ .record-period-heading,.table-toolbar,.panel-heading,.chart-key-panel,.chart-data-details) {
+  background-color: #172b3b;
+  border-color: #30485a;
+  color: #dce7ee;
+}
+:root[data-theme="dark"] :where(.page-heading h1,.module-page-heading h1,.title-row h1,
+ .section-heading h2,.table-heading h2,.panel-heading h2,.panel-heading h3,
+ .module-card-topline strong,.count-value,.record-picker-row strong) { color: #e7f0f6; }
+:root[data-theme="dark"] :where(.page-description,.section-heading p:not(.eyebrow),
+ .module-card-description,.table-heading p,.breadcrumb,.form-help,.count-label,
+ .search-label,.record-picker-number,.record-picker-row > span:nth-of-type(2)) { color: #a9bac8; }
+:root[data-theme="dark"] :where(.record-form-field input,.record-form-field select,
+ .record-form-field textarea,.search-control,.search-control input,.period-filter-bar input,
+ .period-filter-bar select,.report-filter input,.report-filter select) {
+  border-color: #3a5265;
+  background-color: #102333;
+  color: #e5edf4;
+}
+:root[data-theme="dark"] :where(input,textarea)::placeholder { color: #8298a8; }
+:root[data-theme="dark"] :where(.records-table,.report-table,.chart-data-table) th {
+  background: #192e3e; color: #cbd9e3; border-color: #30485a;
+}
+:root[data-theme="dark"] :where(.records-table,.report-table,.chart-data-table) td {
+  color: #d5e0e8; border-color: #293f50;
+}
+:root[data-theme="dark"] :where(.records-table,.report-table,.chart-data-table) tbody tr:hover td {
+  background: #1a3545;
+}
+:root[data-theme="dark"] :where(.button--secondary,.button--pagination) {
+  border-color: #3a5265; background: #172b3b; color: #dce8ef;
+}
+:root[data-theme="dark"] :where(.button--secondary,.button--pagination):hover:not(:disabled) {
+  border-color: #4d8294; background: #20394a;
+}
+:root[data-theme="dark"] .record-picker-row { background: #132535; color: #dce8ee; }
+:root[data-theme="dark"] .record-picker-row:hover,
+:root[data-theme="dark"] .record-picker-row.is-selected { background: #183747; border-color: #287d91; }
+:root[data-theme="dark"] .record-period-group + .record-period-group { border-top-color: #0b1722; }
+:root[data-theme="dark"] .chart-hover-tooltip {
+  border-color: #3a5265; background: rgb(17 32 46 / 97%); color: #e4edf3;
+  box-shadow: var(--wc-shadow-lg);
+}
+:root[data-theme="dark"] .chart-axis-label,
+:root[data-theme="dark"] .chart-category-label { fill: #a8bac8; }
+:root[data-theme="dark"] .chart-axis-caption { fill: #d1dfe7; }
