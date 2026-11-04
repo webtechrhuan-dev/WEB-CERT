@@ -169,3 +169,18 @@
   .report-detail-toolbar > .button { flex: 1 1 100%; }
 }
 @media (max-width: 380px) { .report-detail-kpis { grid-template-columns: minmax(0, 1fr); } }
+
+/* Estrutura geral da página de relatórios */
+.report-workspace { width:min(100% - 40px,1500px); max-width:1500px; }
+.report-page-heading { margin-bottom:24px; }
+.report-dashboard-stack { display:grid; gap:22px; min-width:0; }
+.report-summary-heading { display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:16px; }
+.report-summary-heading > div:first-child h2 { margin:0; color:var(--ink); font-size:18px; font-weight:800; letter-spacing:-.02em; }
+.report-summary-heading > div:first-child p { margin:5px 0 0; color:var(--muted); font-size:12px; line-height:1.6; }
+.report-summary-heading > div:last-child { display:flex; align-items:center; flex-wrap:wrap; gap:8px; }
+:root[data-theme="dark"] .report-summary-heading > div:first-child h2 { color:#e5edf4; }
+@media(max-width:640px) {
+ .report-workspace { width:min(100% - 24px,1500px); }
+ .report-summary-heading > div:last-child { width:100%; }
+ .report-summary-heading > div:last-child .button { flex:1 1 auto; }
+}
