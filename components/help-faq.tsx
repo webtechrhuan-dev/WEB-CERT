@@ -49,6 +49,7 @@ export function HelpFaq({ topic }: { topic: Topic }) {
   const triggerRef = useRef<HTMLButtonElement>(null);
   const legendTriggerRef = useRef<HTMLButtonElement>(null);
   const closeRef = useRef<HTMLButtonElement>(null);
+  const legendCloseRef = useRef<HTMLButtonElement>(null);
   useEffect(() => setMounted(true), []);
   useEffect(() => {
     const openHelp = () => { setExpanded(0); setOpen(true); };
@@ -58,9 +59,25 @@ export function HelpFaq({ topic }: { topic: Topic }) {
   const data = CONTENT[topic];
   useEffect(() => {
     if (!legendOpen) return;
-    const onKey = (event: KeyboardEvent) => { if (event.key === "Escape") setLegendOpen(false); };
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    legendCloseRef.current?.focus();
+    const onKey = (event: KeyboardEvent) => {
+      if (event.key === "Escape") { setLegendOpen(false); return; }
+      if (event.key !== "Tab") return;
+      const dialog = document.querySelector<HTMLElement>(".wc-legend-dialog");
+      const focusable = dialog?.querySelectorAll<HTMLElement>('button:not([disabled]), [href], input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])');
+      if (!focusable?.length) return;
+      const first = focusable[0], last = focusable[focusable.length - 1];
+      if (event.shiftKey && document.activeElement === first) { event.preventDefault(); last.focus(); }
+      else if (!event.shiftKey && document.activeElement === last) { event.preventDefault(); first.focus(); }
+    };
     window.addEventListener("keydown", onKey);
-    return () => window.removeEventListener("keydown", onKey);
+    return () => {
+      document.body.style.overflow = previousOverflow;
+      window.removeEventListener("keydown", onKey);
+      legendTriggerRef.current?.focus();
+    };
   }, [legendOpen]);
   useEffect(() => {
     if (!open) return;
@@ -90,7 +107,7 @@ export function HelpFaq({ topic }: { topic: Topic }) {
     </div>
     {legendOpen && <div className="wc-help-backdrop wc-legend-backdrop" onMouseDown={(event) => { if (event.target === event.currentTarget) setLegendOpen(false); }}>
       <section className="wc-help-dialog wc-legend-dialog" role="dialog" aria-modal="true" aria-labelledby="wc-legend-title">
-        <header className="wc-help-dialog-header"><span className="wc-help-dialog-symbol wc-legend-symbol" aria-hidden="true">i</span><div><p className="eyebrow">CONSULTA RÁPIDA</p><h2 id="wc-legend-title">Atalhos e legendas</h2><p>Comandos e indicadores desta tela.</p></div><button type="button" className="wc-help-close" aria-label="Fechar atalhos e legendas" onClick={() => setLegendOpen(false)}>×</button></header>
+        <header className="wc-help-dialog-header"><span className="wc-help-dialog-symbol wc-legend-symbol" aria-hidden="true">i</span><div><p className="eyebrow">CONSULTA RÁPIDA</p><h2 id="wc-legend-title">Atalhos e legendas</h2><p>Comandos e indicadores desta tela.</p></div><button ref={legendCloseRef} type="button" className="wc-help-close" aria-label="Fechar atalhos e legendas" onClick={() => setLegendOpen(false)}>×</button></header>
         <div className="wc-help-dialog-body"><section className="wc-help-shortcuts wc-legend-shortcuts"><div className="wc-help-shortcuts-heading"><div><p className="eyebrow">PRODUTIVIDADE</p><h3>Atalhos desta tela</h3></div><span aria-hidden="true">⌨</span></div><div className="wc-help-shortcuts-list">{SHORTCUTS[topic].map((shortcut) => <div className="wc-help-shortcut" key={shortcut.key}><kbd>{shortcut.key}</kbd><span>{shortcut.label}</span></div>)}</div><p className="wc-help-shortcuts-note">Atalhos de navegação não são executados enquanto você digita em campos. Ctrl + S salva o formulário quando houver um formulário disponível.</p></section>
           <section className="wc-help-legend-list" aria-label="Legenda dos elementos"><h3>Legenda dos elementos</h3><div className="wc-help-legend-row"><span className="wc-help-legend-mark wc-mark-required">*</span><span><strong>Campo obrigatório</strong><small>Precisa ser preenchido para concluir o cadastro.</small></span></div><div className="wc-help-legend-row"><span className="wc-help-legend-mark wc-mark-focus"></span><span><strong>Campo em destaque</strong><small>Indica foco ou seleção atual na interface.</small></span></div><div className="wc-help-legend-row"><span className="wc-help-legend-mark wc-mark-help">?</span><span><strong>Central de ajuda</strong><small>Abre explicações e orientações sobre esta tela.</small></span></div><div className="wc-help-legend-row"><span className="wc-help-legend-mark wc-mark-info">i</span><span><strong>Atalhos e legendas</strong><small>Mostra os comandos e o significado dos indicadores.</small></span></div><div className="wc-status-legend"><h4>Cores dos status das vendas</h4><div className="wc-status-legend-grid"><span className="sale-status-badge sale-status--emitido">Emitido</span><span className="sale-status-badge sale-status--pendente">Pendente instalar</span><span className="sale-status-badge sale-status--instalado">Instalado</span><span className="sale-status-badge sale-status--concluido">Concluido</span><span className="sale-status-badge sale-status--nao-concluido">não concluido</span><span className="sale-status-badge sale-status--cancelado">Cancelado</span></div><p>As cores são iguais na gestão de vendas e nos relatórios.</p></div></section>
         </div><footer className="wc-help-footer">As informações são específicas da tela atualmente aberta.</footer>
