@@ -19,11 +19,12 @@ export async function GET(_request: Request, context: { params: Promise<{ fileId
     if (!file) return Response.json({ error: { code: "FILE_NOT_FOUND", message: "Certificado não encontrado." } }, { status: 404 });
 
     const metadata = (file.metadata ?? {}) as { rowNumber?: number; originalName?: string };
-    if (!Number.isSafeInteger(metadata.rowNumber)) {
+    const rowNumber = metadata.rowNumber;
+    if (typeof rowNumber !== "number" || !Number.isSafeInteger(rowNumber)) {
       return Response.json({ error: { code: "INVALID_FILE_METADATA", message: "Metadados do certificado inválidos." } }, { status: 404 });
     }
 
-    const auditRecorded = await writeAuditEvent({ actor: access.login, action: "certificate.downloaded", entity: "certificate", entityId: String(file._id), metadata: { rowNumber: metadata.rowNumber } });
+    const auditRecorded = await writeAuditEvent({ actor: access.login, action: "certificate.downloaded", entity: "certificate", entityId: String(file._id), metadata: { rowNumber } });
     const bucket = await getCertificatesBucket();
     const stream = bucket.openDownloadStream(id);
     const safeName = String(metadata.originalName || file.filename || "certificado.pfx")
