@@ -1,8 +1,10 @@
 import { LoginButton } from "@/components/login-button";
+import { ThemeToggle } from "@/components/theme-toggle";
 
 export default function LoginPage() {
   return (
     <main className="login-page">
+      <div className="login-theme-control"><ThemeToggle /></div>
       <section className="login-panel login-panel--branded" aria-labelledby="login-title">
         <div className="login-brand-stage">
           <img
