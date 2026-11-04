@@ -15,6 +15,9 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="pt-BR" suppressHydrationWarning>
+      <head>
+        <script dangerouslySetInnerHTML={{ __html: `try { var savedTheme = localStorage.getItem("web-cert-theme"); var initialTheme = savedTheme === "dark" ? "dark" : "light"; document.documentElement.dataset.theme = initialTheme; document.documentElement.style.colorScheme = initialTheme; } catch (_) { document.documentElement.dataset.theme = "light"; }` }} />
+      </head>
       <body>
         <AppSessionProvider><KeyboardShortcuts />{children}</AppSessionProvider>
       </body>
