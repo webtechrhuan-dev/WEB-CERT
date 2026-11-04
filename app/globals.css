@@ -4314,3 +4314,45 @@ body {
   border-color: #87434d;
 }
 :root[data-theme="dark"] .button--danger:hover:not(:disabled) { background: #512630; border-color: #b65a65; }
+
+
+/* Reautenticação para ações destrutivas */
+.reauth-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  display: grid;
+  place-items: center;
+  padding: 20px;
+  background: rgb(5 14 24 / 72%);
+  backdrop-filter: blur(7px);
+}
+.reauth-dialog {
+  width: min(100%, 480px);
+  display: grid;
+  gap: 18px;
+  padding: 26px;
+  border: 1px solid var(--border-strong, #cbd5e1);
+  border-radius: 18px;
+  background: var(--surface, #fff);
+  color: var(--text, #172b3d);
+  box-shadow: 0 28px 90px rgb(0 0 0 / 38%);
+  animation: reauth-dialog-in 180ms ease-out both;
+}
+.reauth-dialog-heading { display: flex; align-items: flex-start; gap: 14px; }
+.reauth-dialog-heading h3 { margin: 0 0 6px; font-size: 1.12rem; }
+.reauth-dialog-heading p, .reauth-security-note { margin: 0; color: var(--text-muted, #64748b); line-height: 1.55; font-size: .9rem; }
+.reauth-warning-icon {
+  display: grid; place-items: center; flex: 0 0 42px; width: 42px; height: 42px;
+  border-radius: 12px; color: #c2414b; background: #fff0f0;
+}
+.reauth-warning-icon svg { width: 21px; height: 21px; }
+.reauth-security-note { padding: 10px 12px; border-radius: 9px; background: var(--surface-muted, #f1f5f9); font-size: .82rem; }
+:root[data-theme="dark"] .reauth-dialog { background: #142536; color: #e6f0f6; border-color: #344b5e; }
+:root[data-theme="dark"] .reauth-dialog-heading p,
+:root[data-theme="dark"] .reauth-security-note { color: #afc0cd; }
+:root[data-theme="dark"] .reauth-security-note { background: #1b3042; }
+:root[data-theme="dark"] .reauth-warning-icon { color: #ffb6bc; background: #43262e; }
+@keyframes reauth-dialog-in { from { opacity: 0; transform: translateY(8px) scale(.985); } to { opacity: 1; transform: translateY(0) scale(1); } }
+@media (max-width: 520px) { .reauth-dialog { padding: 20px; } .reauth-dialog .form-actions { flex-direction: column-reverse; } .reauth-dialog .form-actions button { width: 100%; } }
+@media (prefers-reduced-motion: reduce) { .reauth-dialog { animation: none; } }
