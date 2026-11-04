@@ -17,8 +17,10 @@ const menu = [
   { label: "Auditoria", href: "/auditoria", icon: "shield" as const, key: "audit", adminOnly: true },
 ];
 
-export function AppHeader({ active }: AppHeaderProps) {
-  const activeItem = menu.find((item) => item.key === active) ?? menu[0];
+export async function AppHeader({ active }: AppHeaderProps) {
+  const session = await auth();
+  const visibleMenu = menu.filter((item) => !("adminOnly" in item && item.adminOnly) || session?.user?.isAdmin === true);
+  const activeItem = visibleMenu.find((item) => item.key === active) ?? visibleMenu[0];
   return (
     <>
       <header className="topbar">
