@@ -23,3 +23,19 @@ export async function PATCH(request: Request, context: { params: Promise<{ rowNu
  if (parsed["Ano da planilha"] !== undefined && (typeof parsed["Ano da planilha"] !== "string" || !validYears.includes(parsed["Ano da planilha"]))) throw new Error("INVALID_INPUT");
  if (parsed["Mês da planilha"] !== undefined && (typeof parsed["Mês da planilha"] !== "string" || !MONTH_NAMES.includes(parsed["Mês da planilha"]))) throw new Error("INVALID_INPUT");
  const values = [...current.values]; for (const [header, value] of Object.entries(parsed)) { if (header !== "Data de vencimento") values[data.headers.indexOf(header)] = value === null ? null : value; } const issueIndex = data.headers.indexOf("Data de emissão/renovação"); const expiryIndex = data.headers.indexOf("Data de vencimento"); values[expiryIndex] = expiryFromIssueDate(values[issueIndex]); if (typeof body?.expectedVersion !== "string") throw new Error("RECORD_CONFLICT"); await updateCertificate(rowNumber, values, body.expectedVersion); return Response.json({ ok: true }, { headers: { "Cache-Control": "no-store" } }); } catch (e) { return apiErrorResponse(e, "api/records/[rowNumber]"); } }
+
+
+export async function DELETE(request: Request, context: { params: Promise<{ rowNumber: string }> }) {
+  try {
+    await requireAccess("editor");
+    const rowNumber = Number((await context.params).rowNumber);
+    if (!Number.isSafeInteger(rowNumber) || rowNumber < 2) throw new Error("RECORD_NOT_FOUND");
+    const body = await request.json().catch(() => null);
+    if (typeof body?.expectedVersion !== "string") throw new Error("RECORD_CONFLICT");
+    const { deleteCertificate } = await import("@/lib/server/certificate-store");
+    await deleteCertificate(rowNumber, body.expectedVersion);
+    return Response.json({ ok: true, deleted: true }, { headers: { "Cache-Control": "no-store" } });
+  } catch (error) {
+    return apiErrorResponse(error, "api/records/[rowNumber]");
+  }
+}
