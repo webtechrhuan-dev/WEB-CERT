@@ -1,10 +1,10 @@
 import type { WorkbookCell, WorkbookData, WorkbookRecord } from "@/lib/workbook-types";
 
 export type ReportDimension = "period" | "model" | "status";
-export type ReportGroup = { label: string; count: number; revenue: number; cost: number; profit: number; completedCount: number };
+export type ReportGroup = { label: string; count: number; revenue: number; cost: number; profit: number; eligibleCount: number };
 export type ReportSummary = {
   count: number;
-  completedCount: number;
+  eligibleCount: number;
   excludedCount: number;
   reviewCount: number;
   revenue: number;
@@ -66,7 +66,7 @@ function isCustomerRecord(record: WorkbookRecord, data: WorkbookData): boolean {
   return true;
 }
 
-type FinancialTreatment = "completed" | "excluded" | "review";
+type FinancialTreatment = "eligible" | "excluded" | "review";
 
 function hasMoneyValue(cell: WorkbookCell | undefined): boolean {
   return cell !== null && cell !== undefined && String(cell).trim() !== "";
@@ -80,7 +80,7 @@ function financialTreatment(record: WorkbookRecord, data: WorkbookData): Financi
   // Registros legados sem status (2024/2025) também entram.
   if (/^(CANCELADO|CANCELADA|NAO CONCLUIDO|NAO CONCLUIDA)$/.test(status)) return "excluded";
   if (status === "SEM PREENCHIMENTO" && (!Number.isFinite(year) || year >= 2026)) return "review";
-  return "completed";
+  return "eligible";
 }
 
 function groupLabel(record: WorkbookRecord, data: WorkbookData, dimension: ReportDimension): string {
@@ -107,27 +107,27 @@ export function summarizeWorkbook(data: WorkbookData, dimension: ReportDimension
   const revenueIndex = headerIndex(data, "Faturamento (R$)");
   const costIndex = headerIndex(data, "Custo (R$)");
   const groups = new Map<string, ReportGroup>();
-  let revenue = 0, cost = 0, profit = 0, count = 0, completedCount = 0, excludedCount = 0, reviewCount = 0, rowsIgnored = 0;
+  let revenue = 0, cost = 0, profit = 0, count = 0, eligibleCount = 0, excludedCount = 0, reviewCount = 0, rowsIgnored = 0;
   for (const record of data.records) {
     if (!isCustomerRecord(record, data)) { rowsIgnored += 1; continue; }
     count += 1;
     const treatment = financialTreatment(record, data);
     if (treatment === "excluded") excludedCount += 1;
     if (treatment === "review") reviewCount += 1;
-    const recordRevenue = treatment === "completed" ? numericCell(revenueIndex >= 0 ? record.values[revenueIndex] : undefined) : 0;
-    const recordCost = treatment === "completed" ? numericCell(costIndex >= 0 ? record.values[costIndex] : undefined) : 0;
-    if (treatment === "completed") {
-      completedCount += 1;
+    const recordRevenue = treatment === "eligible" ? numericCell(revenueIndex >= 0 ? record.values[revenueIndex] : undefined) : 0;
+    const recordCost = treatment === "eligible" ? numericCell(costIndex >= 0 ? record.values[costIndex] : undefined) : 0;
+    if (treatment === "eligible") {
+      eligibleCount += 1;
       const hasRevenue = hasMoneyValue(revenueIndex >= 0 ? record.values[revenueIndex] : undefined);
       revenue += hasRevenue ? recordRevenue : 0;
       cost += recordCost;
       if (hasRevenue && hasMoneyValue(costIndex >= 0 ? record.values[costIndex] : undefined)) profit += recordRevenue - recordCost;
     }
     const label = groupLabel(record, data, dimension);
-    const group = groups.get(label) ?? { label, count: 0, revenue: 0, cost: 0, profit: 0, completedCount: 0 };
+    const group = groups.get(label) ?? { label, count: 0, revenue: 0, cost: 0, profit: 0, eligibleCount: 0 };
     group.count += 1;
-    if (treatment === "completed") {
-      group.completedCount += 1;
+    if (treatment === "eligible") {
+      group.eligibleCount += 1;
       const hasRevenue = hasMoneyValue(revenueIndex >= 0 ? record.values[revenueIndex] : undefined);
       group.revenue += hasRevenue ? recordRevenue : 0;
       group.cost += recordCost;
@@ -137,7 +137,7 @@ export function summarizeWorkbook(data: WorkbookData, dimension: ReportDimension
   }
   const roundMoney = (value: number) => Math.round((value + Number.EPSILON) * 100) / 100;
   return {
-    count, completedCount, excludedCount, reviewCount, revenue: roundMoney(revenue), cost: roundMoney(cost),
+    count, eligibleCount, excludedCount, reviewCount, revenue: roundMoney(revenue), cost: roundMoney(cost),
     profit: roundMoney(profit), rowsIgnored,
     groups: [...groups.values()].map((group) => ({ ...group, revenue: roundMoney(group.revenue), cost: roundMoney(group.cost), profit: roundMoney(group.profit) })).sort((a, b) => compareGroups(a, b, dimension)),
   };
@@ -156,8 +156,8 @@ export type DetailedReportRow = {
   revenue: number;
   cost: number;
   profit: number;
-  completed: boolean;
-  treatment: "Concluída" | "Não concluída" | "Revisar";
+  financiallyEligible: boolean;
+  treatment: "Elegível" | "Não elegível" | "Revisar";
   financialIssue: boolean;
   dateIssue: boolean;
 };
@@ -170,23 +170,29 @@ export function getWorkbookReportRows(data: WorkbookData): DetailedReportRow[] {
     const dateCell = record.values[index("Data de emissão/renovação")];
     let date = value("Data de emissão/renovação");
     if (typeof dateCell === "object" && dateCell && "kind" in dateCell) date = dateCell.parsed || String(dateCell.raw ?? "");
-    const completed = treatment === "completed";
+    const financiallyEligible = treatment === "eligible";
     const year = Number(value("Ano da planilha"));
     const monthMap: Record<string, number> = {
       JANEIRO: 1, FEVEREIRO: 2, MARCO: 3, ABRIL: 4, MAIO: 5, JUNHO: 6,
       JULHO: 7, AGOSTO: 8, SETEMBRO: 9, OUTUBRO: 10, NOVEMBRO: 11, DEZEMBRO: 12,
     };
     const monthNumber = monthMap[normalizedText(value("Mês da planilha"))];
-    const parsedDate = date ? new Date(date) : null;
-    const validDate = Boolean(parsedDate && !Number.isNaN(parsedDate.getTime()));
+    const parsedDate = (() => {
+      const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(date);
+      if (!match) return null;
+      const year = Number(match[1]), month = Number(match[2]), day = Number(match[3]);
+      const candidate = new Date(Date.UTC(year, month - 1, day));
+      return candidate.getUTCFullYear() === year && candidate.getUTCMonth() === month - 1 && candidate.getUTCDate() === day ? candidate : null;
+    })();
+    const validDate = parsedDate !== null;
     const dateIssue = !validDate || !Number.isFinite(year) || !monthNumber ||
-      parsedDate!.getFullYear() !== year || parsedDate!.getMonth() + 1 !== monthNumber;
+      parsedDate!.getUTCFullYear() !== year || parsedDate!.getUTCMonth() + 1 !== monthNumber;
     const status = normalizedText(value("Status / Observação"));
-    const baseWouldBeCompleted = !/^(CANCELADO|CANCELADA|NAO CONCLUIDO|NAO CONCLUIDA)$/.test(status) &&
+    const baseFinanciallyEligible = !/^(CANCELADO|CANCELADA|NAO CONCLUIDO|NAO CONCLUIDA)$/.test(status) &&
       !(status === "SEM PREENCHIMENTO" && (!Number.isFinite(year) || year >= 2026));
     const hasRevenue = hasMoneyValue(record.values[index("Faturamento (R$)")]);
     const hasCost = hasMoneyValue(record.values[index("Custo (R$)")]);
-    const financialIssue = baseWouldBeCompleted && (!hasRevenue || !hasCost);
+    const financialIssue = baseFinanciallyEligible && (!hasRevenue || !hasCost);
     return {
       id: String(record.rowNumber),
       client: value("Cliente"),
@@ -196,13 +202,13 @@ export function getWorkbookReportRows(data: WorkbookData): DetailedReportRow[] {
       month: value("Mês da planilha"),
       model: value("Modelo"),
       status: value("Status / Observação"),
-      revenue: completed && hasRevenue ? numericCell(record.values[index("Faturamento (R$)")]) : 0,
-      cost: completed && hasCost ? numericCell(record.values[index("Custo (R$)")]) : 0,
-      profit: completed && hasRevenue && hasCost
+      revenue: financiallyEligible && hasRevenue ? numericCell(record.values[index("Faturamento (R$)")]) : 0,
+      cost: financiallyEligible && hasCost ? numericCell(record.values[index("Custo (R$)")]) : 0,
+      profit: financiallyEligible && hasRevenue && hasCost
         ? numericCell(record.values[index("Faturamento (R$)")]) - numericCell(record.values[index("Custo (R$)")])
         : 0,
-      completed,
-      treatment: completed ? "Concluída" : treatment === "excluded" ? "Não concluída" : "Revisar",
+      financiallyEligible,
+      treatment: financiallyEligible ? "Elegível" : treatment === "excluded" ? "Não elegível" : "Revisar",
       financialIssue,
       dateIssue,
     };
