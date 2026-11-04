@@ -4128,3 +4128,125 @@ body {
   :root[data-theme="dark"] *::before,
   :root[data-theme="dark"] *::after { scroll-behavior: auto !important; }
 }
+
+
+/* Correções finais guiadas pelas capturas reais — superfícies que
+   ainda recebiam background inline ou estilos-base claros. */
+:root[data-theme="dark"] .record-picker,
+:root[data-theme="dark"] .record-inline-item,
+:root[data-theme="dark"] .record-period-group {
+  background: #111f2d !important;
+  border-color: #2a4052 !important;
+}
+:root[data-theme="dark"] .record-picker-row {
+  background: #142433 !important;
+  color: #dce7ee !important;
+  border-bottom: 1px solid #2a4052 !important;
+  box-shadow: none !important;
+}
+:root[data-theme="dark"] .record-picker-row:hover {
+  background: #1a3444 !important;
+  color: #f0f6f9 !important;
+}
+:root[data-theme="dark"] .record-picker-row.is-selected,
+:root[data-theme="dark"] .record-picker-row[aria-expanded="true"] {
+  background: #173847 !important;
+  box-shadow: inset 4px 0 #22b8cb !important;
+}
+:root[data-theme="dark"] .record-picker-row strong { color: #edf5f8 !important; }
+:root[data-theme="dark"] .record-picker-row .record-picker-number,
+:root[data-theme="dark"] .record-picker-row > span:nth-of-type(2) { color: #9db0bf !important; }
+:root[data-theme="dark"] .record-period-heading {
+  background: #1b3040 !important;
+  color: #c9d8e2 !important;
+  border-color: #30485a !important;
+}
+:root[data-theme="dark"] .record-period-heading strong { color: #e8f1f6 !important; }
+
+/* Legenda do gráfico: o JSX define fundo e cores inline; estes
+   overrides específicos impedem que o painel fique branco. */
+:root[data-theme="dark"] .module-workspace .chart-key-panel {
+  background: linear-gradient(145deg, #142635 0%, #101e2b 100%) !important;
+  border: 1px solid #30495b !important;
+  color: #dce7ee !important;
+  box-shadow: 0 12px 30px rgb(0 0 0 / 24%) !important;
+}
+:root[data-theme="dark"] .module-workspace .chart-key-panel > div:first-child strong {
+  color: #edf5f8 !important;
+}
+:root[data-theme="dark"] .module-workspace .chart-key-panel > div:first-child p,
+:root[data-theme="dark"] .module-workspace .chart-key-panel > div:nth-child(3) > div {
+  color: #afc0cc !important;
+}
+:root[data-theme="dark"] .module-workspace .chart-key-panel > div:first-child > span {
+  color: #c5d6e0 !important;
+  background: #20394a !important;
+  border: 1px solid #355368 !important;
+}
+:root[data-theme="dark"] .module-workspace .chart-key-panel > div:nth-child(2) > div:first-child,
+:root[data-theme="dark"] .module-workspace .chart-key-panel > div:nth-child(2) > div:last-child {
+  color: #68d0dc !important;
+}
+:root[data-theme="dark"] .module-workspace .chart-key-panel > div:nth-child(3) {
+  border-top-color: #30495b !important;
+}
+:root[data-theme="dark"] .module-workspace .chart-key-panel > div:nth-child(3) strong {
+  color: #e3edf3 !important;
+}
+:root[data-theme="dark"] .module-workspace .chart-key-panel .chart-legend-item {
+  background: #192f40 !important;
+  border: 1px solid #3a566a !important;
+  color: #e1ebf1 !important;
+}
+:root[data-theme="dark"] .module-workspace .chart-key-panel .chart-legend-item:hover {
+  background: #203d50 !important;
+  border-color: #4b8295 !important;
+}
+:root[data-theme="dark"] .module-workspace .chart-key-panel .chart-legend-item.is-muted {
+  background: #111f2c !important;
+  color: #8fa2b1 !important;
+  border-color: #2c4151 !important;
+}
+:root[data-theme="dark"] .module-workspace .chart-key-panel .chart-legend-item strong,
+:root[data-theme="dark"] .module-workspace .chart-key-panel .chart-legend-item small {
+  color: inherit !important;
+}
+:root[data-theme="dark"] .module-workspace .chart-key-panel .chart-legend-item [aria-hidden="true"] span {
+  border-color: #192f40 !important;
+}
+
+/* Contraste de elementos informativos e rankings nos relatórios. */
+:root[data-theme="dark"] .module-workspace .model-ranking-item,
+:root[data-theme="dark"] .module-workspace section[aria-labelledby="unified-chart-title"] > div[style*="margin-top"] > div > div {
+  background: #172b3a !important;
+  border: 1px solid #30485a !important;
+}
+:root[data-theme="dark"] .module-workspace section[aria-labelledby="unified-chart-title"] > div[style*="margin-top"] span {
+  color: #b5c5d0 !important;
+}
+:root[data-theme="dark"] .module-workspace section[aria-labelledby="unified-chart-title"] > div[style*="margin-top"] strong {
+  color: #e4edf3 !important;
+}
+
+/* Tabelas e faixas com fundo definido diretamente nos elementos. */
+:root[data-theme="dark"] .module-workspace .records-table tbody tr,
+:root[data-theme="dark"] .module-workspace .report-table tbody tr {
+  background-color: #111f2d !important;
+}
+:root[data-theme="dark"] .module-workspace .records-table tbody tr:nth-child(even),
+:root[data-theme="dark"] .module-workspace .report-table tbody tr:nth-child(even) {
+  background-color: #142433 !important;
+}
+:root[data-theme="dark"] .module-workspace .records-table tbody tr:hover,
+:root[data-theme="dark"] .module-workspace .report-table tbody tr:hover {
+  background-color: #1b3545 !important;
+}
+:root[data-theme="dark"] .module-workspace .records-table tbody tr td,
+:root[data-theme="dark"] .module-workspace .report-table tbody tr td {
+  color: #d5e1e9 !important;
+  border-bottom-color: #2a4052 !important;
+}
+:root[data-theme="dark"] .module-workspace .records-table tbody tr td strong,
+:root[data-theme="dark"] .module-workspace .report-table tbody tr td strong {
+  color: #edf5f8 !important;
+}
