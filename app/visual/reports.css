@@ -283,3 +283,34 @@
 @media (max-width: 390px) {
   .report-filter-grid { grid-template-columns: minmax(0, 1fr); }
 }
+
+
+/* Cabeçalho do gráfico, ranking e tabela de apoio */
+.report-summary-heading > div:first-child h2 { margin: 0; color: var(--ink); font-size: 18px; font-weight: 800; letter-spacing: -.02em; }
+.report-summary-heading > div:first-child p { margin: 5px 0 0; color: var(--muted); font-size: 12px; line-height: 1.6; }
+.report-chart-scroll { display: block; width: 100%; max-width: 100%; min-width: 0; flex: 1 1 0; overflow-x: auto; overflow-y: hidden; box-sizing: border-box; overscroll-behavior-inline: contain; scrollbar-gutter: stable; }
+.report-chart-data-table { width: 1325px; min-width: 1325px; max-width: none; table-layout: fixed; border-collapse: separate; border-spacing: 0; }
+.report-data-scroll { display: block; width: 100%; max-width: 100%; min-width: 0; overflow-x: auto; overflow-y: hidden; padding-bottom: 14px; box-sizing: border-box; }
+.report-chart-heading { display: flex; justify-content: space-between; align-items: flex-start; gap: 16px; flex-wrap: wrap; margin-bottom: 20px; }
+.report-chart-heading-copy { min-width: 0; }
+.report-chart-heading-copy .eyebrow { margin: 0 0 6px; }
+.report-chart-heading-copy h2 { margin: 0; color: var(--ink); font-size: 20px; letter-spacing: -.025em; }
+.report-chart-heading-copy > p:last-child { margin: 6px 0 0; color: var(--muted); font-size: 13px; line-height: 1.6; }
+.report-chart-record-count { display: inline-flex; align-items: center; min-height: 32px; padding: 7px 11px; border: 1px solid var(--line); border-radius: 999px; background: var(--canvas); color: var(--muted); font-size: 12px; font-weight: 750; white-space: nowrap; }
+.report-model-ranking { margin-top: 22px; padding-top: 18px; border-top: 1px solid var(--line); }
+.report-model-ranking-title { margin: 0 0 12px; color: var(--ink); font-size: 14px; font-weight: 800; }
+.report-model-ranking-grid { display: grid; grid-template-columns: repeat(auto-fit,minmax(180px,1fr)); gap: 10px; }
+.report-model-ranking-item { display: flex; justify-content: space-between; align-items: center; gap: 10px; min-width: 0; padding: 10px 12px; border: 1px solid var(--line); border-radius: 10px; background: var(--canvas); }
+.report-model-ranking-label { min-width: 0; color: var(--muted); font-size: 12px; overflow-wrap: anywhere; }
+.report-model-ranking-value { color: var(--ink); font-size: 12px; white-space: nowrap; font-variant-numeric: tabular-nums; }
+:root[data-theme="dark"] .report-chart-record-count,
+:root[data-theme="dark"] .report-model-ranking-item { border-color: #30485a; background: #172d3e; }
+:root[data-theme="dark"] .report-model-ranking { border-top-color: #30485a; }
+:root[data-theme="dark"] .report-model-ranking-title,
+:root[data-theme="dark"] .report-model-ranking-value { color: #e5edf4; }
+:root[data-theme="dark"] .report-model-ranking-label { color: #a9bac8; }
+@media (max-width: 640px) {
+  .report-chart-heading { gap: 11px; margin-bottom: 15px; }
+  .report-chart-record-count { white-space: normal; }
+  .report-model-ranking-grid { grid-template-columns: minmax(0,1fr); }
+}
