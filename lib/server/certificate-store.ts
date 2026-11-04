@@ -125,3 +125,22 @@ export async function importCertificates(records: WorkbookRecord[]): Promise<num
   );
   return operations.length;
 }
+
+
+/** Exclui fisicamente uma venda da coleção principal, condicionada à versão lida. */
+export async function deleteCertificate(rowNumber: number, expectedVersion: string): Promise<void> {
+  const db = await getMongoDb();
+  await ensureStorageIndexes();
+  const expectedRevision = Number(expectedVersion);
+  if (!Number.isSafeInteger(expectedRevision) || expectedRevision < 0) {
+    throw new Error("RECORD_CONFLICT");
+  }
+  const filter = expectedRevision === 0
+    ? { rowNumber, $or: [{ version: 0 }, { version: { $exists: false } }] }
+    : { rowNumber, version: expectedRevision };
+  const result = await db.collection(collection).deleteOne(filter);
+  if (result.deletedCount === 1) return;
+  const exists = await db.collection(collection).findOne({ rowNumber }, { projection: { _id: 1 } });
+  if (!exists) throw new Error("RECORD_NOT_FOUND");
+  throw new Error("RECORD_CONFLICT");
+}
