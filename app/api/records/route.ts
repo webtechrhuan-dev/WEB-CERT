@@ -41,7 +41,7 @@ export async function POST(request: Request) {
     const contentLength = Number(request.headers.get("content-length") ?? 0);
     if (contentLength > 512_000) return Response.json({ error: { code: "PAYLOAD_TOO_LARGE", message: "Requisição muito grande." } }, { status: 413, headers: { "Cache-Control": "no-store" } });
     const body = await request.json();
-    const parsed = validateRecordInput(body?.values);
+    const parsed = validateRecordInput(body?.values, true);
     const values = valuesFromInput(parsed);
     const issueIndex = WORKBOOK_HEADERS.indexOf("Data de emissão/renovação");
     const expiryIndex = WORKBOOK_HEADERS.indexOf("Data de vencimento");
