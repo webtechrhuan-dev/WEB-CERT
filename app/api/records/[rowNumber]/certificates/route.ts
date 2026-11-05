@@ -191,9 +191,9 @@ export async function DELETE(request: Request, context: { params: Promise<{ rowN
         "metadata.rowNumber": rowNumber,
         deleting: { $ne: true },
         $or: [
-          { activeDownloads: { $exists: false } },
-          { activeDownloads: 0 },
-          { activeDownloadLeaseExpiresAt: { $lt: new Date() } },
+          { activeDownloadLeases: { $exists: false } },
+          { activeDownloadLeases: { $size: 0 } },
+          { activeDownloadLeases: { $not: { $elemMatch: { expiresAt: { $gt: new Date() } } } } },
         ],
       },
       { $set: { deleting: true } },
