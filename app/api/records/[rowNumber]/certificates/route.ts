@@ -1,4 +1,5 @@
 import { randomUUID } from "node:crypto";
+import { sanitizeCertificateFileName } from "@/lib/certificate-file-name";
 import { requireAccess } from "@/lib/server/access";
 import { apiErrorResponse } from "@/lib/server/api-errors";
 import { readBodyBytes, readJsonBody } from "@/lib/server/request-body";
@@ -29,11 +30,6 @@ function jsonError(code: string, message: string, status: number): Response {
     status,
     headers: { "Cache-Control": "no-store" },
   });
-}
-
-function safeFileName(value: string): string {
-  const name = value.normalize("NFKC").replace(/[\\/\\\\\r\n\0]/g, "_").trim();
-  return name.slice(0, 160) || "certificado.pfx";
 }
 
 async function ensureSaleExists(rowNumber: number): Promise<boolean> {
@@ -107,7 +103,7 @@ export async function POST(request: Request, context: { params: Promise<{ rowNum
     if (file.size <= 0) return jsonError("EMPTY_FILE", "O arquivo está vazio.", 400);
     if (file.size > MAX_CERTIFICATE_SIZE) return jsonError("FILE_TOO_LARGE", "O arquivo excede o limite de 10 MB.", 413);
 
-    const originalName = safeFileName(file.name);
+    const originalName = sanitizeCertificateFileName(file.name);
     if (!/\.(p12|pfx)$/i.test(originalName)) {
       return jsonError("INVALID_CERTIFICATE_TYPE", "Envie somente arquivos de certificado .p12 ou .pfx.", 415);
     }
