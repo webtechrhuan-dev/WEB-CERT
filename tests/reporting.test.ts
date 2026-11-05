@@ -49,9 +49,11 @@ describe("datas dos relatórios", () => {
     ["2026-13-01", false],
     ["", false],
   ] as Array<[string, boolean]>)("interpreta %s sem rollover", (value, valid) => {
-    expect(parseReportDate(value)?.toISOString().slice(0, 10) ?? null).toBe(
-      valid ? (value.includes("/") ? "2026-02-28" : value) : null,
-    );
+    const parsed = parseReportDate(value);
+    expect(parsed === null).toBe(!valid);
+    if (parsed) {
+      expect([parsed.getFullYear(), parsed.getMonth() + 1, parsed.getDate()]).toEqual([2026, 2, 28]);
+    }
   });
 });
 
