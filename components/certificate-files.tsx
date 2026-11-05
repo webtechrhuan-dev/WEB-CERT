@@ -103,7 +103,7 @@ export function CertificateFiles({ rowNumber, canUpload }: { rowNumber: number; 
   return (
     <section className="content-panel certificate-files-panel" aria-labelledby="certificate-files-title">
       <div className="panel-heading">
-        <div><h3 id="certificate-files-title">Certificados digitais anexados</h3><p>Arquivos .PFX e .P12 vinculados exclusivamente a esta venda.</p></div>
+        <div><h3 id="certificate-files-title">Certificados digitais anexados</h3><p>Arquivos de certificado vinculados exclusivamente a esta venda.</p></div>
         <span className="record-count">{files.length} arquivo(s)</span>
       </div>
       {canUpload && (
@@ -116,7 +116,7 @@ export function CertificateFiles({ rowNumber, canUpload }: { rowNumber: number; 
             onChange={(event) => void upload(event.target.files?.[0])}
             type="file"
           />
-          <span className="form-help">Máximo de 10 MB por arquivo. O sistema não armazena senhas dos certificados.</span>
+          <span className="form-help">Máximo de 10 MB por arquivo. A senha será protegida por criptografia no banco de dados.</span>
         </div>
       )}
       {loading ? <p className="empty-state">Carregando arquivos…</p> : files.length === 0 ? (
@@ -133,7 +133,7 @@ export function CertificateFiles({ rowNumber, canUpload }: { rowNumber: number; 
       )}
       {error && <p className="form-message form-message--error" role="alert">{error}</p>}
       {notice && <p className="form-message form-message--success" role="status">{notice}</p>}
-      <p className="form-help">Os arquivos ficam em um armazenamento MongoDB separado da base comercial. O acesso exige autenticação e o envio exige permissão de edição.</p>
+      <p className="form-help">Os arquivos ficam no mesmo banco MongoDB das vendas, em uma coleção GridFS exclusiva para certificados. O acesso exige autenticação e o envio exige permissão de edição.</p>
     </section>
   );
 }
