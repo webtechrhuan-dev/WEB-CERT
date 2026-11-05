@@ -4,7 +4,7 @@ import { requireAccess } from "@/lib/server/access";
 import { apiErrorResponse } from "@/lib/server/api-errors";
 import { writeAuditEvent } from "@/lib/server/audit-log";
 import { getMongoDb } from "@/lib/server/mongodb";
-import { getCertificatesBucket, getCertificatesDb, parseObjectId } from "@/lib/server/certificates-mongodb";
+import { getCertificatesBucket, getCertificatesDb, ensureCertificateStoreIndexes, parseObjectId } from "@/lib/server/certificates-mongodb";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -16,6 +16,7 @@ export async function GET(_request: Request, context: { params: Promise<{ fileId
     const id = parseObjectId(fileId);
     if (!id) return Response.json({ error: { code: "INVALID_FILE_ID", message: "Arquivo inválido." } }, { status: 400 });
 
+    await ensureCertificateStoreIndexes();
     const db = await getCertificatesDb();
     const file = await db.collection("certificate_files.files").findOne({ _id: id });
     if (!file) return Response.json({ error: { code: "FILE_NOT_FOUND", message: "Certificado não encontrado." } }, { status: 404 });
