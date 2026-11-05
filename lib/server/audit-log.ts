@@ -7,6 +7,7 @@ export type AuditAction =
   | "sale.deleted"
   | "certificate.uploaded"
   | "certificate.downloaded"
+  | "certificate.deleted"
   | "user.updated";
 
 type AuditEvent = {
