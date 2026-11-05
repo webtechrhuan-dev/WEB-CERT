@@ -6,7 +6,7 @@ import { readJsonBody } from "@/lib/server/request-body";
 import { readCertificateData, updateCertificate } from "@/lib/server/certificate-store";
 import { validateRecordInput, valuesFromInput } from "@/lib/server/record-validation";
 import { writeAuditEvent } from "@/lib/server/audit-log";
-import { getCertificatesDb } from "@/lib/server/certificates-mongodb";
+import { getCertificatesDb, ensureCertificateStoreIndexes } from "@/lib/server/certificates-mongodb";
 import { acquireCertificateMutationLock, releaseCertificateMutationLock } from "@/lib/server/certificate-store";
 import { expiryFromIssueDate } from "@/lib/record-dates";
 
@@ -44,6 +44,7 @@ export async function DELETE(request: Request, context: { params: Promise<{ rowN
       return Response.json({ error: { code: "CERTIFICATE_OPERATION_IN_PROGRESS", message: "Há outra operação de certificado em andamento para esta venda. Tente novamente." } }, { status: 409, headers: { "Cache-Control": "no-store" } });
     }
     try {
+      await ensureCertificateStoreIndexes();
       const certificateDb = await getCertificatesDb();
       const attachedCount = await certificateDb.collection("certificate_files.files").countDocuments({ "metadata.rowNumber": rowNumber });
       if (attachedCount > 0) {
