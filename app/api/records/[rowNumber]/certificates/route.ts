@@ -8,6 +8,7 @@ import { acquireCertificateMutationLock, releaseCertificateMutationLock } from "
 import {
   getCertificatesBucket,
   getCertificatesDb,
+  ensureCertificateStoreIndexes,
   parseObjectId,
   MAX_CERTIFICATE_SIZE,
 } from "@/lib/server/certificates-mongodb";
@@ -50,6 +51,7 @@ export async function GET(_request: Request, context: { params: Promise<{ rowNum
     if (!Number.isSafeInteger(rowNumber) || rowNumber < 2) return jsonError("INVALID_ROW", "Venda inválida.", 400);
     if (!(await ensureSaleExists(rowNumber))) return jsonError("RECORD_NOT_FOUND", "Venda não encontrada.", 404);
 
+    await ensureCertificateStoreIndexes();
     const db = await getCertificatesDb();
     const files = await db.collection("certificate_files.files")
       .find({ "metadata.rowNumber": rowNumber }, {
