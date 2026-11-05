@@ -128,8 +128,47 @@ export async function importCertificates(records: WorkbookRecord[]): Promise<num
 }
 
 
-/** Exclui fisicamente uma venda da coleção principal, condicionada à versão lida. */
-export async function deleteCertificate(rowNumber: number, expectedVersion: string): Promise<void> {
+
+/**
+ * Serializa alterações entre a coleção comercial e o GridFS separado.
+ * O lease expira para não deixar uma venda bloqueada indefinidamente após
+ * encerramento inesperado de uma função serverless.
+ */
+export async function acquireCertificateMutationLock(
+  rowNumber: number,
+  token: string,
+  leaseMs = 30 * 60 * 1000,
+): Promise<boolean> {
+  const db = await getMongoDb();
+  const now = new Date();
+  const result = await db.collection(collection).updateOne(
+    {
+      rowNumber,
+      $or: [
+        { certificateMutationLockExpiresAt: { $exists: false } },
+        { certificateMutationLockExpiresAt: { $lt: now } },
+      ],
+    },
+    {
+      $set: {
+        certificateMutationLockToken: token,
+        certificateMutationLockExpiresAt: new Date(now.getTime() + leaseMs),
+      },
+    },
+  );
+  return result.modifiedCount === 1;
+}
+
+export async function releaseCertificateMutationLock(rowNumber: number, token: string): Promise<void> {
+  const db = await getMongoDb();
+  await db.collection(collection).updateOne(
+    { rowNumber, certificateMutationLockToken: token },
+    { $unset: { certificateMutationLockToken: "", certificateMutationLockExpiresAt: "" } },
+  );
+}
+
+/** Exclui fisicamente uma venda da coleção principal, condicionada à versão lida e ao lock. */
+export async function deleteCertificate(rowNumber: number, expectedVersion: string, lockToken: string): Promise<void> {
   const db = await getMongoDb();
   await ensureStorageIndexes();
   const expectedRevision = Number(expectedVersion);
@@ -137,8 +176,8 @@ export async function deleteCertificate(rowNumber: number, expectedVersion: stri
     throw new Error("RECORD_CONFLICT");
   }
   const filter = expectedRevision === 0
-    ? { rowNumber, $or: [{ version: 0 }, { version: { $exists: false } }] }
-    : { rowNumber, version: expectedRevision };
+    ? { rowNumber, certificateMutationLockToken: lockToken, $or: [{ version: 0 }, { version: { $exists: false } }] }
+    : { rowNumber, version: expectedRevision, certificateMutationLockToken: lockToken };
   const result = await db.collection(collection).deleteOne(filter);
   if (result.deletedCount === 1) return;
   const exists = await db.collection(collection).findOne({ rowNumber }, { projection: { _id: 1 } });
