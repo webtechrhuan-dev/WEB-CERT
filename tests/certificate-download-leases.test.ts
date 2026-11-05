@@ -16,9 +16,6 @@ describe("reservas concorrentes de download de certificados", () => {
     expect(buildAcquireDownloadLeasePipeline("lease-a", now)).toEqual([
       {
         $set: {
-          deleting: false,
-          deletingLeaseToken: null,
-          deletingLeaseExpiresAt: null,
           activeDownloadLeases: {
             $concatArrays: [
               {
