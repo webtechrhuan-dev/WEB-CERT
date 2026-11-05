@@ -1,5 +1,6 @@
 import { requireAccess } from "@/lib/server/access";
 import { apiErrorResponse } from "@/lib/server/api-errors";
+import { readJsonBody } from "@/lib/server/request-body";
 import { readCertificateData, createCertificate } from "@/lib/server/certificate-store";
 import { WORKBOOK_HEADERS } from "@/lib/workbook-types";
 import { validateRecordInput, valuesFromInput } from "@/lib/server/record-validation";
@@ -33,9 +34,7 @@ export async function GET() {
 export async function POST(request: Request) {
   try {
     const access = await requireAccess("editor");
-    const contentLength = Number(request.headers.get("content-length") ?? 0);
-    if (contentLength > 512_000) return Response.json({ error: { code: "PAYLOAD_TOO_LARGE", message: "Requisição muito grande." } }, { status: 413, headers: { "Cache-Control": "no-store" } });
-    const body = await request.json();
+    const body = await readJsonBody(request);
     const parsed = validateRecordInput(body?.values, true);
     const values = valuesFromInput(parsed);
     const issueIndex = WORKBOOK_HEADERS.indexOf("Data de emissão/renovação");
