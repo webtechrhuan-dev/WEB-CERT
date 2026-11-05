@@ -78,7 +78,7 @@ export function CertificateFiles({ rowNumber, canUpload }: { rowNumber: number; 
     if (!file || uploading) return;
     setError(null);
     setNotice(null);
-    if (!/\.(p12|pfx)$/i.test(file.name)) {
+    if (!/\.pfx$/i.test(file.name)) {
       setError("Formato inválido. Selecione um arquivo .pfx.");
       return;
     }
