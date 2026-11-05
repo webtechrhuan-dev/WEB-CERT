@@ -4,7 +4,6 @@ const MONTHS = ["janeiro", "fevereiro", "março", "abril", "maio", "junho", "jul
 const MODELS = ["CNPJ - A1", "CPF - A1"];
 const STATUSES = ["Cancelado", "não concluido", "Orçamento/oferta enviada ao cliente", "Emitido", "Pendente instalar", "Instalado", "Concluido"];
 const REQUIRED_FIELDS = ["Ano da planilha", "Mês da planilha", "Cliente", "Data de emissão/renovação", "Modelo", "Status / Observação"];
-const REQUIRED_FIELDS = ["Ano da planilha", "Mês da planilha", "Cliente", "Data de emissão/renovação", "Modelo", "Status / Observação"];
 
 function invalid(): never { throw new Error("INVALID_INPUT"); }
 function validIsoDate(value: string): boolean {
