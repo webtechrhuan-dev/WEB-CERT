@@ -555,6 +555,7 @@ export function RecordManagement({ mode }: { mode: ManagementMode }) {
                             <strong>{displayListValue(record.values[clientIndex], "Cliente")}</strong>
                             <span>{displayListValue(record.values[modelIndex], "Modelo")} · {displayListValue(record.values[yearIndex], "Ano da planilha")}</span>
                             <span className={`sale-status-badge ${saleStatusClass(saleStatus)}`}>{saleStatusLabel(saleStatus)}</span>
+                            <span className={`sale-certificate-badge ${record.hasCertificate ? "is-linked" : "is-unlinked"}`} title={record.hasCertificate ? "Esta venda possui certificado PFX vinculado" : "Esta venda não possui certificado PFX vinculado"}>{record.hasCertificate ? "Com certificado" : "Sem certificado"}</span>
                             <Icon name="chevronRight" />
                           </button>
                           {selectedRow === record.rowNumber && (

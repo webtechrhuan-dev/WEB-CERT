@@ -5,6 +5,7 @@ import { readCertificateData, createCertificate } from "@/lib/server/certificate
 import { WORKBOOK_HEADERS } from "@/lib/workbook-types";
 import { validateRecordInput, valuesFromInput } from "@/lib/server/record-validation";
 import { expiryFromIssueDate } from "@/lib/record-dates";
+import { getCertificatesDb } from "@/lib/server/certificates-mongodb";
 
 export const runtime = "nodejs";
 
@@ -24,7 +25,14 @@ function currentPeriod(): { year: string; month: string } {
 export async function GET() {
   try {
     await requireAccess();
-    return Response.json(await readCertificateData(), { headers: { "Cache-Control": "no-store" } });
+    const data = await readCertificateData();
+    if (data.source === "mongodb") {
+      const db = await getCertificatesDb();
+      const linkedRows = await db.collection("certificate_files.files").distinct("metadata.rowNumber");
+      const linked = new Set(linkedRows.map(Number));
+      data.records = data.records.map((record) => ({ ...record, hasCertificate: linked.has(record.rowNumber) }));
+    }
+    return Response.json(data, { headers: { "Cache-Control": "no-store" } });
   } catch (e) {
     return apiErrorResponse(e, "api/records");
   }

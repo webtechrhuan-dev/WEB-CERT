@@ -745,8 +745,8 @@ export default function ReportsPage() {
               <option value="all">Todas as situações</option><option value="Elegível">Incluídos no financeiro</option><option value="Não elegível">Excluídos do financeiro</option><option value="Revisar">A revisar</option>
             </select>
             <button className="button button--secondary button--small" type="button" onClick={() => {
-              const headers = ["Cliente","Contato","Data","Modelo","Status","Situação financeira","Data divergente/ausente","Valor financeiro ausente","Faturamento bruto","Custo","Valor líquido"];
-              const body = selectedRows.map((r) => [r.client,r.contact,r.date,r.model,r.status,r.treatment,r.dateIssue ? "Sim" : "Não",r.financialIssue ? "Sim" : "Não",r.revenue.toFixed(2),r.cost.toFixed(2),r.profit.toFixed(2)]);
+              const headers = ["Cliente","Contato","Data","Modelo","Status","Certificado vinculado","Situação financeira","Data divergente/ausente","Valor financeiro ausente","Faturamento bruto","Custo","Valor líquido"];
+              const body = selectedRows.map((r) => [r.client,r.contact,r.date,r.model,r.status,r.hasCertificate ? "Sim" : "Não",r.treatment,r.dateIssue ? "Sim" : "Não",r.financialIssue ? "Sim" : "Não",r.revenue.toFixed(2),r.cost.toFixed(2),r.profit.toFixed(2)]);
               const csv = [headers,...body].map((line) => line.map((v) => `"${String(v).replace(/"/g,'""')}"`).join(";")).join("\r\n");
               const url = URL.createObjectURL(new Blob(["\uFEFF",csv],{type:"text/csv;charset=utf-8"}));
               const a = document.createElement("a"); a.href = url; a.download = `detalhamento-${selectedLabel.replace(/[^a-z0-9]+/gi,"-").toLowerCase()}.csv`; a.click(); URL.revokeObjectURL(url);
@@ -754,11 +754,12 @@ export default function ReportsPage() {
           </div>
           <div className="report-detail-table-wrap">
             <table className="records-table report-table report-detail-table">
-              <thead><tr><th>Cliente</th><th>Data emissão/renovação</th><th>Modelo</th><th>Status</th><th>Situação</th><th>Qualidade dos dados</th><th className="numeric-cell">Faturamento bruto</th><th className="numeric-cell">Custo</th><th className="numeric-cell">Valor líquido</th></tr></thead>
+              <thead><tr><th>Cliente</th><th>Data emissão/renovação</th><th>Modelo</th><th>Status</th><th>Certificado PFX</th><th>Situação</th><th>Qualidade dos dados</th><th className="numeric-cell">Faturamento bruto</th><th className="numeric-cell">Custo</th><th className="numeric-cell">Valor líquido</th></tr></thead>
               <tbody>
                 {selectedRows.map((row) => <tr key={row.id}>
                   <td className="report-detail-client">{row.client}</td><td>{row.date}</td><td>{textValue(row.model)}</td>
                   <td><span className={`sale-status-badge ${saleStatusClass(row.status)}`}>{saleStatusLabel(row.status)}</span></td>
+                  <td><span className={`sale-certificate-badge ${row.hasCertificate ? "is-linked" : "is-unlinked"}`}>{row.hasCertificate ? "Vinculado" : "Não vinculado"}</span></td>
                   <td><span className={`report-treatment-badge ${row.treatment === "Elegível" ? "report-treatment--complete" : row.treatment === "Revisar" ? "report-treatment--review" : "report-treatment--pending"}`}>{row.treatment}</span></td>
                   <td className="report-data-quality">
                     {row.dateIssue && <span className="report-data-issue report-data-issue--date">Data divergente/ausente</span>}
