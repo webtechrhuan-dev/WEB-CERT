@@ -36,24 +36,53 @@ export async function GET(_request: Request, context: { params: Promise<{ fileId
       return Response.json({ error: { code: "SALE_NOT_FOUND", message: "A venda vinculada não existe mais. O arquivo não pode ser baixado." } }, { status: 404, headers: { "Cache-Control": "no-store" } });
     }
 
-    const auditRecorded = await writeAuditEvent({ actor: access.login, action: "certificate.downloaded", entity: "certificate", entityId: String(file._id), metadata: { rowNumber } });
-    const bucket = await getCertificatesBucket();
-    const stream = bucket.openDownloadStream(id);
-    const safeName = String(metadata.originalName || file.filename || "certificado.pfx")
-      .replace(/[\r\n"]/g, "_");
-    const asciiName = safeName.replace(/[^\x20-\x7E]/g, "_");
-    const encodedName = encodeURIComponent(safeName).replace(/['()*]/g, (char) => `%${char.charCodeAt(0).toString(16).toUpperCase()}`);
+    // Reserva atomicamente o download para impedir que a exclusão remova
+    // os chunks enquanto o arquivo está sendo transmitido ao navegador.
+    const lease = await db.collection("certificate_files.files").updateOne(
+      { _id: id, deleting: { $ne: true } },
+      { $inc: { activeDownloads: 1 } },
+    );
+    if (lease.modifiedCount !== 1) {
+      return Response.json({ error: { code: "FILE_NOT_AVAILABLE", message: "O certificado está sendo removido ou não está disponível." } }, { status: 409, headers: { "Cache-Control": "no-store" } });
+    }
 
-    return new Response(Readable.toWeb(stream) as ReadableStream, {
-      headers: {
-        "Content-Type": "application/x-pkcs12",
-        "Content-Length": String(file.length),
-        "Content-Disposition": `attachment; filename="${asciiName}"; filename*=UTF-8''${encodedName}`,
-        "Cache-Control": "private, no-store",
-        "X-Content-Type-Options": "nosniff",
-        "X-Audit-Recorded": auditRecorded ? "true" : "false",
-      },
-    });
+    let leaseReleased = false;
+    const releaseLease = () => {
+      if (leaseReleased) return;
+      leaseReleased = true;
+      void db.collection("certificate_files.files").updateOne(
+        { _id: id },
+        { $inc: { activeDownloads: -1 } },
+      ).catch(() => console.error("[certificates] Falha ao liberar reserva de download."));
+    };
+
+    let stream: Readable | undefined;
+    try {
+      const auditRecorded = await writeAuditEvent({ actor: access.login, action: "certificate.downloaded", entity: "certificate", entityId: String(file._id), metadata: { rowNumber } });
+      const bucket = await getCertificatesBucket();
+      stream = bucket.openDownloadStream(id);
+      stream.once("close", releaseLease);
+      stream.once("error", releaseLease);
+      const safeName = String(metadata.originalName || file.filename || "certificado.pfx")
+        .replace(/[\\r\\n"]/g, "_");
+      const asciiName = safeName.replace(/[^\\x20-\\x7E]/g, "_");
+      const encodedName = encodeURIComponent(safeName).replace(/['()*]/g, (char) => `%${char.charCodeAt(0).toString(16).toUpperCase()}`);
+
+      return new Response(Readable.toWeb(stream) as ReadableStream, {
+        headers: {
+          "Content-Type": "application/x-pkcs12",
+          "Content-Length": String(file.length),
+          "Content-Disposition": `attachment; filename="${asciiName}"; filename*=UTF-8''${encodedName}`,
+          "Cache-Control": "private, no-store",
+          "X-Content-Type-Options": "nosniff",
+          "X-Audit-Recorded": auditRecorded ? "true" : "false",
+        },
+      });
+    } catch (error) {
+      stream?.destroy();
+      releaseLease();
+      throw error;
+    }
   } catch (error) {
     return apiErrorResponse(error, "api/certificates/[fileId]");
   }
