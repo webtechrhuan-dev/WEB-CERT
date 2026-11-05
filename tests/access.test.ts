@@ -34,7 +34,7 @@ describe("autorização baseada no estado atual da conta", () => {
 
   it("bloqueia imediatamente uma conta desativada mesmo com sessão válida", async () => {
     findOne.mockResolvedValue({ username: "arthur", role: "admin", active: false });
-    await expect(requireAccess()).rejects.toMatchObject<Partial<AccessError>>({
+    await expect(requireAccess()).rejects.toMatchObject({
       code: "UNAUTHENTICATED",
     });
   });
@@ -49,7 +49,7 @@ describe("autorização baseada no estado atual da conta", () => {
 
   it("nega sessões sem login antes de consultar o banco", async () => {
     auth.mockResolvedValue({ user: {} });
-    await expect(requireAccess()).rejects.toMatchObject<Partial<AccessError>>({
+    await expect(requireAccess()).rejects.toMatchObject({
       code: "UNAUTHENTICATED",
     });
     expect(getMongoDb).not.toHaveBeenCalled();
