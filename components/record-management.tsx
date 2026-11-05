@@ -568,7 +568,7 @@ export function RecordManagement({ mode }: { mode: ManagementMode }) {
                               ) : (
                                 <p className="empty-state">{canEdit ? "A edição será habilitada quando a fonte estiver configurada." : "Edição disponível apenas para usuários autorizados como editores."}</p>
                               )}
-                              {data.source === "mongodb" && <CertificateFiles rowNumber={record.rowNumber} canUpload={canEdit} />}
+                              {data.source === "mongodb" && <CertificateFiles rowNumber={record.rowNumber} canUpload={canEdit} saleStatus={saleStatus} />}
                             </div>
                           )}
                         </div>
