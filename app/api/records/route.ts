@@ -1,18 +1,14 @@
 import { requireAccess } from "@/lib/server/access";
 import { apiErrorResponse } from "@/lib/server/api-errors";
+import { readJsonBody } from "@/lib/server/request-body";
 import { readCertificateData, createCertificate } from "@/lib/server/certificate-store";
 import { WORKBOOK_HEADERS } from "@/lib/workbook-types";
 import { validateRecordInput, valuesFromInput } from "@/lib/server/record-validation";
+import { writeAuditEvent } from "@/lib/server/audit-log";
+import { expiryFromIssueDate } from "@/lib/record-dates";
 
 export const runtime = "nodejs";
 
-function expiryFromIssueDate(value: unknown): string | null {
-  if (typeof value !== "string" || !/^\d{4}-\d{2}-\d{2}$/.test(value)) return null;
-  const [year, month, day] = value.split("-").map(Number);
-  const expiryYear = year + 1;
-  const lastDay = new Date(Date.UTC(expiryYear, month, 0)).getUTCDate();
-  return [expiryYear, String(month).padStart(2, "0"), String(Math.min(day, lastDay)).padStart(2, "0")].join("-");
-}
 const MONTH_NAMES = ["janeiro", "fevereiro", "março", "abril", "maio", "junho", "julho", "agosto", "setembro", "outubro", "novembro", "dezembro"];
 
 function currentPeriod(): { year: string; month: string } {
@@ -37,10 +33,8 @@ export async function GET() {
 
 export async function POST(request: Request) {
   try {
-    await requireAccess("editor");
-    const contentLength = Number(request.headers.get("content-length") ?? 0);
-    if (contentLength > 512_000) return Response.json({ error: { code: "PAYLOAD_TOO_LARGE", message: "Requisição muito grande." } }, { status: 413, headers: { "Cache-Control": "no-store" } });
-    const body = await request.json();
+    const access = await requireAccess("editor");
+    const body = await readJsonBody(request);
     const parsed = validateRecordInput(body?.values, true);
     const values = valuesFromInput(parsed);
     const issueIndex = WORKBOOK_HEADERS.indexOf("Data de emissão/renovação");
@@ -58,8 +52,9 @@ export async function POST(request: Request) {
     if (typeof selectedMonth !== "string" || !MONTH_NAMES.includes(selectedMonth)) {
       throw new Error("INVALID_INPUT");
     }
-    await createCertificate(values);
-    return Response.json({ ok: true, headers: WORKBOOK_HEADERS }, { status: 201, headers: { "Cache-Control": "no-store" } });
+    const rowNumber = await createCertificate(values);
+    const auditRecorded = await writeAuditEvent({ actor: access.login, action: "sale.created", entity: "sale", entityId: String(rowNumber) });
+    return Response.json({ ok: true, rowNumber, auditRecorded, headers: WORKBOOK_HEADERS }, { status: 201, headers: { "Cache-Control": "no-store" } });
   } catch (e) {
     return apiErrorResponse(e, "api/records");
   }

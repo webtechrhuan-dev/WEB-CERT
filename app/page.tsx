@@ -128,10 +128,9 @@ export default async function Home() {
             <Icon name="lock" />
           </span>
           <p>
-            <strong>Modo de consulta</strong>
+            <strong>Dados protegidos</strong>
             <span>
-              Consulta e relatórios usam os dados reais. Cadastro e edição exigem
-              uma conta autorizada e integração GitHub configurada no servidor.
+              Vendas são armazenadas no MongoDB. Cadastro e edição exigem uma conta autorizada; anexos de certificados usam um armazenamento separado.
             </span>
           </p>
         </aside>

@@ -4,10 +4,13 @@ import { useMemo, useState, type FormEvent } from "react";
 import Link from "next/link";
 import { useSession } from "next-auth/react";
 import { Icon } from "@/components/icon";
+import { CertificateFiles } from "@/components/certificate-files";
 import { saleStatusClass, saleStatusLabel } from "@/lib/sale-status";
 import { useWorkbookData } from "@/lib/client/use-workbook-data";
 import { WORKBOOK_HEADERS } from "@/lib/workbook-types";
 import type { WorkbookCell, WorkbookRecord } from "@/lib/workbook-types";
+import { paginateItems } from "@/lib/record-pagination";
+import { expiryFromIssueDate } from "@/lib/record-dates";
 
 type ManagementMode = "create" | "edit";
 type FormValues = Record<string, string>;
@@ -87,13 +90,6 @@ function currentPeriod(): { year: string; month: string } {
   return { year, month: MONTH_NAMES[monthNumber - 1] ?? MONTH_NAMES[0] };
 }
 
-function expiryFromIssueDate(value: string): string {
-  if (!/^\d{4}-\d{2}-\d{2}$/.test(value)) return "";
-  const [year, month, day] = value.split("-").map(Number);
-  const expiryYear = year + 1;
-  const lastDay = new Date(Date.UTC(expiryYear, month, 0)).getUTCDate();
-  return [expiryYear, String(month).padStart(2, "0"), String(Math.min(day, lastDay)).padStart(2, "0")].join("-");
-}
 function formValues(record?: WorkbookRecord): FormValues {
   const values = Object.fromEntries(
     WORKBOOK_HEADERS.map((header, index) => [header, valueAsText(record?.values[index])]),
@@ -243,7 +239,7 @@ function RecordForm({
                 <input autoComplete="off" type="date" value={values[header] ?? ""}
                   onChange={(event) => {
                     const issueDate = event.target.value;
-                    setValues((current) => ({ ...current, [header]: issueDate, ["Data de vencimento"]: expiryFromIssueDate(issueDate) }));
+                    setValues((current) => ({ ...current, [header]: issueDate, ["Data de vencimento"]: expiryFromIssueDate(issueDate) ?? "" }));
                   }}
                 />
               ) : expiryField ? (
@@ -368,6 +364,7 @@ export function RecordManagement({ mode }: { mode: ManagementMode }) {
     status === "authenticated",
   );
   const [search, setSearch] = useState("");
+  const [currentPage, setCurrentPage] = useState(1);
   const [filterYear, setFilterYear] = useState("");
   const [filterMonth, setFilterMonth] = useState("");
   const [selectedRow, setSelectedRow] = useState<number | null>(null);
@@ -397,11 +394,12 @@ export function RecordManagement({ mode }: { mode: ManagementMode }) {
       return clientName.includes(query);
     });
   }, [data, filterYear, filterMonth, search, periodIndexes]);
+  const pageResult = useMemo(() => paginateItems(records, currentPage, 15), [records, currentPage]);
   const yearIndexForGroup = data?.headers.indexOf("Ano da planilha") ?? -1;
   const monthIndexForGroup = data?.headers.indexOf("Mês da planilha") ?? -1;
   const groupedRecords = useMemo(() => {
     const groups = new Map<string, WorkbookRecord[]>();
-    for (const record of records) {
+    for (const record of pageResult.items) {
       const year = valueAsText(record.values[yearIndexForGroup]) || "Sem ano";
       const rawMonth = valueAsText(record.values[monthIndexForGroup]) || "Sem mês";
       const month = rawMonth === "Sem mês" ? rawMonth : normalizeMonth(rawMonth);
@@ -417,7 +415,7 @@ export function RecordManagement({ mode }: { mode: ManagementMode }) {
       if (yearDiff) return yearDiff;
       return (monthOrder.get(monthA.toLocaleLowerCase("pt-BR")) ?? 99) - (monthOrder.get(monthB.toLocaleLowerCase("pt-BR")) ?? 99);
     });
-  }, [records, yearIndexForGroup, monthIndexForGroup]);
+  }, [pageResult.items, yearIndexForGroup, monthIndexForGroup]);
 
 
   function handleSaved(message: string) {
@@ -501,26 +499,26 @@ export function RecordManagement({ mode }: { mode: ManagementMode }) {
           <div className="period-filter-bar">
             <label className="record-form-field">
               <span>Ano</span>
-              <select value={filterYear} onChange={(event) => { setFilterYear(event.target.value); setSearch(""); setSelectedRow(null); }}>
+              <select value={filterYear} onChange={(event) => { setFilterYear(event.target.value); setSearch(""); setCurrentPage(1); setSelectedRow(null); }}>
                 <option value="">Selecione o ano</option>
                 {availableYearOptions.map((year) => <option key={year} value={year}>{year}</option>)}
               </select>
             </label>
             <label className="record-form-field">
               <span>Mês</span>
-              <select value={filterMonth} onChange={(event) => { setFilterMonth(event.target.value); setSearch(""); setSelectedRow(null); }}>
+              <select value={filterMonth} onChange={(event) => { setFilterMonth(event.target.value); setSearch(""); setCurrentPage(1); setSelectedRow(null); }}>
                 <option value="">Selecione o mês</option>
                 {MONTH_NAMES.map((month) => <option key={month} value={month}>{month.charAt(0).toLocaleUpperCase("pt-BR") + month.slice(1)}</option>)}
               </select>
             </label>
-            <button className="button button--secondary button--small period-filter-clear" onClick={() => { setFilterYear(""); setFilterMonth(""); setSearch(""); setSelectedRow(null); }} type="button">Limpar filtros</button>
+            <button className="button button--secondary button--small period-filter-clear" onClick={() => { setFilterYear(""); setFilterMonth(""); setSearch(""); setCurrentPage(1); setSelectedRow(null); }} type="button">Limpar filtros</button>
           </div>
           {filterYear && filterMonth && (
             <label className="search-field management-search">
               <span className="search-label">Buscar venda pelo nome do cliente</span>
               <span className="search-control">
                 <Icon name="search" className="search-icon" />
-                <input value={search} onChange={(event) => { setSearch(event.target.value); setSelectedRow(null); }} placeholder="Digite o nome do cliente..." type="search" />
+                <input value={search} onChange={(event) => { setSearch(event.target.value); setCurrentPage(1); setSelectedRow(null); }} placeholder="Digite o nome do cliente..." type="search" />
               </span>
             </label>
           )}
@@ -570,6 +568,7 @@ export function RecordManagement({ mode }: { mode: ManagementMode }) {
                               ) : (
                                 <p className="empty-state">{canEdit ? "A edição será habilitada quando a fonte estiver configurada." : "Edição disponível apenas para usuários autorizados como editores."}</p>
                               )}
+                              {data.source === "mongodb" && <CertificateFiles rowNumber={record.rowNumber} canUpload={canEdit} />}
                             </div>
                           )}
                         </div>
@@ -580,6 +579,16 @@ export function RecordManagement({ mode }: { mode: ManagementMode }) {
               })
             )}
           </div>
+          )}
+          {filterYear && filterMonth && records.length > 0 && (
+            <div className="records-pagination" aria-label="Paginação das vendas">
+              <span>Exibindo {((pageResult.page - 1) * pageResult.pageSize) + 1}–{Math.min(pageResult.page * pageResult.pageSize, pageResult.total)} de {pageResult.total} vendas</span>
+              <div className="records-pagination-actions">
+                <button className="button button--secondary button--small" type="button" disabled={pageResult.page <= 1} onClick={() => { setCurrentPage(pageResult.page - 1); setSelectedRow(null); }}>Anterior</button>
+                <span aria-live="polite">Página {pageResult.page} de {pageResult.totalPages}</span>
+                <button className="button button--secondary button--small" type="button" disabled={pageResult.page >= pageResult.totalPages} onClick={() => { setCurrentPage(pageResult.page + 1); setSelectedRow(null); }}>Próxima</button>
+              </div>
+            </div>
           )}
 
         </section>

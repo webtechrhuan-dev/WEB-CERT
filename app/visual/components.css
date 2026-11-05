@@ -66,3 +66,12 @@
 .chart-bar:hover { filter: drop-shadow(0 5px 7px rgb(8 32 51 / 18%)) brightness(1.06); }
 :where(.chart-legend-item):hover { transform: translateY(-1px); }
 :where(.chart-legend-item:focus-visible,.record-picker-row:focus-visible) { outline-offset: 3px; }
+
+
+/* Admin audit history */
+.audit-log-panel { overflow: hidden; }
+.audit-log-panel .panel-heading p { max-width: 68ch; }
+.audit-log-table { min-width: 760px; }
+.audit-log-table td:first-child { white-space: nowrap; font-variant-numeric: tabular-nums; }
+.audit-log-table td:nth-child(2) strong { color: var(--text-strong); }
+.audit-log-more { justify-content: center; padding-top: 1rem; }

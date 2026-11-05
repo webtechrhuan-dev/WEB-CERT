@@ -9,7 +9,7 @@ import { Icon } from "@/components/icon";
 import { HelpFaq } from "@/components/help-faq";
 import { saleStatusClass, saleStatusLabel } from "@/lib/sale-status";
 import { useWorkbookData } from "@/lib/client/use-workbook-data";
-import { getWorkbookReportRows, summarizeWorkbook, type ReportDimension, type DetailedReportRow } from "@/lib/reporting";
+import { getWorkbookReportRows, parseReportDate, summarizeWorkbook, type ReportDimension, type DetailedReportRow } from "@/lib/reporting";
 
 const currency = new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" });
 const numbers = new Intl.NumberFormat("pt-BR");
@@ -79,19 +79,7 @@ function canonicalMonth(value: string): string {
   return month ?? value.trim().replace(/\s+/g, " ").toLocaleLowerCase("pt-BR");
 }
 function parsedDate(row: DetailedReportRow): Date | null {
-  const raw = row.date.trim();
-  let match = /^(\d{1,2})[\/.-](\d{1,2})[\/.-](\d{4})$/.exec(raw);
-  if (match) {
-    const d = new Date(Number(match[3]), Number(match[2]) - 1, Number(match[1]));
-    return Number.isNaN(d.getTime()) ? null : d;
-  }
-  match = /^(\d{4})-(\d{2})-(\d{2})/.exec(raw);
-  if (match) {
-    const d = new Date(Number(match[1]), Number(match[2]) - 1, Number(match[3]));
-    return Number.isNaN(d.getTime()) ? null : d;
-  }
-  const parsed = new Date(raw);
-  return raw && !Number.isNaN(parsed.getTime()) ? parsed : null;
+  return parseReportDate(row.date);
 }
 function periodLabel(row: DetailedReportRow, granularity: Granularity): string {
   const date = parsedDate(row);

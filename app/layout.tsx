@@ -6,8 +6,8 @@ import "./quality-layer.css";
 import "./visual-system.css";
 
 export const metadata: Metadata = {
-  title: "Certificados Manager",
-  description: "Consulta e gestão versionada de registros comerciais da Web Tech.",
+  title: "WEB-CERT | Web Tech",
+  description: "Gestão de vendas, certificados digitais, renovações e relatórios da Web Tech.",
 };
 
 export default function RootLayout({

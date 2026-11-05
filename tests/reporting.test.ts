@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { getWorkbookReportRows, numericCell, summarizeWorkbook } from "../lib/reporting";
+import { getWorkbookReportRows, numericCell, parseReportDate, summarizeWorkbook } from "../lib/reporting";
 import { WORKBOOK_HEADERS } from "../lib/workbook-types";
 import type { WorkbookData, WorkbookRecord } from "../lib/workbook-types";
 
@@ -39,6 +39,23 @@ const sample: WorkbookData = {
     record(6, { "Ano da planilha": 2025, "Mês da planilha": "Janeiro", Cliente: "TOTAL" }),
   ],
 };
+
+describe("datas dos relatórios", () => {
+  it.each([
+    ["2026-02-28", true],
+    ["28/02/2026", true],
+    ["2026-02-31", false],
+    ["31/02/2026", false],
+    ["2026-13-01", false],
+    ["", false],
+  ] as Array<[string, boolean]>)("interpreta %s sem rollover", (value, valid) => {
+    const parsed = parseReportDate(value);
+    expect(parsed === null).toBe(!valid);
+    if (parsed) {
+      expect([parsed.getFullYear(), parsed.getMonth() + 1, parsed.getDate()]).toEqual([2026, 2, 28]);
+    }
+  });
+});
 
 describe("interpretação de valores monetários", () => {
   it.each([

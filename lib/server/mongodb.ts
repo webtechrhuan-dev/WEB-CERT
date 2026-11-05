@@ -23,6 +23,10 @@ function getClientPromise(): Promise<MongoClient> {
   return global.__mongoClientPromise;
 }
 
+export async function getMongoClient(): Promise<MongoClient> {
+  return getClientPromise();
+}
+
 export async function getMongoDb(): Promise<Db> {
-  return (await getClientPromise()).db(dbName);
+  return (await getMongoClient()).db(dbName);
 }
