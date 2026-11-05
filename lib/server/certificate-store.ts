@@ -1,19 +1,13 @@
 import "server-only";
 import { getMongoDb } from "./mongodb";
 import type { WorkbookCell, WorkbookData, WorkbookRecord } from "@/lib/workbook-types";
+import { expiryFromIssueDate } from "@/lib/record-dates";
 
 const collection = "certificates";
 const counters = "counters";
 const counterId = "certificate-row-number";
 const HEADERS = ["Ano da planilha","Mês da planilha","Cliente","Contato","Data de emissão/renovação","Data de vencimento","Modelo","Faturamento (R$)","Custo (R$)","Status / Observação"];
 
-function expiryFromIssueDate(value: unknown): string | null {
-  if (typeof value !== "string" || !/^\d{4}-\d{2}-\d{2}$/.test(value)) return null;
-  const [year, month, day] = value.split("-").map(Number);
-  const expiryYear = year + 1;
-  const lastDay = new Date(Date.UTC(expiryYear, month, 0)).getUTCDate();
-  return [expiryYear, String(month).padStart(2, "0"), String(Math.min(day, lastDay)).padStart(2, "0")].join("-");
-}
 function normalizeValues(input: WorkbookCell[]): WorkbookCell[] {
   const values = [...input];
   if (values.length === HEADERS.length - 1) values.splice(5, 0, null);
