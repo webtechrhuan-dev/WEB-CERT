@@ -6,6 +6,7 @@ import {
   buildAcquireDownloadLeasePipeline,
   buildCertificateDeletionClaimFilter,
   buildReleaseDownloadLeasePipeline,
+  buildRenewDownloadLeasePipeline,
 } from "@/lib/server/certificate-download-leases";
 
 describe("reservas concorrentes de download de certificados", () => {
@@ -40,6 +41,29 @@ describe("reservas concorrentes de download de certificados", () => {
     const appended = (pipeline[0] as { $set: { activeDownloadLeases: { $concatArrays: unknown[] } } })
       .$set.activeDownloadLeases.$concatArrays[1];
     expect(appended).toEqual([{ token: "lease-b", expiresAt: new Date(now.getTime() + 5_000) }]);
+  });
+
+  it("renova somente a expiração do lease correspondente", () => {
+    const expiresAt = new Date(now.getTime() + 60_000);
+    expect(buildRenewDownloadLeasePipeline("lease-a", expiresAt)).toEqual([
+      {
+        $set: {
+          activeDownloadLeases: {
+            $map: {
+              input: { $ifNull: ["$activeDownloadLeases", []] },
+              as: "activeLease",
+              in: {
+                $cond: [
+                  { $eq: ["$activeLease.token", "lease-a"] },
+                  { $mergeObjects: ["$activeLease", { expiresAt }] },
+                  "$activeLease",
+                ],
+              },
+            },
+          },
+        },
+      },
+    ]);
   });
 
   it("libera somente o token correspondente sem substituir outras reservas", () => {
