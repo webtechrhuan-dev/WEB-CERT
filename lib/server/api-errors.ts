@@ -1,4 +1,5 @@
 import "server-only";
+import { ApiRequestError } from "@/lib/server/request-body";
 
 import { AccessError } from "@/lib/server/access";
 import { GitHubWorkbookError } from "@/lib/server/github-workbook";
@@ -94,6 +95,9 @@ function errorResponse(code: string, message: string, status: number): Response 
 }
 
 export function apiErrorResponse(error: unknown, route: string): Response {
+  if (error instanceof ApiRequestError) {
+    return errorResponse(error.code, error.message, error.code === "PAYLOAD_TOO_LARGE" ? 413 : 400);
+  }
   if (error instanceof Error && error.message.includes("MONGODB_CERTIFICATES_URI não está configurada")) {
     return errorResponse("CERTIFICATE_STORAGE_NOT_CONFIGURED", "O armazenamento separado de certificados ainda não está configurado no servidor.", 503);
   }
