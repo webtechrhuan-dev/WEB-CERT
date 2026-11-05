@@ -17,7 +17,13 @@ export async function GET(request: Request) {
   const db = await getCertificatesDb();
   const now = new Date();
   const expired = await db.collection("certificate_files.files")
-    .find({ "metadata.expiresAt": { $lte: now }, deleting: { $ne: true } }, { projection: { _id: 1, "metadata.rowNumber": 1 } })
+    .find({
+      "metadata.expiresAt": { $lte: now },
+      $or: [
+        { deleting: { $ne: true } },
+        { deletingLeaseExpiresAt: { $lte: now } },
+      ],
+    }, { projection: { _id: 1, "metadata.rowNumber": 1 } })
     .sort({ "metadata.expiresAt": 1 })
     .limit(BATCH_SIZE)
     .toArray();
