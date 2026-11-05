@@ -54,9 +54,9 @@ describe("reservas concorrentes de download de certificados", () => {
               as: "activeLease",
               in: {
                 $cond: [
-                  { $eq: ["$activeLease.token", "lease-a"] },
-                  { $mergeObjects: ["$activeLease", { expiresAt }] },
-                  "$activeLease",
+                  { $eq: ["$$activeLease.token", "lease-a"] },
+                  { $mergeObjects: ["$$activeLease", { expiresAt }] },
+                  "$$activeLease",
                 ],
               },
             },
