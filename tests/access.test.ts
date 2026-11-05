@@ -10,7 +10,7 @@ vi.mock("server-only", () => ({}));
 vi.mock("@/auth", () => ({ auth }));
 vi.mock("@/lib/server/mongodb", () => ({ getMongoDb }));
 
-import { AccessError, requireAccess } from "../lib/server/access";
+import { requireAccess } from "../lib/server/access";
 
 describe("autorização baseada no estado atual da conta", () => {
   beforeEach(() => {
