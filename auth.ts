@@ -3,7 +3,7 @@ import Credentials from "next-auth/providers/credentials";
 import { randomBytes, scryptSync, timingSafeEqual } from "node:crypto";
 import { getMongoDb } from "@/lib/server/mongodb";
 
-type AppRole = "admin" | "editor";
+type AppRole = "admin" | "editor" | "viewer";
 type UserDocument = {
   username: string;
   displayName: string;
@@ -132,14 +132,14 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
     async jwt({ token, user }) {
       if (user) {
         token.login = "login" in user && typeof user.login === "string" ? user.login : user.id;
-        token.role = "role" in user && user.role === "admin" ? "admin" : "editor";
+        token.role = "role" in user && (user.role === "admin" || user.role === "viewer" || user.role === "editor") ? user.role : "editor";
       }
       return token;
     },
     async session({ session, token }) {
       const login = typeof token.login === "string" ? token.login : "";
       const isAdmin = token.role === "admin";
-      const role = token.role === "admin" || token.role === "editor" ? "editor" : "viewer";
+      const role = token.role === "admin" || token.role === "editor" || token.role === "viewer" ? token.role : "viewer";
       if (session.user) {
         session.user.login = login;
         session.user.role = role;
