@@ -4,7 +4,6 @@ import { buildAcquireDownloadLeasePipeline, buildReleaseDownloadLeasePipeline } 
 import { Readable } from "node:stream";
 import { requireAccess } from "@/lib/server/access";
 import { apiErrorResponse } from "@/lib/server/api-errors";
-import { writeAuditEvent } from "@/lib/server/audit-log";
 import { getMongoDb } from "@/lib/server/mongodb";
 import { getCertificatesBucket, getCertificatesDb, ensureCertificateStoreIndexes, parseObjectId } from "@/lib/server/certificates-mongodb";
 
@@ -13,7 +12,7 @@ export const dynamic = "force-dynamic";
 
 export async function GET(_request: Request, context: { params: Promise<{ fileId: string }> }) {
   try {
-    const access = await requireAccess();
+    await requireAccess();
     const { fileId } = await context.params;
     const id = parseObjectId(fileId);
     if (!id) return Response.json({ error: { code: "INVALID_FILE_ID", message: "Arquivo inválido." } }, { status: 400 });
@@ -70,7 +69,6 @@ export async function GET(_request: Request, context: { params: Promise<{ fileId
 
     let stream: Readable | undefined;
     try {
-      const auditRecorded = await writeAuditEvent({ actor: access.login, action: "certificate.downloaded", entity: "certificate", entityId: String(file._id), metadata: { rowNumber } });
       const bucket = await getCertificatesBucket();
       stream = bucket.openDownloadStream(id);
       stream.once("close", releaseLease);
@@ -86,7 +84,6 @@ export async function GET(_request: Request, context: { params: Promise<{ fileId
           "Content-Disposition": `attachment; filename="${asciiName}"; filename*=UTF-8''${encodedName}`,
           "Cache-Control": "private, no-store",
           "X-Content-Type-Options": "nosniff",
-          "X-Audit-Recorded": auditRecorded ? "true" : "false",
         },
       });
     } catch (error) {
