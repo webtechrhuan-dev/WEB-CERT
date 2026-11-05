@@ -33,6 +33,23 @@ function displayCell(cell: WorkbookCell | undefined): string {
   return value || "Sem preenchimento";
 }
 
+/** Parses supported report dates without allowing JavaScript's date rollover (e.g. 31/02). */
+export function parseReportDate(value: string): Date | null {
+  const raw = value.trim();
+  const iso = /^(\\d{4})-(\\d{2})-(\\d{2})$/.exec(raw);
+  const brazilian = /^(\\d{1,2})[\\/.-](\\d{1,2})[\\/.-](\\d{4})$/.exec(raw);
+  if (!iso && !brazilian) return null;
+  const year = Number(iso ? iso[1] : brazilian![3]);
+  const month = Number(iso ? iso[2] : brazilian![2]);
+  const day = Number(iso ? iso[3] : brazilian![1]);
+  const parsed = new Date(0);
+  parsed.setHours(12, 0, 0, 0);
+  parsed.setFullYear(year, month - 1, day);
+  return parsed.getFullYear() === year && parsed.getMonth() === month - 1 && parsed.getDate() === day
+    ? parsed
+    : null;
+}
+
 /** Interpreta valores monetários brasileiros e internacionais. */
 export function numericCell(cell: WorkbookCell | undefined): number {
   if (typeof cell === "number") return Number.isFinite(cell) ? cell : 0;
