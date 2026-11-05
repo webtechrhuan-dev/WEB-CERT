@@ -1,5 +1,5 @@
 export class ApiRequestError extends Error {
-  constructor(public readonly code: "PAYLOAD_TOO_LARGE" | "MALFORMED_JSON", message: string) {
+  constructor(public readonly code: "PAYLOAD_TOO_LARGE" | "MALFORMED_JSON" | "BODY_READ_FAILED", message: string) {
     super(message);
     this.name = "ApiRequestError";
   }
@@ -28,6 +28,9 @@ export async function readBodyBytes(request: Request, maxBytes: number): Promise
       }
       chunks.push(value);
     }
+  } catch (error) {
+    if (error instanceof ApiRequestError) throw error;
+    throw new ApiRequestError("BODY_READ_FAILED", "Não foi possível receber o corpo completo da requisição.");
   } finally {
     reader.releaseLock();
   }
