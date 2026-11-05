@@ -39,7 +39,21 @@ export async function PATCH(request: Request, context: { params: Promise<{ rowNu
    if (attached && !eligible) {
      return Response.json({ error: { code: "CERTIFICATE_STATUS_LOCKED", message: "Esta venda possui um certificado vinculado. Exclua o certificado antes de alterar o status para uma etapa não elegível." } }, { status: 409, headers: { "Cache-Control": "no-store" } });
    }
+   const expiryValue = values[expiryIndex];
+   const expiryDateText = typeof expiryValue === "string" ? expiryValue : "";
+   const certificateExpiry = /^\\d{4}-\\d{2}-\\d{2}$/.test(expiryDateText)
+     ? new Date(`${expiryDateText}T23:59:59.999Z`)
+     : null;
+   if (attached && (!certificateExpiry || !Number.isFinite(certificateExpiry.getTime()) || certificateExpiry.toISOString().slice(0, 10) !== expiryDateText)) {
+     return Response.json({ error: { code: "SALE_EXPIRY_INVALID", message: "A data de vencimento do cadastro precisa ser válida para manter o certificado vinculado." } }, { status: 409, headers: { "Cache-Control": "no-store" } });
+   }
    await updateCertificate(rowNumber, values, body.expectedVersion);
+   if (attached && certificateExpiry) {
+     await certificateDb.collection("certificate_files.files").updateOne(
+       { "metadata.rowNumber": rowNumber },
+       { $set: { "metadata.expiresAt": certificateExpiry } },
+     );
+   }
    return Response.json({ ok: true }, { headers: { "Cache-Control": "no-store" } });
  } finally {
    await releaseCertificateMutationLock(rowNumber, mutationToken).catch(() => console.error("[certificates] Falha ao liberar lock de mutação."));
