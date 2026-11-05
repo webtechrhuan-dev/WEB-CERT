@@ -111,7 +111,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         await ensureInitialUsers();
         const db = await getMongoDb();
         const user = await db.collection<UserDocument>("users").findOne({ username });
-        if (!user) return null;
+        if (!user || ("active" in user && user.active === false)) return null;
 
         const candidate = Buffer.from(passwordHash(password, user.salt), "hex");
         const expected = Buffer.from(user.passwordHash, "hex");
