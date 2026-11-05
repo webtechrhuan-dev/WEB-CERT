@@ -4,7 +4,6 @@ import { buildCertificateDeletionClaimFilter, CERTIFICATE_DELETION_LEASE_MS } fr
 import { requireAccess } from "@/lib/server/access";
 import { apiErrorResponse } from "@/lib/server/api-errors";
 import { readBodyBytes, readJsonBody } from "@/lib/server/request-body";
-import { writeAuditEvent } from "@/lib/server/audit-log";
 import { getMongoDb } from "@/lib/server/mongodb";
 import { cleanupGridFsUpload } from "@/lib/server/gridfs-cleanup";
 import { acquireCertificateMutationLock, releaseCertificateMutationLock } from "@/lib/server/certificate-store";
@@ -161,8 +160,7 @@ export async function POST(request: Request, context: { params: Promise<{ rowNum
         return jsonError("RECORD_NOT_FOUND", "A venda foi removida durante o envio. O arquivo não foi mantido.", 404);
       }
 
-      const auditRecorded = await writeAuditEvent({ actor: access.login, action: "certificate.uploaded", entity: "certificate", entityId: String(upload.id), metadata: { rowNumber, extension: originalName.toLowerCase().endsWith(".p12") ? ".p12" : ".pfx", size: file.size } });
-      return Response.json({ ok: true, id: String(upload.id), name: originalName, auditRecorded }, {
+      return Response.json({ ok: true, id: String(upload.id), name: originalName }, {
         status: 201,
         headers: { "Cache-Control": "no-store" },
       });
@@ -223,14 +221,7 @@ export async function DELETE(request: Request, context: { params: Promise<{ rowN
       ).catch(() => console.error("[certificates] Falha ao liberar marca de exclusão."));
       throw error;
     }
-    const auditRecorded = await writeAuditEvent({
-      actor: access.login,
-      action: "certificate.deleted",
-      entity: "certificate",
-      entityId: String(id),
-      metadata: { rowNumber },
-    });
-    return Response.json({ ok: true, deleted: true, auditRecorded }, {
+    return Response.json({ ok: true, deleted: true }, {
       headers: { "Cache-Control": "no-store" },
     });
   } catch (error) {

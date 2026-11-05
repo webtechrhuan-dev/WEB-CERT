@@ -5,7 +5,6 @@ import { apiErrorResponse } from "@/lib/server/api-errors";
 import { readJsonBody } from "@/lib/server/request-body";
 import { readCertificateData, updateCertificate } from "@/lib/server/certificate-store";
 import { validateRecordInput, valuesFromInput } from "@/lib/server/record-validation";
-import { writeAuditEvent } from "@/lib/server/audit-log";
 import { getCertificatesDb, ensureCertificateStoreIndexes } from "@/lib/server/certificates-mongodb";
 import { acquireCertificateMutationLock, releaseCertificateMutationLock } from "@/lib/server/certificate-store";
 import { expiryFromIssueDate } from "@/lib/record-dates";
@@ -22,7 +21,7 @@ export async function PATCH(request: Request, context: { params: Promise<{ rowNu
  const validYears = Array.from({ length: Math.max(0, currentYear() - 2024 + 1) }, (_, index) => String(currentYear() - index));
  if (parsed["Ano da planilha"] !== undefined && (typeof parsed["Ano da planilha"] !== "string" || !validYears.includes(parsed["Ano da planilha"]))) throw new Error("INVALID_INPUT");
  if (parsed["Mês da planilha"] !== undefined && (typeof parsed["Mês da planilha"] !== "string" || !MONTH_NAMES.includes(parsed["Mês da planilha"]))) throw new Error("INVALID_INPUT");
- const values = [...current.values]; for (const [header, value] of Object.entries(parsed)) { if (header !== "Data de vencimento") values[data.headers.indexOf(header)] = value === null ? null : value; } const issueIndex = data.headers.indexOf("Data de emissão/renovação"); const expiryIndex = data.headers.indexOf("Data de vencimento"); values[expiryIndex] = expiryFromIssueDate(values[issueIndex]); if (typeof body?.expectedVersion !== "string") throw new Error("RECORD_CONFLICT"); await updateCertificate(rowNumber, values, body.expectedVersion); const auditRecorded = await writeAuditEvent({ actor: access.login, action: "sale.updated", entity: "sale", entityId: String(rowNumber), metadata: { changedFields: Object.keys(parsed) } }); return Response.json({ ok: true, auditRecorded }, { headers: { "Cache-Control": "no-store" } }); } catch (e) { return apiErrorResponse(e, "api/records/[rowNumber]"); } }
+ const values = [...current.values]; for (const [header, value] of Object.entries(parsed)) { if (header !== "Data de vencimento") values[data.headers.indexOf(header)] = value === null ? null : value; } const issueIndex = data.headers.indexOf("Data de emissão/renovação"); const expiryIndex = data.headers.indexOf("Data de vencimento"); values[expiryIndex] = expiryFromIssueDate(values[issueIndex]); if (typeof body?.expectedVersion !== "string") throw new Error("RECORD_CONFLICT"); await updateCertificate(rowNumber, values, body.expectedVersion); return Response.json({ ok: true }, { headers: { "Cache-Control": "no-store" } }); } catch (e) { return apiErrorResponse(e, "api/records/[rowNumber]"); } }
 
 
 export async function DELETE(request: Request, context: { params: Promise<{ rowNumber: string }> }) {
@@ -52,8 +51,7 @@ export async function DELETE(request: Request, context: { params: Promise<{ rowN
       }
       const { deleteCertificate } = await import("@/lib/server/certificate-store");
       await deleteCertificate(rowNumber, body.expectedVersion, mutationToken);
-      const auditRecorded = await writeAuditEvent({ actor: access.login, action: "sale.deleted", entity: "sale", entityId: String(rowNumber) });
-      return Response.json({ ok: true, deleted: true, auditRecorded }, { headers: { "Cache-Control": "no-store" } });
+      return Response.json({ ok: true, deleted: true }, { headers: { "Cache-Control": "no-store" } });
     } finally {
       await releaseCertificateMutationLock(rowNumber, mutationToken).catch(() => {
         console.error("[certificates] Falha ao liberar lock de mutação.");

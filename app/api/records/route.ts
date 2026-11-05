@@ -4,7 +4,6 @@ import { readJsonBody } from "@/lib/server/request-body";
 import { readCertificateData, createCertificate } from "@/lib/server/certificate-store";
 import { WORKBOOK_HEADERS } from "@/lib/workbook-types";
 import { validateRecordInput, valuesFromInput } from "@/lib/server/record-validation";
-import { writeAuditEvent } from "@/lib/server/audit-log";
 import { expiryFromIssueDate } from "@/lib/record-dates";
 
 export const runtime = "nodejs";
@@ -33,7 +32,7 @@ export async function GET() {
 
 export async function POST(request: Request) {
   try {
-    const access = await requireAccess("editor");
+    await requireAccess("editor");
     const body = await readJsonBody(request);
     const parsed = validateRecordInput(body?.values, true);
     const values = valuesFromInput(parsed);
@@ -53,8 +52,7 @@ export async function POST(request: Request) {
       throw new Error("INVALID_INPUT");
     }
     const rowNumber = await createCertificate(values);
-    const auditRecorded = await writeAuditEvent({ actor: access.login, action: "sale.created", entity: "sale", entityId: String(rowNumber) });
-    return Response.json({ ok: true, rowNumber, auditRecorded, headers: WORKBOOK_HEADERS }, { status: 201, headers: { "Cache-Control": "no-store" } });
+    return Response.json({ ok: true, rowNumber, headers: WORKBOOK_HEADERS }, { status: 201, headers: { "Cache-Control": "no-store" } });
   } catch (e) {
     return apiErrorResponse(e, "api/records");
   }
