@@ -4,16 +4,10 @@ import { readCertificateData, createCertificate } from "@/lib/server/certificate
 import { WORKBOOK_HEADERS } from "@/lib/workbook-types";
 import { validateRecordInput, valuesFromInput } from "@/lib/server/record-validation";
 import { writeAuditEvent } from "@/lib/server/audit-log";
+import { expiryFromIssueDate } from "@/lib/record-dates";
 
 export const runtime = "nodejs";
 
-function expiryFromIssueDate(value: unknown): string | null {
-  if (typeof value !== "string" || !/^\d{4}-\d{2}-\d{2}$/.test(value)) return null;
-  const [year, month, day] = value.split("-").map(Number);
-  const expiryYear = year + 1;
-  const lastDay = new Date(Date.UTC(expiryYear, month, 0)).getUTCDate();
-  return [expiryYear, String(month).padStart(2, "0"), String(Math.min(day, lastDay)).padStart(2, "0")].join("-");
-}
 const MONTH_NAMES = ["janeiro", "fevereiro", "março", "abril", "maio", "junho", "julho", "agosto", "setembro", "outubro", "novembro", "dezembro"];
 
 function currentPeriod(): { year: string; month: string } {
