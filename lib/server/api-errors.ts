@@ -98,6 +98,9 @@ export function apiErrorResponse(error: unknown, route: string): Response {
   if (error instanceof ApiRequestError) {
     return errorResponse(error.code, error.message, error.code === "PAYLOAD_TOO_LARGE" ? 413 : 400);
   }
+  if (error instanceof Error && error.message === "INVALID_INPUT") {
+    return errorResponse("INVALID_INPUT", "Revise os dados informados e tente novamente.", 400);
+  }
   if (error instanceof Error && error.message.includes("MONGODB_CERTIFICATES_URI não está configurada")) {
     return errorResponse("CERTIFICATE_STORAGE_NOT_CONFIGURED", "O armazenamento separado de certificados ainda não está configurado no servidor.", 503);
   }
