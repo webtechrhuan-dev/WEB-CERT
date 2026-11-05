@@ -1,6 +1,6 @@
 import { randomUUID } from "node:crypto";
 import { sanitizeCertificateFileName } from "@/lib/certificate-file-name";
-import { buildCertificateDeletionClaimFilter } from "@/lib/server/certificate-download-leases";
+import { buildCertificateDeletionClaimFilter, CERTIFICATE_DELETION_LEASE_MS } from "@/lib/server/certificate-download-leases";
 import { requireAccess } from "@/lib/server/access";
 import { apiErrorResponse } from "@/lib/server/api-errors";
 import { readBodyBytes, readJsonBody } from "@/lib/server/request-body";
@@ -190,9 +190,17 @@ export async function DELETE(request: Request, context: { params: Promise<{ rowN
 
     // A exclusão só reivindica o arquivo quando não há downloads ativos.
     // O update é atômico com a reserva feita pela rota de download.
+    const deletionToken = randomUUID();
+    const deletionStartedAt = new Date();
     const deletionClaim = await db.collection("certificate_files.files").updateOne(
-      buildCertificateDeletionClaimFilter(id, rowNumber, new Date()),
-      { $set: { deleting: true } },
+      buildCertificateDeletionClaimFilter(id, rowNumber, deletionStartedAt),
+      {
+        $set: {
+          deleting: true,
+          deletingLeaseToken: deletionToken,
+          deletingLeaseExpiresAt: new Date(deletionStartedAt.getTime() + CERTIFICATE_DELETION_LEASE_MS),
+        },
+      },
     );
     if (deletionClaim.modifiedCount !== 1) {
       return jsonError("FILE_IN_USE", "O certificado está sendo baixado ou removido. Aguarde e tente novamente.", 409);
@@ -203,8 +211,8 @@ export async function DELETE(request: Request, context: { params: Promise<{ rowN
       await bucket.delete(id);
     } catch (error) {
       await db.collection("certificate_files.files").updateOne(
-        { _id: id, deleting: true },
-        { $unset: { deleting: "" } },
+        { _id: id, deletingLeaseToken: deletionToken },
+        { $unset: { deleting: "", deletingLeaseToken: "", deletingLeaseExpiresAt: "" } },
       ).catch(() => console.error("[certificates] Falha ao liberar marca de exclusão."));
       throw error;
     }
