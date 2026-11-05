@@ -15,6 +15,7 @@ const menu = [
 
   { label: "Relatórios", href: "/relatorios", icon: "chart" as const, key: "reports" },
   { label: "Auditoria", href: "/auditoria", icon: "shield" as const, key: "audit", adminOnly: true },
+  { label: "Usuários", href: "/admin/usuarios", icon: "users" as const, key: "admin", adminOnly: true },
 ];
 
 export function AppHeader({ active }: AppHeaderProps) {
