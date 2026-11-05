@@ -1,6 +1,7 @@
 import { randomUUID } from "node:crypto";
 import { requireAccess } from "@/lib/server/access";
 import { apiErrorResponse } from "@/lib/server/api-errors";
+import { readJsonBody } from "@/lib/server/request-body";
 import { writeAuditEvent } from "@/lib/server/audit-log";
 import { getMongoDb } from "@/lib/server/mongodb";
 import { acquireCertificateMutationLock, releaseCertificateMutationLock } from "@/lib/server/certificate-store";
@@ -82,6 +83,8 @@ export async function POST(request: Request, context: { params: Promise<{ rowNum
     if (!Number.isSafeInteger(rowNumber) || rowNumber < 2) return jsonError("INVALID_ROW", "Venda inválida.", 400);
     if (!(await ensureSaleExists(rowNumber))) return jsonError("RECORD_NOT_FOUND", "Venda não encontrada.", 404);
 
+    const declaredLength = Number(request.headers.get("content-length"));
+    if (Number.isFinite(declaredLength) && declaredLength > MAX_CERTIFICATE_SIZE + 256_000) return jsonError("FILE_TOO_LARGE", "O envio excede o limite permitido.", 413);
     const form = await request.formData();
     const file = form.get("file");
     if (!(file instanceof File)) return jsonError("FILE_REQUIRED", "Selecione um arquivo de certificado.", 400);
@@ -117,11 +120,19 @@ export async function POST(request: Request, context: { params: Promise<{ rowNum
         } satisfies CertificateMetadata,
       });
 
-      await new Promise<void>((resolve, reject) => {
-        upload.once("error", reject);
-        upload.once("finish", resolve);
-        upload.end(bytes);
-      });
+      try {
+        await new Promise<void>((resolve, reject) => {
+          upload.once("error", reject);
+          upload.once("finish", resolve);
+          upload.end(bytes);
+        });
+      } catch (uploadError) {
+        // GridFS pode ter gravado chunks antes da falha; remove o upload parcial.
+        await bucket.delete(upload.id).catch(() => {
+          console.error("[certificates] Falha ao limpar upload GridFS interrompido.");
+        });
+        throw uploadError;
+      }
 
       if (!(await ensureSaleExists(rowNumber))) {
         await bucket.delete(upload.id).catch(() => {
@@ -152,7 +163,7 @@ export async function DELETE(request: Request, context: { params: Promise<{ rowN
     const access = await requireAccess("editor");
     const rowNumber = Number((await context.params).rowNumber);
     if (!Number.isSafeInteger(rowNumber) || rowNumber < 2) return jsonError("INVALID_ROW", "Venda inválida.", 400);
-    const body = await request.json().catch(() => null);
+    const body = await readJsonBody(request);
     const id = typeof body?.fileId === "string" ? parseObjectId(body.fileId) : null;
     if (!id) return jsonError("INVALID_FILE_ID", "Arquivo inválido.", 400);
 
