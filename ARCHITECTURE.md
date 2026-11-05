@@ -38,6 +38,7 @@ O contador de linha é incrementado atomicamente. A edição compara a versão e
 - `GET /api/certificates/[fileId]`: download autenticado.
 - `components/certificate-files.tsx`: interface de upload, listagem e download exibida na edição da venda.
 - `lib/server/certificates-mongodb.ts`: cliente MongoDB separado, GridFS, índice composto por venda/data, validação de ObjectId e limite de 10 MB.
+- `lib/server/certificate-download-leases.ts`: construção dos pipelines atômicos de reserva/liberação de download e claim de exclusão com expiração recuperável.
 
 O arquivo é associado ao `rowNumber` da venda no campo `metadata` do GridFS. A listagem retorna apenas metadados; o binário só é transmitido pela rota autenticada de download. Extensões aceitas: `.p12` e `.pfx`. O servidor normaliza o nome e registra usuário/data de envio. A validação inicial confere extensão, tamanho e marcador ASN.1 DER (0x30); isso não substitui a validação criptográfica completa do conteúdo. O corpo multipart é limitado por bytes recebidos (10 MB + overhead limitado), embora seja materializado em memória antes do parsing.
 
@@ -52,10 +53,12 @@ A aplicação principal continua funcional sem a configuração opcional do clus
 
 - Upload e exclusão de venda compartilham lock atômico por venda, com token e expiração.
 - Cada download tem lease individual com expiração; a exclusão de arquivo só é reivindicada quando não há leases ativos.
+- O claim de exclusão tem token e expiração de 30 minutos. Se a função for interrompida, um download ou nova exclusão pode recuperar a marca expirada, sem deixar o arquivo bloqueado permanentemente.
 - Uma venda com anexos não pode ser excluída. Os anexos devem ser removidos individualmente por editor/admin antes da exclusão da venda.
 - O endpoint de listagem e os fluxos de exclusão usam índice composto em `metadata.rowNumber` e `uploadDate`.
 - A validação de extensão/tamanho/ASN.1 é estrutural; validação criptográfica completa do PKCS#12 continua pendente.
-- A URI separada e os privilégios mínimos do usuário MongoDB precisam ser confirmados no ambiente real.
+- O projeto Atlas separado tem cluster Free `Certificados` (AWS, região `SA_EAST_1`, MongoDB 8.0.37) e dois usuários com `readWrite` restrito ao banco `certificates_store`.
+- A allowlist Atlas do projeto de arquivos inclui `0.0.0.0/0` para suportar IPs dinâmicos da Vercel. Isso amplia a superfície de rede; mantenha credenciais fortes, TLS e privilégios mínimos e migre para egress IPs fixos se disponíveis.
 
 ## Auditoria operacional\n\n- `lib/server/audit-log.ts` grava eventos na coleção `audit_events`, sem armazenar valores das vendas, senhas, tokens ou bytes dos arquivos.\n- Eventos instrumentados: `sale.created`, `sale.updated`, `sale.deleted`, `certificate.uploaded` e `certificate.downloaded`.\n- `GET /api/admin/audit` exige papel `admin` e oferece paginação por cursor ObjectId (limite de 1 a 100 por página).\n- A gravação da auditoria é best-effort: uma indisponibilidade é registrada em log sanitizado e não converte uma operação comercial já concluída em falha falsa. A interface administrativa, alertas e reconciliação de eventos ainda precisam ser construídos.\n\n## Relatórios e regras financeiras
 
