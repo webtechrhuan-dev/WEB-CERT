@@ -183,6 +183,7 @@ export async function DELETE(request: Request, context: { params: Promise<{ rowN
     const id = typeof body?.fileId === "string" ? parseObjectId(body.fileId) : null;
     if (!id) return jsonError("INVALID_FILE_ID", "Arquivo inválido.", 400);
 
+    await ensureCertificateStoreIndexes();
     const db = await getCertificatesDb();
     const file = await db.collection("certificate_files.files").findOne(
       { _id: id, "metadata.rowNumber": rowNumber },
