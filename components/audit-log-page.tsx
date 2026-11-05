@@ -19,6 +19,7 @@ const ACTION_LABELS: Record<string, string> = {
   "sale.deleted": "Venda excluída",
   "certificate.uploaded": "Certificado enviado",
   "certificate.downloaded": "Certificado baixado",
+  "user.updated": "Permissões de usuário alteradas",
 };
 
 function detail(event: AuditEvent): string {
@@ -26,7 +27,7 @@ function detail(event: AuditEvent): string {
   if (Array.isArray(changed)) return `Campos: ${changed.join(", ")}`;
   if (typeof event.metadata.rowNumber === "number") return `Venda #${event.metadata.rowNumber}`;
   if (typeof event.metadata.size === "number") return `Arquivo: ${(event.metadata.size / 1024).toFixed(1)} KB`;
-  return event.entity === "sale" ? `Venda #${event.entityId}` : "—";
+  return event.entity === "sale" ? `Venda #${event.entityId}` : event.entity === "user" ? `Usuário @${event.entityId}` : "—";
 }
 
 export function AuditLogPage() {
@@ -81,7 +82,7 @@ export function AuditLogPage() {
                   <td>{new Date(event.occurredAt).toLocaleString("pt-BR")}</td>
                   <td><strong>{event.actor}</strong></td>
                   <td>{ACTION_LABELS[event.action] ?? event.action}</td>
-                  <td>{event.entity === "sale" ? `Venda #${event.entityId}` : "Certificado"}</td>
+                  <td>{event.entity === "sale" ? `Venda #${event.entityId}` : event.entity === "user" ? `Usuário @${event.entityId}` : "Certificado"}</td>
                   <td>{detail(event)}</td>
                 </tr>
               ))}
