@@ -116,6 +116,15 @@ export async function POST(request: Request, context: { params: Promise<{ rowNum
       upload.end(bytes);
     });
 
+    // Fecha a janela de corrida em que a venda poderia ser removida durante
+    // o upload. Se o vínculo deixou de existir, desfaz somente este upload.
+    if (!(await ensureSaleExists(rowNumber))) {
+      await bucket.delete(upload.id).catch(() => {
+        console.error("[certificates] Falha ao reverter upload sem venda vinculada.");
+      });
+      return jsonError("RECORD_NOT_FOUND", "A venda foi removida durante o envio. O arquivo não foi mantido.", 404);
+    }
+
     const auditRecorded = await writeAuditEvent({ actor: access.login, action: "certificate.uploaded", entity: "certificate", entityId: String(upload.id), metadata: { rowNumber, extension: originalName.toLowerCase().endsWith(".p12") ? ".p12" : ".pfx", size: file.size } });
     return Response.json({ ok: true, id: String(upload.id), name: originalName, auditRecorded }, {
       status: 201,
