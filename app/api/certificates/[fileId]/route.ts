@@ -2,6 +2,7 @@ import { Readable } from "node:stream";
 import { requireAccess } from "@/lib/server/access";
 import { apiErrorResponse } from "@/lib/server/api-errors";
 import { writeAuditEvent } from "@/lib/server/audit-log";
+import { getMongoDb } from "@/lib/server/mongodb";
 import { getCertificatesBucket, getCertificatesDb, parseObjectId } from "@/lib/server/certificates-mongodb";
 
 export const runtime = "nodejs";
@@ -20,8 +21,19 @@ export async function GET(_request: Request, context: { params: Promise<{ fileId
 
     const metadata = (file.metadata ?? {}) as { rowNumber?: number; originalName?: string };
     const rowNumber = metadata.rowNumber;
-    if (typeof rowNumber !== "number" || !Number.isSafeInteger(rowNumber)) {
-      return Response.json({ error: { code: "INVALID_FILE_METADATA", message: "Metadados do certificado inválidos." } }, { status: 404 });
+    if (typeof rowNumber !== "number" || !Number.isSafeInteger(rowNumber) || rowNumber < 2) {
+      return Response.json({ error: { code: "INVALID_FILE_METADATA", message: "Metadados do certificado inválidos." } }, { status: 404, headers: { "Cache-Control": "no-store" } });
+    }
+
+    // O ID do GridFS não basta para autorizar o download: o vínculo com a venda
+    // precisa continuar válido na base comercial.
+    const salesDb = await getMongoDb();
+    const sale = await salesDb.collection("certificates").findOne(
+      { rowNumber },
+      { projection: { _id: 1 } },
+    );
+    if (!sale) {
+      return Response.json({ error: { code: "SALE_NOT_FOUND", message: "A venda vinculada não existe mais. O arquivo não pode ser baixado." } }, { status: 404, headers: { "Cache-Control": "no-store" } });
     }
 
     const auditRecorded = await writeAuditEvent({ actor: access.login, action: "certificate.downloaded", entity: "certificate", entityId: String(file._id), metadata: { rowNumber } });
