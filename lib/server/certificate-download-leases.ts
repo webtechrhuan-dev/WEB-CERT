@@ -12,9 +12,6 @@ export function buildAcquireDownloadLeasePipeline(
   return [
     {
       $set: {
-        deleting: false,
-        deletingLeaseToken: null,
-        deletingLeaseExpiresAt: null,
         activeDownloadLeases: {
           $concatArrays: [
             {

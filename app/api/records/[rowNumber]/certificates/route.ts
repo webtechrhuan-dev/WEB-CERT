@@ -1,4 +1,6 @@
 import { randomUUID } from "node:crypto";
+import { WORKBOOK_HEADERS } from "@/lib/workbook-types";
+import { encryptCertificatePassword } from "@/lib/server/certificate-password";
 import { sanitizeCertificateFileName } from "@/lib/certificate-file-name";
 import { buildCertificateDeletionClaimFilter, CERTIFICATE_DELETION_LEASE_MS } from "@/lib/server/certificate-download-leases";
 import { requireAccess } from "@/lib/server/access";
@@ -24,6 +26,8 @@ type CertificateMetadata = {
   contentType: string;
   uploadedBy: string;
   uploadedAt: Date;
+  expiresAt: Date;
+  passwordEncrypted: { algorithm: string; iv: string; authTag: string; ciphertext: string };
 };
 
 function jsonError(code: string, message: string, status: number): Response {
@@ -33,12 +37,23 @@ function jsonError(code: string, message: string, status: number): Response {
   });
 }
 
-async function ensureSaleExists(rowNumber: number): Promise<boolean> {
+async function getSale(rowNumber: number): Promise<{ values?: unknown[] } | null> {
   const db = await getMongoDb();
-  return Boolean(await db.collection("certificates").findOne(
+  return db.collection("certificates").findOne(
     { rowNumber },
-    { projection: { _id: 1 } },
-  ));
+    { projection: { _id: 1, values: 1 } },
+  ) as Promise<{ values?: unknown[] } | null>;
+}
+
+function saleAllowsCertificate(sale: { values?: unknown[] } | null): boolean {
+  if (!sale || !Array.isArray(sale.values)) return false;
+  const statusIndex = WORKBOOK_HEADERS.indexOf("Status / Observação");
+  const status = String(sale.values[statusIndex] ?? "").trim().toLocaleLowerCase("pt-BR");
+  return ["emitido", "pendente instalar", "instalado", "concluido", "concluído"].includes(status);
+}
+
+async function ensureSaleExists(rowNumber: number): Promise<boolean> {
+  return Boolean(await getSale(rowNumber));
 }
 
 export async function GET(_request: Request, context: { params: Promise<{ rowNumber: string }> }) {
@@ -67,6 +82,7 @@ export async function GET(_request: Request, context: { params: Promise<{ rowNum
           size: file.length,
           uploadedAt: metadata.uploadedAt ?? file.uploadDate,
           uploadedBy: metadata.uploadedBy ?? "—",
+          expiresAt: metadata.expiresAt ?? null,
         };
       }),
     }, { headers: { "Cache-Control": "no-store" } });
@@ -80,7 +96,9 @@ export async function POST(request: Request, context: { params: Promise<{ rowNum
     const access = await requireAccess("editor");
     const rowNumber = Number((await context.params).rowNumber);
     if (!Number.isSafeInteger(rowNumber) || rowNumber < 2) return jsonError("INVALID_ROW", "Venda inválida.", 400);
-    if (!(await ensureSaleExists(rowNumber))) return jsonError("RECORD_NOT_FOUND", "Venda não encontrada.", 404);
+    const sale = await getSale(rowNumber);
+    if (!sale) return jsonError("RECORD_NOT_FOUND", "Venda não encontrada.", 404);
+    if (!saleAllowsCertificate(sale)) return jsonError("SALE_STATUS_NOT_ELIGIBLE", "Só é possível vincular certificado a vendas com status Emitido, Pendente instalar, Instalado ou Concluido.", 409);
 
     // Limita o corpo multipart inteiro, mesmo quando Content-Length é omitido ou falso.
     // O teto inclui até 256 KB de boundary/campos/metadados além do arquivo de 10 MB.
@@ -100,13 +118,19 @@ export async function POST(request: Request, context: { params: Promise<{ rowNum
       return jsonError("MALFORMED_MULTIPART", "O formulário de envio está inválido ou incompleto.", 400);
     }
     const file = form.get("file");
+    const password = form.get("password");
+    const expiryInput = form.get("expiresAt");
+    if (typeof password !== "string" || !password.trim()) return jsonError("CERTIFICATE_PASSWORD_REQUIRED", "Informe a senha do certificado PFX.", 400);
+    if (typeof expiryInput !== "string" || !/^\d{4}-\d{2}-\d{2}$/.test(expiryInput)) return jsonError("INVALID_CERTIFICATE_EXPIRY", "Informe a data de vencimento do certificado.", 400);
+    const expiresAt = new Date(`${expiryInput}T23:59:59.999Z`);
+    if (!Number.isFinite(expiresAt.getTime()) || expiresAt.toISOString().slice(0, 10) !== expiryInput) return jsonError("INVALID_CERTIFICATE_EXPIRY", "A data de vencimento informada é inválida.", 400);
     if (!(file instanceof File)) return jsonError("FILE_REQUIRED", "Selecione um arquivo de certificado.", 400);
     if (file.size <= 0) return jsonError("EMPTY_FILE", "O arquivo está vazio.", 400);
     if (file.size > MAX_CERTIFICATE_SIZE) return jsonError("FILE_TOO_LARGE", "O arquivo excede o limite de 10 MB.", 413);
 
     const originalName = sanitizeCertificateFileName(file.name);
-    if (!/\.(p12|pfx)$/i.test(originalName)) {
-      return jsonError("INVALID_CERTIFICATE_TYPE", "Envie somente arquivos de certificado .p12 ou .pfx.", 415);
+    if (!/\.pfx$/i.test(originalName)) {
+      return jsonError("INVALID_CERTIFICATE_TYPE", "Envie somente arquivos de certificado .pfx.", 415);
     }
 
     const bytes = Buffer.from(await file.arrayBuffer());
@@ -120,7 +144,17 @@ export async function POST(request: Request, context: { params: Promise<{ rowNum
       return jsonError("CERTIFICATE_OPERATION_IN_PROGRESS", "Outra operação está em andamento para esta venda. Tente novamente.", 409);
     }
     try {
+      // Revalida o status depois de adquirir o lock: a venda pode ter sido
+      // alterada enquanto o arquivo era enviado/aguardava outra operação.
+      const saleAfterLock = await getSale(rowNumber);
+      if (!saleAfterLock) return jsonError("RECORD_NOT_FOUND", "Venda não encontrada.", 404);
+      if (!saleAllowsCertificate(saleAfterLock)) {
+        return jsonError("SALE_STATUS_NOT_ELIGIBLE", "O status desta venda não permite vincular certificado.", 409);
+      }
+      const existing = await (await getCertificatesDb()).collection("certificate_files.files").findOne({ "metadata.rowNumber": rowNumber }, { projection: { _id: 1 } });
+      if (existing) return jsonError("CERTIFICATE_ALREADY_LINKED", "Esta venda já possui um certificado vinculado. Exclua o atual antes de cadastrar outro.", 409);
       const uploadedAt = new Date();
+      const passwordEncrypted = encryptCertificatePassword(password);
       const bucket = await getCertificatesBucket();
       const upload = bucket.openUploadStream(originalName, {
         contentType: "application/x-pkcs12",
@@ -130,6 +164,8 @@ export async function POST(request: Request, context: { params: Promise<{ rowNum
           contentType: "application/x-pkcs12",
           uploadedBy: access.login,
           uploadedAt,
+          expiresAt,
+          passwordEncrypted,
         } satisfies CertificateMetadata,
       });
 
@@ -160,7 +196,7 @@ export async function POST(request: Request, context: { params: Promise<{ rowNum
         return jsonError("RECORD_NOT_FOUND", "A venda foi removida durante o envio. O arquivo não foi mantido.", 404);
       }
 
-      return Response.json({ ok: true, id: String(upload.id), name: originalName }, {
+      return Response.json({ ok: true, id: String(upload.id), name: originalName, expiresAt }, {
         status: 201,
         headers: { "Cache-Control": "no-store" },
       });
