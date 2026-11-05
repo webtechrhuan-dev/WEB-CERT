@@ -1,45 +1,51 @@
 # WEB-CERT — Gestão de certificados digitais | Web Tech
 
-Aplicação interna para cadastro, consulta, edição, relatórios e gestão de arquivos de certificados digitais. A aplicação usa Next.js App Router, TypeScript, Auth.js e MongoDB Atlas. A hospedagem é feita na Vercel.
+Aplicação interna da Web Tech para cadastro e gestão de vendas de certificados digitais, acompanhamento de vencimentos, relatórios e armazenamento seguro de arquivos PFX/P12.
 
 ## Módulos
 
 - `/` — painel inicial.
 - `/login` — autenticação interna.
 - `/cadastros` — cadastro de vendas.
-- `/editar` — consulta por ano/mês, pesquisa por cliente e edição inline.
+- `/editar` — consulta por período, pesquisa por cliente e edição inline.
 - `/registros` — consulta de registros.
 - `/relatorios` — indicadores financeiros e relatórios por período/status.
-- Anexos da venda — upload, listagem e download de arquivos `.p12` e `.pfx` dentro da edição de uma venda.
-- Auditoria — registro de eventos comerciais e de certificados na coleção `audit_events`; consulta paginada disponível somente para administradores em `GET /api/admin/audit`.
+- `/admin/usuarios` — administração de contas, papéis e ativação (somente administrador).
+- `/auditoria` — consulta da trilha de auditoria (somente administrador).
+- Anexos da venda — upload, listagem, download e exclusão individual de arquivos `.p12` e `.pfx` na edição de uma venda.
 
 ## Dados e persistência
 
-- A base comercial principal usa a variável `MONGODB_URI` e o banco definido por `MONGODB_DB` (padrão `web_cert`). A coleção `certificates` contém os registros de venda.
-- Os arquivos binários de certificados são armazenados separadamente em MongoDB Atlas/GridFS, usando `MONGODB_CERTIFICATES_URI` e `MONGODB_CERTIFICATES_DB` (padrão `certificates_store`). Não se deve apontar essa URI para o cluster comercial se a intenção for manter os arquivos isolados.
-- Cada arquivo recebe metadados de associação ao `rowNumber` da venda, nome original, usuário e data de envio.
-- Não armazene senhas dos arquivos PFX/P12 no banco, em logs ou em variáveis de ambiente.
-- O sistema não deve usar o filesystem efêmero da Vercel como armazenamento permanente.
+- A base comercial usa `MONGODB_URI` e o banco definido por `MONGODB_DB` (padrão `web_cert`). A coleção `certificates` contém os registros de venda.
+- Os binários dos certificados ficam em outro MongoDB Atlas/GridFS, configurado por `MONGODB_CERTIFICATES_URI` e `MONGODB_CERTIFICATES_DB` (padrão `certificates_store`). Para manter isolamento, a URI deve apontar para o cluster de arquivos, não para o cluster comercial.
+- Cada arquivo é associado ao `rowNumber` da venda por metadados GridFS. O sistema cria índice composto em `metadata.rowNumber` e `uploadDate` para acelerar a listagem e a contagem de anexos.
+- O armazenamento permanente não depende do filesystem efêmero da Vercel.
+- Não armazene senhas de PFX/P12 no banco, em logs ou em variáveis de ambiente.
 
 ## Acesso e segurança
 
-- A autenticação usa usuário e senha internos, com hash scrypt e salt aleatório persistidos na coleção `users` do banco principal.
-- Usuários de bootstrap: `rhuan` (administrador), `arthur` e `wesley` (editores). O bootstrap só cria contas quando as variáveis de senha correspondentes estão configuradas com pelo menos 16 caracteres; valores existentes não são sobrescritos.
-- `AUTH_SECRET` e `MONGODB_URI` são necessários para autenticação.
-- Consultar vendas e baixar anexos exige sessão autenticada. Alterar vendas e enviar anexos exige papel `editor` ou `admin`.
-- Upload aceita somente extensão `.p12` ou `.pfx`, até 10 MB por arquivo, e verifica o marcador ASN.1 DER inicial do contêiner PKCS#12. Essa checagem estrutural não substitui uma validação criptográfica completa do certificado.
-- Segredos devem existir apenas nas variáveis de ambiente do servidor/Vercel. Nunca incluir valores reais em commits ou no bundle do navegador.
+- Auth.js com credenciais internas; senhas persistidas com scrypt e salt aleatório.
+- Contas de bootstrap: `rhuan` (administrador), `arthur` e `wesley` (editores). O bootstrap só cria contas inexistentes quando as variáveis de senha correspondentes estão configuradas com pelo menos 16 caracteres; não sobrescreve credenciais existentes.
+- `AUTH_SECRET` e `MONGODB_URI` são necessários para autenticação e acesso à base comercial.
+- Cada rota protegida valida a sessão e o papel atual do usuário no MongoDB. A interface não substitui a autorização no servidor.
+- Consultar vendas e baixar anexos exige sessão autenticada. Criar/editar vendas e enviar/remover anexos exige papel `editor` ou `admin`.
+- A administração de usuários é exclusiva de administradores e protege contra auto-rebaixamento/desativação e contra desativar o último administrador ativo.
+- A exclusão de venda exige reautenticação com usuário e senha. Uma venda com anexos não pode ser excluída; os arquivos devem ser removidos individualmente primeiro.
+- Upload aceita somente extensão `.p12` ou `.pfx`, até 10 MB por arquivo. O corpo multipart é limitado por bytes efetivamente recebidos, inclusive quando `Content-Length` está ausente ou incorreto.
+- A checagem do marcador ASN.1 DER inicial é apenas estrutural e não substitui validação criptográfica completa do PKCS#12.
+- Downloads e exclusões de anexos usam reservas individuais com expiração para reduzir condições de corrida entre transmissão e remoção.
+- A trilha de auditoria registra ações comerciais, de usuários e de certificados sem armazenar senhas, tokens ou conteúdo binário.
 
 ## Variáveis de ambiente
 
-Copie `.env.example` para `.env.local` apenas no desenvolvimento e preencha os valores localmente. Em produção, configure no painel da Vercel:
+Use `.env.example` como referência. Em desenvolvimento, configure valores locais em `.env.local`; em produção, configure-os no painel da Vercel:
 
 - `AUTH_SECRET`
 - `MONGODB_URI` e `MONGODB_DB`
 - `MONGODB_CERTIFICATES_URI` e `MONGODB_CERTIFICATES_DB`
 - `BOOTSTRAP_RHUAN_PASSWORD`, `BOOTSTRAP_ARTHUR_PASSWORD`, `BOOTSTRAP_WESLEY_PASSWORD` (somente para provisionar contas ainda inexistentes)
 
-As variáveis `EXCEL_FILE_PATH` e `GITHUB_*` são compatibilidade/documentação de fluxos anteriores; não representam a fonte principal do cadastro atual.
+As variáveis `EXCEL_FILE_PATH` e `GITHUB_*` pertencem à arquitetura histórica e não representam a fonte atual dos dados comerciais. Nunca inclua valores reais de segredos em commits ou no bundle do navegador.
 
 ## Desenvolvimento e validação
 
@@ -53,26 +59,28 @@ npm test
 npm run build
 ```
 
-Os testes unitários devem usar dados sintéticos e mocks; não devem modificar o banco de produção nem carregar arquivos reais de clientes. Testes de integração com MongoDB devem usar um banco isolado e credenciais próprias.
+Os testes unitários usam dados sintéticos e mocks; não devem modificar bancos de produção nem carregar certificados reais. Testes de integração MongoDB devem usar bancos isolados e credenciais próprias.
 
 ## Implantação e operação
 
-1. Configure as variáveis de ambiente de produção na Vercel.
-2. Verifique conectividade e permissões do cluster comercial e do cluster de arquivos.
-3. Confirme que o usuário de banco tem acesso mínimo necessário às coleções.
-4. Execute CI (typecheck, testes e build) antes de integrar na `main`.
-5. Valide autenticação, cadastro, edição, relatórios, upload e download em preview com dados de teste.
-6. Configure backup independente para os dois bancos, incluindo política de retenção e teste de restauração.
+1. Configure as variáveis de ambiente na Vercel.
+2. Confirme conectividade e permissões mínimas nos dois clusters.
+3. Execute CI (testes, TypeScript e build) antes de integrar na `main`.
+4. Valide autenticação, cadastro, edição, relatórios, administração, auditoria e fluxo de anexos com dados fictícios.
+5. Configure backup independente dos bancos comercial e de arquivos e faça um ensaio de restauração.
+6. Monitore falhas de upload/download, bloqueios de concorrência e gravações de auditoria.
 
-## Limitações conhecidas / próximos controles
+A integração ocorre por branch de trabalho e pull request. A `main` e a produção Vercel só devem ser alteradas após aprovação explícita e conclusão das validações.
 
-- A tela de administração completa de usuários ainda precisa ser implementada.
-- A trilha básica de auditoria está implementada para criação/edição/exclusão de vendas e upload/download de certificados. Ainda faltam a interface administrativa de consulta, filtros avançados e alertas para falhas de gravação da auditoria.
-- Backup independente e restauração ainda dependem de configuração operacional no Atlas e de ensaio de recuperação.
-- Paginação no acesso ao MongoDB precisa ser aplicada nos endpoints de consulta para volumes maiores.
-- A exclusão de uma venda e a retenção/limpeza de anexos relacionados precisam de política explícita antes de habilitar exclusões em massa.
-- A presença das variáveis de ambiente e a conectividade dos clusters devem ser verificadas no projeto Vercel; este repositório não contém nem deve conter credenciais.
+## Limitações e próximos controles
+
+- O cluster separado de certificados precisa estar configurado no ambiente e validado com upload/download de teste.
+- Backup, retenção, RPO/RTO e restauração dos dois bancos ainda dependem de configuração operacional e ensaio no Atlas.
+- A paginação da consulta comercial é atualmente client-side; a API ainda carrega o conjunto completo. Migrar para paginação por cursor no MongoDB quando o volume justificar.
+- A validação de arquivo verifica extensão, tamanho e marcador ASN.1 inicial; ainda não realiza validação criptográfica completa nem inspeciona validade, cadeia ou chave privada do certificado.
+- O limite do multipart protege o tamanho total recebido, mas o corpo é materializado em memória antes do parsing; não é upload em streaming direto para o GridFS.
+- A auditoria é best-effort: falha na gravação não desfaz uma operação principal já concluída. Alertas e reconciliação operacional continuam pendentes.
 
 ## Identidade visual
 
-A interface utiliza a identidade visual Web Tech. Não inclua arquivos de logo ou credenciais de clientes sem autorização e origem confirmada.
+A interface utiliza a identidade visual Web Tech, com temas claro/escuro, componentes responsivos e suporte a `prefers-reduced-motion`. Preserve o logo oficial e valide novos componentes nos dois temas e em larguras móveis.
