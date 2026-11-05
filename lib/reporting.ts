@@ -170,6 +170,7 @@ export type DetailedReportRow = {
   month: string;
   model: string;
   status: string;
+  hasCertificate: boolean;
   revenue: number;
   cost: number;
   profit: number;
@@ -219,6 +220,7 @@ export function getWorkbookReportRows(data: WorkbookData): DetailedReportRow[] {
       month: value("Mês da planilha"),
       model: value("Modelo"),
       status: value("Status / Observação"),
+      hasCertificate: record.hasCertificate === true,
       revenue: financiallyEligible && hasRevenue ? numericCell(record.values[index("Faturamento (R$)")]) : 0,
       cost: financiallyEligible && hasCost ? numericCell(record.values[index("Custo (R$)")]) : 0,
       profit: financiallyEligible && hasRevenue && hasCost
