@@ -32,6 +32,32 @@ export function buildAcquireDownloadLeasePipeline(
   ];
 }
 
+/** Renova somente o lease pertencente a este download, sem tocar nos demais. */
+export function buildRenewDownloadLeasePipeline(
+  token: string,
+  expiresAt: Date,
+): Document[] {
+  return [
+    {
+      $set: {
+        activeDownloadLeases: {
+          $map: {
+            input: { $ifNull: ["$activeDownloadLeases", []] },
+            as: "activeLease",
+            in: {
+              $cond: [
+                { $eq: ["$activeLease.token", token] },
+                { $mergeObjects: ["$activeLease", { expiresAt }] },
+                "$activeLease",
+              ],
+            },
+          },
+        },
+      },
+    },
+  ];
+}
+
 /** Pipeline atômico e idempotente para liberar somente a reserva informada. */
 export function buildReleaseDownloadLeasePipeline(token: string): Document[] {
   return [
