@@ -123,7 +123,7 @@ export async function POST(request: Request, context: { params: Promise<{ rowNum
     const expiryIndex = WORKBOOK_HEADERS.indexOf("Data de vencimento");
     const saleExpiry = sale.values?.[expiryIndex];
     const expiryInput = typeof saleExpiry === "string" ? saleExpiry : (typeof saleExpiry === "object" && saleExpiry !== null && "parsed" in saleExpiry && typeof saleExpiry.parsed === "string" ? saleExpiry.parsed : "");
-    if (!/^\\d{4}-\\d{2}-\\d{2}$/.test(expiryInput)) return jsonError("SALE_EXPIRY_MISSING", "Defina uma data de vencimento válida no cadastro da venda antes de anexar o certificado.", 409);
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(expiryInput)) return jsonError("SALE_EXPIRY_MISSING", "Defina uma data de vencimento válida no cadastro da venda antes de anexar o certificado.", 409);
     const expiresAt = new Date(`${expiryInput}T23:59:59.999Z`);
     if (!Number.isFinite(expiresAt.getTime()) || expiresAt.toISOString().slice(0, 10) !== expiryInput) return jsonError("SALE_EXPIRY_INVALID", "A data de vencimento cadastrada nesta venda é inválida.", 409);
     if (!(file instanceof File)) return jsonError("FILE_REQUIRED", "Selecione um arquivo de certificado.", 400);
