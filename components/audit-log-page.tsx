@@ -27,6 +27,7 @@ function detail(event: AuditEvent): string {
   if (Array.isArray(changed)) return `Campos: ${changed.join(", ")}`;
   if (typeof event.metadata.rowNumber === "number") return `Venda #${event.metadata.rowNumber}`;
   if (typeof event.metadata.size === "number") return `Arquivo: ${(event.metadata.size / 1024).toFixed(1)} KB`;
+  if (event.entity === "user") return `Função: ${String(event.metadata.role ?? "—")} · ${event.metadata.active === false ? "Inativo" : "Ativo"}`;
   return event.entity === "sale" ? `Venda #${event.entityId}` : event.entity === "user" ? `Usuário @${event.entityId}` : "—";
 }
 
