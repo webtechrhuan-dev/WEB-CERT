@@ -34,6 +34,8 @@ export async function PATCH(request: Request) {
       await session.withTransaction(async () => {
         const db = client.db(process.env.MONGODB_DB ?? "web_cert");
         const users = db.collection<ManagedUser>("users");
+        // Escrita em documento comum serializa alterações concorrentes de administradores.
+        await db.collection("admin_guard").updateOne({ _id: "user-management" }, { $inc: { revision: 1 } }, { upsert: true, session });
         const target = await users.findOne({ username }, { session });
         if (!target) throw new Error("USER_NOT_FOUND");
         const nextRole = role ?? target.role;
