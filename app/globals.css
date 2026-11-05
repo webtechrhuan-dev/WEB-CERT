@@ -4801,3 +4801,27 @@ body, .app-shell, .workspace, .content-panel, .table-panel, .record-form, .login
     justify-content: flex-start;
   }
 }
+
+
+/* Ajustes finais do tema escuro: campos desabilitados/readonly e selects nativos. */
+:root[data-theme="dark"] .record-form-field input:disabled,
+:root[data-theme="dark"] .record-form-field input[readonly],
+:root[data-theme="dark"] .record-form-field select:disabled,
+:root[data-theme="dark"] .certificate-files-panel .certificate-expiry-readonly {
+  color-scheme: dark !important;
+  color: #c5d3de !important;
+  -webkit-text-fill-color: #c5d3de;
+  background-color: #1a2a38 !important;
+  border-color: #3b5366 !important;
+  opacity: 1;
+}
+
+:root[data-theme="dark"] .record-form-field select,
+:root[data-theme="dark"] .record-form-field select option {
+  color-scheme: dark;
+}
+
+:root[data-theme="dark"] .record-form-field select option {
+  color: #e5edf4;
+  background-color: #111f2d;
+}
