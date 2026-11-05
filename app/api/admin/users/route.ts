@@ -5,7 +5,8 @@ import { getMongoClient, getMongoDb } from "@/lib/server/mongodb";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
-type ManagedUser = { username: string; displayName?: string; role: "admin" | "editor" | "viewer"; active?: boolean; createdAt?: Date; updatedAt?: Date };
+type UserRole = "admin" | "editor" | "viewer";
+type ManagedUser = { username: string; displayName?: string; role: UserRole; active?: boolean; createdAt?: Date; updatedAt?: Date };
 
 export async function GET() {
   try {
@@ -21,33 +22,36 @@ export async function PATCH(request: Request) {
     const actor = await requireAccess("admin");
     const body = await request.json().catch(() => null);
     const username = typeof body?.username === "string" ? body.username.trim().toLowerCase() : "";
-    const role = body?.role;
-    const active = body?.active;
-    if (!/^[a-z0-9._-]{2,80}$/.test(username) || (role !== undefined && !["admin", "editor", "viewer"].includes(role)) || (active !== undefined && typeof active !== "boolean") || (role === undefined && active === undefined)) {
+    const requestedRole: unknown = body?.role;
+    const active: unknown = body?.active;
+    const validRoles: UserRole[] = ["admin", "editor", "viewer"];
+    const role = typeof requestedRole === "string" && validRoles.includes(requestedRole as UserRole) ? requestedRole as UserRole : undefined;
+    if (!/^[a-z0-9._-]{2,80}$/.test(username) || (requestedRole !== undefined && role === undefined) || (active !== undefined && typeof active !== "boolean") || (role === undefined && active === undefined)) {
       return Response.json({ error: { code: "INVALID_INPUT", message: "Informe usuário e uma função ou situação válida." } }, { status: 400 });
     }
     if (username === actor.login) return Response.json({ error: { code: "SELF_MODIFICATION_BLOCKED", message: "Para evitar bloqueio administrativo, não é permitido alterar a própria conta por esta tela." } }, { status: 409 });
     const client = await getMongoClient();
     const session = client.startSession();
-    let updatedUser: ManagedUser | null = null;
+    const updateResult: { user: ManagedUser | null } = { user: null };
     try {
       await session.withTransaction(async () => {
         const db = client.db(process.env.MONGODB_DB ?? "web_cert");
         const users = db.collection<ManagedUser>("users");
         // Escrita em documento comum serializa alterações concorrentes de administradores.
-        await db.collection("admin_guard").updateOne({ _id: "user-management" }, { $inc: { revision: 1 } }, { upsert: true, session });
+        await db.collection<{ _id: string; revision: number }>("admin_guard").updateOne({ _id: "user-management" }, { $inc: { revision: 1 } }, { upsert: true, session });
         const target = await users.findOne({ username }, { session });
         if (!target) throw new Error("USER_NOT_FOUND");
         const nextRole = role ?? target.role;
-        const nextActive = active ?? target.active !== false;
+        const nextActive = active === undefined ? target.active !== false : active as boolean;
         if (target.role === "admin" && target.active !== false && (nextRole !== "admin" || !nextActive)) {
           const activeAdmins = await users.countDocuments({ role: "admin", active: { $ne: false } }, { session });
           if (activeAdmins <= 1) throw new Error("LAST_ADMIN");
         }
         await users.updateOne({ username }, { $set: { role: nextRole, active: nextActive, updatedAt: new Date() } }, { session });
-        updatedUser = { ...target, role: nextRole, active: nextActive };
+        updateResult.user = { ...target, role: nextRole, active: nextActive };
       });
     } finally { await session.endSession(); }
+    const updatedUser = updateResult.user;
     if (!updatedUser) throw new Error("USER_NOT_FOUND");
     const auditRecorded = await writeAuditEvent({ actor: actor.login, action: "user.updated", entity: "user", entityId: username, metadata: { role: updatedUser.role, active: updatedUser.active !== false } });
     return Response.json({ ok: true, user: { username, role: updatedUser.role, active: updatedUser.active !== false }, auditRecorded }, { headers: { "Cache-Control": "no-store" } });
