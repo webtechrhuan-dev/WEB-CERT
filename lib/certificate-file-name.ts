@@ -11,5 +11,5 @@ export function sanitizeCertificateFileName(value: string): string {
 
 /** Fallback ASCII para o parâmetro filename do Content-Disposition. */
 export function toAsciiCertificateFileName(value: string): string {
-  return value.replace(/[^\\x20-\\x7E]/g, "_");
+  return value.replace(/[^\x20-\x7E]/g, "_");
 }
