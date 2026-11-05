@@ -1,5 +1,6 @@
 import { randomUUID } from "node:crypto";
 import { sanitizeCertificateFileName } from "@/lib/certificate-file-name";
+import { buildCertificateDeletionClaimFilter } from "@/lib/server/certificate-download-leases";
 import { requireAccess } from "@/lib/server/access";
 import { apiErrorResponse } from "@/lib/server/api-errors";
 import { readBodyBytes, readJsonBody } from "@/lib/server/request-body";
@@ -190,16 +191,7 @@ export async function DELETE(request: Request, context: { params: Promise<{ rowN
     // A exclusão só reivindica o arquivo quando não há downloads ativos.
     // O update é atômico com a reserva feita pela rota de download.
     const deletionClaim = await db.collection("certificate_files.files").updateOne(
-      {
-        _id: id,
-        "metadata.rowNumber": rowNumber,
-        deleting: { $ne: true },
-        $or: [
-          { activeDownloadLeases: { $exists: false } },
-          { activeDownloadLeases: { $size: 0 } },
-          { activeDownloadLeases: { $not: { $elemMatch: { expiresAt: { $gt: new Date() } } } } },
-        ],
-      },
+      buildCertificateDeletionClaimFilter(id, rowNumber, new Date()),
       { $set: { deleting: true } },
     );
     if (deletionClaim.modifiedCount !== 1) {
