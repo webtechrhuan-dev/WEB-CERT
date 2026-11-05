@@ -1,6 +1,7 @@
 import { ObjectId } from "mongodb";
 import { describe, expect, it } from "vitest";
 import {
+  CERTIFICATE_DELETION_LEASE_MS,
   CERTIFICATE_DOWNLOAD_LEASE_MS,
   buildAcquireDownloadLeasePipeline,
   buildCertificateDeletionClaimFilter,
@@ -14,6 +15,9 @@ describe("reservas concorrentes de download de certificados", () => {
     expect(buildAcquireDownloadLeasePipeline("lease-a", now)).toEqual([
       {
         $set: {
+          deleting: false,
+          deletingLeaseToken: null,
+          deletingLeaseExpiresAt: null,
           activeDownloadLeases: {
             $concatArrays: [
               {
@@ -54,16 +58,29 @@ describe("reservas concorrentes de download de certificados", () => {
     ]);
   });
 
-  it("só permite reivindicar a exclusão quando não há leases ativos", () => {
+  it("usa um lease de exclusão com expiração para recuperar operações interrompidas", () => {
+    expect(CERTIFICATE_DELETION_LEASE_MS).toBe(30 * 60 * 1000);
+  });
+
+  it("só permite reivindicar a exclusão quando não há leases ativos e a reserva anterior expirou", () => {
     const id = new ObjectId("507f1f77bcf86cd799439011");
     expect(buildCertificateDeletionClaimFilter(id, 12, now)).toEqual({
       _id: id,
       "metadata.rowNumber": 12,
-      deleting: { $ne: true },
-      $or: [
-        { activeDownloadLeases: { $exists: false } },
-        { activeDownloadLeases: { $size: 0 } },
-        { activeDownloadLeases: { $not: { $elemMatch: { expiresAt: { $gt: now } } } } },
+      $and: [
+        {
+          $or: [
+            { deleting: { $ne: true } },
+            { deletingLeaseExpiresAt: { $lte: now } },
+          ],
+        },
+        {
+          $or: [
+            { activeDownloadLeases: { $exists: false } },
+            { activeDownloadLeases: { $size: 0 } },
+            { activeDownloadLeases: { $not: { $elemMatch: { expiresAt: { $gt: now } } } } },
+          ],
+        },
       ],
     });
   });
