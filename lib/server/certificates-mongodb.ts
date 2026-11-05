@@ -1,51 +1,19 @@
-import { GridFSBucket, MongoClient, ObjectId, type Db } from "mongodb";
+import "server-only";
+import { GridFSBucket, ObjectId } from "mongodb";
+import { getMongoDb } from "@/lib/server/mongodb";
 
-const uri = process.env.MONGODB_CERTIFICATES_URI;
-const dbName = process.env.MONGODB_CERTIFICATES_DB || "certificates_store";
-
-if (!uri) {
-  // Keep the main application usable when the optional certificate store is not configured.
-}
-
-declare global {
-  // eslint-disable-next-line no-var
-  var certificatesMongoClientPromise: Promise<MongoClient> | undefined;
-}
-
-let clientPromise: Promise<MongoClient> | undefined;
-
-function getClientPromise(): Promise<MongoClient> {
-  if (!uri) {
-    throw new Error("MONGODB_CERTIFICATES_URI não está configurada.");
-  }
-
-  if (process.env.NODE_ENV === "development") {
-    if (!global.certificatesMongoClientPromise) {
-      global.certificatesMongoClientPromise = new MongoClient(uri).connect();
-    }
-    return global.certificatesMongoClientPromise;
-  }
-
-  if (!clientPromise) {
-    clientPromise = new MongoClient(uri).connect();
-  }
-  return clientPromise;
-}
-
-export async function getCertificatesDb(): Promise<Db> {
-  const client = await getClientPromise();
-  return client.db(dbName);
+/** Os arquivos GridFS compartilham a mesma conexão e o mesmo banco das vendas. */
+export async function getCertificatesDb() {
+  return getMongoDb();
 }
 
 export async function getCertificatesBucket(): Promise<GridFSBucket> {
-  const db = await getCertificatesDb();
-  return new GridFSBucket(db, { bucketName: "certificate_files" });
+  return new GridFSBucket(await getCertificatesDb(), { bucketName: "certificate_files" });
 }
-
 
 let certificateIndexesPromise: Promise<void> | undefined;
 
-/** Índice para localizar anexos por venda sem varrer toda a coleção GridFS. */
+/** Índice de consulta por venda; unicidade será aplicada após validar os anexos legados. */
 export async function ensureCertificateStoreIndexes(): Promise<void> {
   if (!certificateIndexesPromise) {
     certificateIndexesPromise = (async () => {
@@ -54,9 +22,12 @@ export async function ensureCertificateStoreIndexes(): Promise<void> {
         { "metadata.rowNumber": 1, uploadDate: -1 },
         { name: "certificate_row_upload_date" },
       );
+      await db.collection("certificate_files.files").createIndex(
+        { "metadata.expiresAt": 1 },
+        { name: "certificate_expiry" },
+      );
     })();
   }
-
   try {
     await certificateIndexesPromise;
   } catch (error) {
