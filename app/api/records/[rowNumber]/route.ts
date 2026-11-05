@@ -41,7 +41,7 @@ export async function PATCH(request: Request, context: { params: Promise<{ rowNu
    }
    const expiryValue = values[expiryIndex];
    const expiryDateText = typeof expiryValue === "string" ? expiryValue : "";
-   const certificateExpiry = /^\\d{4}-\\d{2}-\\d{2}$/.test(expiryDateText)
+   const certificateExpiry = /^\d{4}-\d{2}-\d{2}$/.test(expiryDateText)
      ? new Date(`${expiryDateText}T23:59:59.999Z`)
      : null;
    if (attached && (!certificateExpiry || !Number.isFinite(certificateExpiry.getTime()) || certificateExpiry.toISOString().slice(0, 10) !== expiryDateText)) {
