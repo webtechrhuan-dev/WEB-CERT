@@ -119,18 +119,27 @@ export function CertificateFiles({ rowNumber, canUpload, saleStatus }: { rowNumb
         <span className="record-count">{files.length} arquivo(s)</span>
       </div>
       {canManageCertificate && (
-        <div className="form-actions">
-          <label className="record-form-field"><span>Senha do certificado PFX</span><input type="password" autoComplete="new-password" value={password} onChange={(event) => setPassword(event.target.value)} disabled={uploading} placeholder="Senha do arquivo PFX" /></label>
-          <label className="record-form-field"><span>Vencimento do certificado</span><input type="date" value={expiresAt} onChange={(event) => setExpiresAt(event.target.value)} disabled={uploading} /></label>
-          <input
-            ref={inputRef}
-            aria-label="Selecionar arquivo de certificado"
-            accept=".pfx,application/x-pkcs12"
-            disabled={uploading}
-            onChange={(event) => void upload(event.target.files?.[0])}
-            type="file"
-          />
-          <span className="form-help">Máximo de 10 MB. Informe a senha e a validade do certificado; a senha será criptografada antes de ser armazenada.</span>
+        <div className="certificate-upload-form" aria-label="Adicionar certificado digital">
+          <label className="record-form-field certificate-upload-field">
+            <span>Senha do certificado PFX</span>
+            <input type="password" autoComplete="new-password" value={password} onChange={(event) => setPassword(event.target.value)} disabled={uploading} placeholder="Senha do arquivo PFX" />
+          </label>
+          <label className="record-form-field certificate-upload-field">
+            <span>Vencimento do certificado</span>
+            <input type="date" value={expiresAt} onChange={(event) => setExpiresAt(event.target.value)} disabled={uploading} />
+          </label>
+          <label className="record-form-field certificate-upload-field certificate-upload-file">
+            <span>Arquivo do certificado</span>
+            <input
+              ref={inputRef}
+              aria-label="Selecionar arquivo de certificado"
+              accept=".pfx,application/x-pkcs12"
+              disabled={uploading}
+              onChange={(event) => void upload(event.target.files?.[0])}
+              type="file"
+            />
+          </label>
+          <p className="certificate-upload-help">Máximo de 10 MB. Informe a senha e a validade do certificado. A senha será criptografada antes de ser armazenada.</p>
         </div>
       )}
       {loading ? <p className="empty-state">Carregando arquivos…</p> : files.length === 0 ? (
