@@ -1,7 +1,7 @@
 import { randomUUID } from "node:crypto";
 import { requireAccess } from "@/lib/server/access";
 import { apiErrorResponse } from "@/lib/server/api-errors";
-import { readJsonBody } from "@/lib/server/request-body";
+import { readBodyBytes, readJsonBody } from "@/lib/server/request-body";
 import { writeAuditEvent } from "@/lib/server/audit-log";
 import { getMongoDb } from "@/lib/server/mongodb";
 import { acquireCertificateMutationLock, releaseCertificateMutationLock } from "@/lib/server/certificate-store";
@@ -83,9 +83,18 @@ export async function POST(request: Request, context: { params: Promise<{ rowNum
     if (!Number.isSafeInteger(rowNumber) || rowNumber < 2) return jsonError("INVALID_ROW", "Venda inválida.", 400);
     if (!(await ensureSaleExists(rowNumber))) return jsonError("RECORD_NOT_FOUND", "Venda não encontrada.", 404);
 
-    const declaredLength = Number(request.headers.get("content-length"));
-    if (Number.isFinite(declaredLength) && declaredLength > MAX_CERTIFICATE_SIZE + 256_000) return jsonError("FILE_TOO_LARGE", "O envio excede o limite permitido.", 413);
-    const form = await request.formData();
+    // Limita o corpo multipart inteiro, mesmo quando Content-Length é omitido ou falso.
+    // O teto inclui até 256 KB de boundary/campos/metadados além do arquivo de 10 MB.
+    const multipartBytes = await readBodyBytes(request, MAX_CERTIFICATE_SIZE + 256_000);
+    const boundedHeaders = new Headers(request.headers);
+    boundedHeaders.delete("content-length");
+    boundedHeaders.delete("transfer-encoding");
+    const boundedRequest = new Request(request.url, {
+      method: "POST",
+      headers: boundedHeaders,
+      body: multipartBytes,
+    });
+    const form = await boundedRequest.formData();
     const file = form.get("file");
     if (!(file instanceof File)) return jsonError("FILE_REQUIRED", "Selecione um arquivo de certificado.", 400);
     if (file.size <= 0) return jsonError("EMPTY_FILE", "O arquivo está vazio.", 400);
