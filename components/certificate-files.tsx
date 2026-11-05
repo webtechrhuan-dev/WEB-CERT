@@ -25,7 +25,10 @@ function formatSize(bytes: number): string {
   return `${(bytes / (1024 * 1024)).toFixed(2)} MB`;
 }
 
-export function CertificateFiles({ rowNumber, canUpload }: { rowNumber: number; canUpload: boolean }) {
+export function CertificateFiles({ rowNumber, canUpload, saleStatus }: { rowNumber: number; canUpload: boolean; saleStatus: string }) {
+  const normalizedStatus = saleStatus.trim().toLocaleLowerCase("pt-BR");
+  const statusAllowsCertificate = ["emitido", "pendente instalar", "instalado", "concluido", "concluído"].includes(normalizedStatus);
+  const canManageCertificate = canUpload && statusAllowsCertificate;
   const [files, setFiles] = useState<CertificateFile[]>([]);
   const [loading, setLoading] = useState(true);
   const [uploading, setUploading] = useState(false);
@@ -56,7 +59,7 @@ export function CertificateFiles({ rowNumber, canUpload }: { rowNumber: number; 
   useEffect(() => { void refresh(); }, [refresh]);
 
   async function remove(file: CertificateFile) {
-    if (!canUpload || !window.confirm(`Excluir permanentemente o certificado "${file.name}" desta venda?`)) return;
+    if (!canManageCertificate || !window.confirm(`Excluir permanentemente o certificado "${file.name}" desta venda?`)) return;
     setError(null);
     setNotice(null);
     try {
@@ -115,7 +118,7 @@ export function CertificateFiles({ rowNumber, canUpload }: { rowNumber: number; 
         <div><h3 id="certificate-files-title">Certificados digitais anexados</h3><p>Um certificado PFX vinculado exclusivamente a esta venda.</p></div>
         <span className="record-count">{files.length} arquivo(s)</span>
       </div>
-      {canUpload && (
+      {canManageCertificate && (
         <div className="form-actions">
           <label className="record-form-field"><span>Senha do certificado PFX</span><input type="password" autoComplete="new-password" value={password} onChange={(event) => setPassword(event.target.value)} disabled={uploading} placeholder="Senha do arquivo PFX" /></label>
           <label className="record-form-field"><span>Vencimento do certificado</span><input type="date" value={expiresAt} onChange={(event) => setExpiresAt(event.target.value)} disabled={uploading} /></label>
@@ -137,7 +140,7 @@ export function CertificateFiles({ rowNumber, canUpload }: { rowNumber: number; 
           {files.map((file) => (
             <li key={file.id}>
               <div><strong>{file.name}</strong><span>{formatSize(file.size)} · Enviado em {new Date(file.uploadedAt).toLocaleString("pt-BR")} · Vence em {file.expiresAt ? new Date(file.expiresAt).toLocaleDateString("pt-BR", { timeZone: "UTC" }) : "não informado"} · {file.uploadedBy}</span></div>
-              <div className="certificate-file-actions"><a className="button button--secondary button--small" href={`/api/certificates/${file.id}`} rel="noreferrer">Baixar</a>{canUpload && <button className="button button--danger button--small" onClick={() => void remove(file)} type="button">Excluir</button>}</div>
+              <div className="certificate-file-actions"><a className="button button--secondary button--small" href={`/api/certificates/${file.id}`} rel="noreferrer">Baixar</a>{canManageCertificate && <button className="button button--danger button--small" onClick={() => void remove(file)} type="button">Excluir</button>}</div>
             </li>
           ))}
         </ul>
