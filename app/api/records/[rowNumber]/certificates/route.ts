@@ -193,6 +193,7 @@ export async function DELETE(request: Request, context: { params: Promise<{ rowN
         $or: [
           { activeDownloads: { $exists: false } },
           { activeDownloads: 0 },
+          { activeDownloadLeaseExpiresAt: { $lt: new Date() } },
         ],
       },
       { $set: { deleting: true } },
