@@ -142,14 +142,22 @@ export async function POST(request: Request, context: { params: Promise<{ rowNum
         });
       } catch (uploadError) {
         // GridFS pode ter gravado chunks antes da falha; remove o upload parcial.
-        const cleaned = await cleanupGridFsUpload(await getCertificatesDb(), upload.id);
-        if (!cleaned) console.error("[certificates] Falha ao limpar upload GridFS interrompido.");
+        try {
+          const cleaned = await cleanupGridFsUpload(await getCertificatesDb(), upload.id);
+          if (!cleaned) console.error("[certificates] Falha ao limpar upload GridFS interrompido.");
+        } catch {
+          console.error("[certificates] Falha ao limpar upload GridFS interrompido.");
+        }
         throw uploadError;
       }
 
       if (!(await ensureSaleExists(rowNumber))) {
-        const cleaned = await cleanupGridFsUpload(await getCertificatesDb(), upload.id);
-        if (!cleaned) console.error("[certificates] Falha ao reverter upload sem venda vinculada.");
+        try {
+          const cleaned = await cleanupGridFsUpload(await getCertificatesDb(), upload.id);
+          if (!cleaned) console.error("[certificates] Falha ao reverter upload sem venda vinculada.");
+        } catch {
+          console.error("[certificates] Falha ao reverter upload sem venda vinculada.");
+        }
         return jsonError("RECORD_NOT_FOUND", "A venda foi removida durante o envio. O arquivo não foi mantido.", 404);
       }
 
