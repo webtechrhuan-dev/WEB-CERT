@@ -29,6 +29,8 @@ export function CertificateFiles({ rowNumber, canUpload, saleStatus, saleExpiry 
   const normalizedStatus = saleStatus.trim().toLocaleLowerCase("pt-BR");
   const statusAllowsCertificate = ["emitido", "pendente instalar", "instalado", "concluido", "concluído"].includes(normalizedStatus);
   const canManageCertificate = canUpload && statusAllowsCertificate;
+  // Um vínculo legado em status inválido precisa continuar removível por um editor.
+  const canDeleteCertificate = canUpload;
   const [files, setFiles] = useState<CertificateFile[]>([]);
   const [loading, setLoading] = useState(true);
   const [uploading, setUploading] = useState(false);
@@ -143,7 +145,7 @@ export function CertificateFiles({ rowNumber, canUpload, saleStatus, saleExpiry 
           </label>
           <label className="record-form-field certificate-upload-field">
             <span>Exclusão automática em</span>
-            <input type="text" value={saleExpiry ? new Date(`${saleExpiry}T00:00:00`).toLocaleDateString("pt-BR") : "Defina a data no cadastro"} readOnly disabled aria-readonly="true" title="Esta data é obtida automaticamente do campo Data de vencimento da venda." />
+            <input type="text" value={saleExpiry ? new Date(`${saleExpiry}T00:00:00`).toLocaleDateString("pt-BR") : "Defina a data no cadastro"} readOnly disabled aria-readonly="true" className="certificate-expiry-readonly" title="Esta data é obtida automaticamente do campo Data de vencimento da venda." />
           </label>
           <label className="record-form-field certificate-upload-field certificate-upload-file">
             <span>Arquivo do certificado</span>
@@ -166,12 +168,12 @@ export function CertificateFiles({ rowNumber, canUpload, saleStatus, saleExpiry 
           {files.map((file) => (
             <li key={file.id}>
               <div><strong>{file.name}</strong><span>{formatSize(file.size)} · Enviado em {new Date(file.uploadedAt).toLocaleString("pt-BR")} · Vence em {file.expiresAt ? new Date(file.expiresAt).toLocaleDateString("pt-BR", { timeZone: "UTC" }) : "não informado"} · {file.uploadedBy}</span></div>
-              <div className="certificate-file-actions"><a className="button button--secondary button--small" href={`/api/certificates/${file.id}`} rel="noreferrer">Baixar</a>{canManageCertificate && <button className="button button--danger button--small" disabled={deleting} onClick={() => remove(file)} type="button">Excluir</button>}</div>
+              <div className="certificate-file-actions"><a className="button button--secondary button--small" href={`/api/certificates/${file.id}`} rel="noreferrer">Baixar</a>{canDeleteCertificate && <button className="button button--danger button--small" disabled={deleting} onClick={() => remove(file)} type="button">Excluir</button>}</div>
             </li>
           ))}
         </ul>
       )}
-      {files.length > 0 && <p className="certificate-delete-dependency">Esta venda não pode ser excluída enquanto houver certificado vinculado. Exclua primeiro o certificado usando a confirmação de usuário e senha.</p>}
+      {files.length > 0 && <p className="certificate-delete-dependency">{statusAllowsCertificate ? "Esta venda não pode ser excluída enquanto houver certificado vinculado. Exclua primeiro o certificado usando a confirmação de usuário e senha." : "Atenção: o status atual desta venda não permite manter certificado vinculado. Exclua o arquivo usando a confirmação de usuário e senha antes de continuar."}</p>}
       {fileToDelete && (
         <div className="reauth-overlay" role="presentation" onMouseDown={(event) => { if (event.target === event.currentTarget && !deleting) setFileToDelete(null); }}>
           <section className="reauth-dialog" role="dialog" aria-modal="true" aria-labelledby="certificate-delete-auth-title">
