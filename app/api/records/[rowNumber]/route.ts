@@ -83,7 +83,7 @@ export async function DELETE(request: Request, context: { params: Promise<{ rowN
       const certificateDb = await getCertificatesDb();
       const attachedCount = await certificateDb.collection("certificate_files.files").countDocuments({ "metadata.rowNumber": rowNumber });
       if (attachedCount > 0) {
-        return Response.json({ error: { code: "CERTIFICATES_ATTACHED", message: `Esta venda possui ${attachedCount} certificado(s) anexado(s). Remova ou transfira os arquivos antes de excluir a venda.` } }, { status: 409, headers: { "Cache-Control": "no-store" } });
+        return Response.json({ error: { code: "CERTIFICATES_ATTACHED", message: `Esta venda possui ${attachedCount} certificado(s) anexado(s). Exclua primeiro o certificado digital vinculado; a venda só poderá ser excluída quando não houver certificados anexados.` } }, { status: 409, headers: { "Cache-Control": "no-store" } });
       }
       const { deleteCertificate } = await import("@/lib/server/certificate-store");
       await deleteCertificate(rowNumber, body.expectedVersion, mutationToken);
