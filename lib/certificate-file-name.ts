@@ -7,3 +7,9 @@ export function sanitizeCertificateFileName(value: string): string {
     .slice(0, 160);
   return !normalized || /^[_\s.]*$/.test(normalized) ? "certificado.pfx" : normalized;
 }
+
+
+/** Fallback ASCII para o parâmetro filename do Content-Disposition. */
+export function toAsciiCertificateFileName(value: string): string {
+  return value.replace(/[^\\x20-\\x7E]/g, "_");
+}
