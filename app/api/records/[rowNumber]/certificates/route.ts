@@ -183,8 +183,34 @@ export async function DELETE(request: Request, context: { params: Promise<{ rowN
     );
     if (!file) return jsonError("FILE_NOT_FOUND", "Certificado não encontrado nesta venda.", 404);
 
+    // A exclusão só reivindica o arquivo quando não há downloads ativos.
+    // O update é atômico com a reserva feita pela rota de download.
+    const deletionClaim = await db.collection("certificate_files.files").updateOne(
+      {
+        _id: id,
+        "metadata.rowNumber": rowNumber,
+        deleting: { $ne: true },
+        $or: [
+          { activeDownloads: { $exists: false } },
+          { activeDownloads: 0 },
+        ],
+      },
+      { $set: { deleting: true } },
+    );
+    if (deletionClaim.modifiedCount !== 1) {
+      return jsonError("FILE_IN_USE", "O certificado está sendo baixado ou removido. Aguarde e tente novamente.", 409);
+    }
+
     const bucket = await getCertificatesBucket();
-    await bucket.delete(id);
+    try {
+      await bucket.delete(id);
+    } catch (error) {
+      await db.collection("certificate_files.files").updateOne(
+        { _id: id, deleting: true },
+        { $unset: { deleting: "" } },
+      ).catch(() => console.error("[certificates] Falha ao liberar marca de exclusão."));
+      throw error;
+    }
     const auditRecorded = await writeAuditEvent({
       actor: access.login,
       action: "certificate.deleted",
