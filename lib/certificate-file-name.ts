@@ -4,5 +4,5 @@ export function sanitizeCertificateFileName(value: string): string {
     .replace(/[\/\\\u0000-\u001F\u007F"]/g, "_")
     .trim()
     .slice(0, 160);
-  return normalized || "certificado.pfx";
+  return !normalized || /^[_\s.]*$/.test(normalized) ? "certificado.pfx" : normalized;
 }
