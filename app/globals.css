@@ -4825,3 +4825,39 @@ body, .app-shell, .workspace, .content-panel, .table-panel, .record-form, .login
   color: #e5edf4;
   background-color: #111f2d;
 }
+
+
+.sale-certificate-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  min-height: 26px;
+  padding: 4px 10px;
+  border: 1px solid var(--border, #34495a);
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 700;
+  line-height: 1.2;
+  white-space: nowrap;
+}
+.sale-certificate-badge.is-linked {
+  color: #087a50;
+  background: #dcfce9;
+  border-color: #8ddbb0;
+}
+.sale-certificate-badge.is-unlinked {
+  color: #667789;
+  background: #edf2f7;
+  border-color: #cbd5e1;
+}
+:root[data-theme="dark"] .sale-certificate-badge.is-linked {
+  color: #8df0bd;
+  background: rgba(16, 110, 72, .22);
+  border-color: rgba(76, 201, 140, .45);
+}
+:root[data-theme="dark"] .sale-certificate-badge.is-unlinked {
+  color: #bdcbd8;
+  background: rgba(100, 116, 139, .18);
+  border-color: rgba(148, 163, 184, .3);
+}
