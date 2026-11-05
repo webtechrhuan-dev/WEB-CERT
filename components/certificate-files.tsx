@@ -79,7 +79,7 @@ export function CertificateFiles({ rowNumber, canUpload }: { rowNumber: number; 
     setError(null);
     setNotice(null);
     if (!/\.(p12|pfx)$/i.test(file.name)) {
-      setError("Formato inválido. Selecione um arquivo .p12 ou .pfx.");
+      setError("Formato inválido. Selecione um arquivo .pfx.");
       return;
     }
     if (file.size > 10 * 1024 * 1024) {
@@ -112,7 +112,7 @@ export function CertificateFiles({ rowNumber, canUpload }: { rowNumber: number; 
   return (
     <section className="content-panel certificate-files-panel" aria-labelledby="certificate-files-title">
       <div className="panel-heading">
-        <div><h3 id="certificate-files-title">Certificados digitais anexados</h3><p>Arquivos de certificado vinculados exclusivamente a esta venda.</p></div>
+        <div><h3 id="certificate-files-title">Certificados digitais anexados</h3><p>Um certificado PFX vinculado exclusivamente a esta venda.</p></div>
         <span className="record-count">{files.length} arquivo(s)</span>
       </div>
       {canUpload && (
