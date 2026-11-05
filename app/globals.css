@@ -4537,3 +4537,12 @@ body, .app-shell, .workspace, .content-panel, .table-panel, .record-form, .login
 :root[data-theme="dark"] .status-pill--danger{border-color:#71404a;background:#3c252c;color:#f0a0a7}
 :root[data-theme="dark"] .content-panel select{border-color:#3a5365;background:#142a3a;color:#e1edf3}
 @media(max-width:760px){.content-panel select{min-height:40px}.helper-text{font-size:10px}}
+
+
+/* Navegação da paginação de vendas */
+.records-pagination{display:flex;align-items:center;justify-content:space-between;gap:14px;margin:18px 0 4px;padding:14px 16px;border:1px solid var(--border-color,#dce5eb);border-radius:12px;background:var(--surface-subtle,#f7fafc);color:var(--text-muted,#718392);font-size:11px}
+.records-pagination-actions{display:flex;align-items:center;gap:12px;color:var(--text-primary,#294253);font-weight:650}
+.records-pagination-actions button:disabled{cursor:not-allowed;opacity:.45;transform:none}
+@media(max-width:620px){.records-pagination{align-items:stretch;flex-direction:column}.records-pagination-actions{justify-content:space-between;gap:8px}.records-pagination-actions .button{min-width:88px}}
+:root[data-theme="dark"] .records-pagination{border-color:#30495b;background:#122a3b;color:#a8bdca}
+:root[data-theme="dark"] .records-pagination-actions{color:#e0edf3}
