@@ -10,6 +10,7 @@ import { useWorkbookData } from "@/lib/client/use-workbook-data";
 import { WORKBOOK_HEADERS } from "@/lib/workbook-types";
 import type { WorkbookCell, WorkbookRecord } from "@/lib/workbook-types";
 import { paginateItems } from "@/lib/record-pagination";
+import { expiryFromIssueDate } from "@/lib/record-dates";
 
 type ManagementMode = "create" | "edit";
 type FormValues = Record<string, string>;
@@ -89,13 +90,6 @@ function currentPeriod(): { year: string; month: string } {
   return { year, month: MONTH_NAMES[monthNumber - 1] ?? MONTH_NAMES[0] };
 }
 
-function expiryFromIssueDate(value: string): string {
-  if (!/^\d{4}-\d{2}-\d{2}$/.test(value)) return "";
-  const [year, month, day] = value.split("-").map(Number);
-  const expiryYear = year + 1;
-  const lastDay = new Date(Date.UTC(expiryYear, month, 0)).getUTCDate();
-  return [expiryYear, String(month).padStart(2, "0"), String(Math.min(day, lastDay)).padStart(2, "0")].join("-");
-}
 function formValues(record?: WorkbookRecord): FormValues {
   const values = Object.fromEntries(
     WORKBOOK_HEADERS.map((header, index) => [header, valueAsText(record?.values[index])]),
@@ -245,7 +239,7 @@ function RecordForm({
                 <input autoComplete="off" type="date" value={values[header] ?? ""}
                   onChange={(event) => {
                     const issueDate = event.target.value;
-                    setValues((current) => ({ ...current, [header]: issueDate, ["Data de vencimento"]: expiryFromIssueDate(issueDate) }));
+                    setValues((current) => ({ ...current, [header]: issueDate, ["Data de vencimento"]: expiryFromIssueDate(issueDate) ?? "" }));
                   }}
                 />
               ) : expiryField ? (
