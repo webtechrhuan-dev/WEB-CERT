@@ -52,6 +52,25 @@ export function CertificateFiles({ rowNumber, canUpload }: { rowNumber: number; 
 
   useEffect(() => { void refresh(); }, [refresh]);
 
+  async function remove(file: CertificateFile) {
+    if (!canUpload || !window.confirm(`Excluir permanentemente o certificado "${file.name}" desta venda?`)) return;
+    setError(null);
+    setNotice(null);
+    try {
+      const response = await fetch(`/api/records/${rowNumber}/certificates`, {
+        method: "DELETE",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ fileId: file.id }),
+      });
+      const body: unknown = await response.json();
+      if (!response.ok) throw new Error(messageFrom(body) ?? "Não foi possível excluir o certificado.");
+      setNotice("Certificado excluído do armazenamento.");
+      await refresh();
+    } catch (removeError) {
+      setError(removeError instanceof Error ? removeError.message : "Falha ao excluir certificado.");
+    }
+  }
+
   async function upload(file?: File) {
     if (!file || uploading) return;
     setError(null);
@@ -107,7 +126,7 @@ export function CertificateFiles({ rowNumber, canUpload }: { rowNumber: number; 
           {files.map((file) => (
             <li key={file.id}>
               <div><strong>{file.name}</strong><span>{formatSize(file.size)} · {new Date(file.uploadedAt).toLocaleString("pt-BR")} · {file.uploadedBy}</span></div>
-              <a className="button button--secondary button--small" href={`/api/certificates/${file.id}`} rel="noreferrer">Baixar</a>
+              <div className="certificate-file-actions"><a className="button button--secondary button--small" href={`/api/certificates/${file.id}`} rel="noreferrer">Baixar</a>{canUpload && <button className="button button--danger button--small" onClick={() => void remove(file)} type="button">Excluir</button>}</div>
             </li>
           ))}
         </ul>
