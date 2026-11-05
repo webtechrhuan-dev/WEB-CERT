@@ -32,7 +32,7 @@ export async function GET() {
 
 export async function POST(request: Request) {
   try {
-    const access = await requireAccess("editor");
+    await requireAccess("editor");
     const body = await readJsonBody(request);
     const parsed = validateRecordInput(body?.values, true);
     const values = valuesFromInput(parsed);
