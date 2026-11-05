@@ -72,7 +72,19 @@ export async function GET(_request: Request, context: { params: Promise<{ fileId
       leaseReleased = true;
       void db.collection("certificate_files.files").updateOne(
         { _id: id },
-        { $pull: { activeDownloadLeases: { token: leaseToken } } },
+        [
+          {
+            $set: {
+              activeDownloadLeases: {
+                $filter: {
+                  input: { $ifNull: ["$activeDownloadLeases", []] },
+                  as: "activeLease",
+                  cond: { $ne: ["$activeLease.token", leaseToken] },
+                },
+              },
+            },
+          },
+        ],
       ).catch(() => console.error("[certificates] Falha ao liberar reserva de download."));
     };
 
