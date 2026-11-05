@@ -6,6 +6,7 @@ import { apiErrorResponse } from "@/lib/server/api-errors";
 import { readBodyBytes, readJsonBody } from "@/lib/server/request-body";
 import { writeAuditEvent } from "@/lib/server/audit-log";
 import { getMongoDb } from "@/lib/server/mongodb";
+import { cleanupGridFsUpload } from "@/lib/server/gridfs-cleanup";
 import { acquireCertificateMutationLock, releaseCertificateMutationLock } from "@/lib/server/certificate-store";
 import {
   getCertificatesBucket,
@@ -141,16 +142,14 @@ export async function POST(request: Request, context: { params: Promise<{ rowNum
         });
       } catch (uploadError) {
         // GridFS pode ter gravado chunks antes da falha; remove o upload parcial.
-        await bucket.delete(upload.id).catch(() => {
-          console.error("[certificates] Falha ao limpar upload GridFS interrompido.");
-        });
+        const cleaned = await cleanupGridFsUpload(await getCertificatesDb(), upload.id);
+        if (!cleaned) console.error("[certificates] Falha ao limpar upload GridFS interrompido.");
         throw uploadError;
       }
 
       if (!(await ensureSaleExists(rowNumber))) {
-        await bucket.delete(upload.id).catch(() => {
-          console.error("[certificates] Falha ao reverter upload sem venda vinculada.");
-        });
+        const cleaned = await cleanupGridFsUpload(await getCertificatesDb(), upload.id);
+        if (!cleaned) console.error("[certificates] Falha ao reverter upload sem venda vinculada.");
         return jsonError("RECORD_NOT_FOUND", "A venda foi removida durante o envio. O arquivo não foi mantido.", 404);
       }
 
