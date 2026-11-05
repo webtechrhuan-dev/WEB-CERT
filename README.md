@@ -19,6 +19,7 @@ Aplicação interna da Web Tech para cadastro e gestão de vendas de certificado
 - A base comercial usa `MONGODB_URI` e o banco definido por `MONGODB_DB` (padrão `web_cert`). A coleção `certificates` contém os registros de venda.
 - Os binários dos certificados ficam em outro MongoDB Atlas/GridFS, configurado por `MONGODB_CERTIFICATES_URI` e `MONGODB_CERTIFICATES_DB` (padrão `certificates_store`). Para manter isolamento, a URI deve apontar para o cluster de arquivos, não para o cluster comercial.
 - Cada arquivo é associado ao `rowNumber` da venda por metadados GridFS. O sistema cria índice composto em `metadata.rowNumber` e `uploadDate` para acelerar a listagem e a contagem de anexos.
+- O projeto Atlas de arquivos usa allowlist `0.0.0.0/0` para acomodar IPs dinâmicos de funções Vercel. Por isso, a autenticação do banco deve permanecer forte, TLS habilitado e o usuário limitado a `readWrite` no banco de arquivos; prefira egress IPs fixos se disponíveis no plano.
 - O armazenamento permanente não depende do filesystem efêmero da Vercel.
 - Não armazene senhas de PFX/P12 no banco, em logs ou em variáveis de ambiente.
 
