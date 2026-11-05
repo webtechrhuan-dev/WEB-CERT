@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { sanitizeCertificateFileName } from "@/lib/certificate-file-name";
+import { sanitizeCertificateFileName, toAsciiCertificateFileName } from "@/lib/certificate-file-name";
 
 describe("sanitizeCertificateFileName", () => {
   it("removes path separators, control characters and header quotes", () => {
@@ -15,5 +15,14 @@ describe("sanitizeCertificateFileName", () => {
 
   it("uses a safe fallback for an empty name", () => {
     expect(sanitizeCertificateFileName("")).toBe("certificado.pfx");
+  });
+});
+
+
+describe("toAsciiCertificateFileName", () => {
+  it("preserves printable ASCII and replaces only non-ASCII/control characters", () => {
+    expect(toAsciiCertificateFileName("certificado.pfx")).toBe("certificado.pfx");
+    expect(toAsciiCertificateFileName("certificado-á.pfx")).toBe("certificado-_.pfx");
+    expect(toAsciiCertificateFileName("a\nb\u007f.pfx")).toBe("a_b_.pfx");
   });
 });
