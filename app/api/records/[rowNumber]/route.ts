@@ -1,3 +1,4 @@
+import { randomUUID } from "node:crypto";
 import { requireAccess } from "@/lib/server/access";
 import { verifyReauthentication } from "@/auth";
 import { apiErrorResponse } from "@/lib/server/api-errors";
@@ -5,6 +6,7 @@ import { readCertificateData, updateCertificate } from "@/lib/server/certificate
 import { validateRecordInput, valuesFromInput } from "@/lib/server/record-validation";
 import { writeAuditEvent } from "@/lib/server/audit-log";
 import { getCertificatesDb } from "@/lib/server/certificates-mongodb";
+import { acquireCertificateMutationLock, releaseCertificateMutationLock } from "@/lib/server/certificate-store";
 
 function expiryFromIssueDate(value: unknown): string | null {
  if (typeof value !== "string" || !/^\d{4}-\d{2}-\d{2}$/.test(value)) return null;
@@ -40,17 +42,27 @@ export async function DELETE(request: Request, context: { params: Promise<{ rowN
     if (!username || username !== access.login.toLowerCase() || !password || !(await verifyReauthentication(username, password))) {
       return Response.json({ error: { code: "REAUTHENTICATION_FAILED", message: "Usuário ou senha incorretos. A venda não foi excluída." } }, { status: 401, headers: { "Cache-Control": "no-store" } });
     }
-    // Não apagar a venda enquanto houver arquivos no cluster separado. Como
-    // os dois clusters não compartilham transação, isso evita órfãos silenciosos.
-    const certificateDb = await getCertificatesDb();
-    const attachedCount = await certificateDb.collection("certificate_files.files").countDocuments({ "metadata.rowNumber": rowNumber });
-    if (attachedCount > 0) {
-      return Response.json({ error: { code: "CERTIFICATES_ATTACHED", message: `Esta venda possui ${attachedCount} certificado(s) anexado(s). Remova ou transfira os arquivos antes de excluir a venda.` } }, { status: 409, headers: { "Cache-Control": "no-store" } });
+    // O mesmo lock é usado pelo upload: assim não existe janela entre a
+    // contagem dos anexos e a exclusão da venda em que um novo arquivo entre.
+    const mutationToken = randomUUID();
+    if (!(await acquireCertificateMutationLock(rowNumber, mutationToken))) {
+      return Response.json({ error: { code: "CERTIFICATE_OPERATION_IN_PROGRESS", message: "Há outra operação de certificado em andamento para esta venda. Tente novamente." } }, { status: 409, headers: { "Cache-Control": "no-store" } });
     }
-    const { deleteCertificate } = await import("@/lib/server/certificate-store");
-    await deleteCertificate(rowNumber, body.expectedVersion);
-    const auditRecorded = await writeAuditEvent({ actor: access.login, action: "sale.deleted", entity: "sale", entityId: String(rowNumber) });
-    return Response.json({ ok: true, deleted: true, auditRecorded }, { headers: { "Cache-Control": "no-store" } });
+    try {
+      const certificateDb = await getCertificatesDb();
+      const attachedCount = await certificateDb.collection("certificate_files.files").countDocuments({ "metadata.rowNumber": rowNumber });
+      if (attachedCount > 0) {
+        return Response.json({ error: { code: "CERTIFICATES_ATTACHED", message: `Esta venda possui ${attachedCount} certificado(s) anexado(s). Remova ou transfira os arquivos antes de excluir a venda.` } }, { status: 409, headers: { "Cache-Control": "no-store" } });
+      }
+      const { deleteCertificate } = await import("@/lib/server/certificate-store");
+      await deleteCertificate(rowNumber, body.expectedVersion, mutationToken);
+      const auditRecorded = await writeAuditEvent({ actor: access.login, action: "sale.deleted", entity: "sale", entityId: String(rowNumber) });
+      return Response.json({ ok: true, deleted: true, auditRecorded }, { headers: { "Cache-Control": "no-store" } });
+    } finally {
+      await releaseCertificateMutationLock(rowNumber, mutationToken).catch(() => {
+        console.error("[certificates] Falha ao liberar lock de mutação.");
+      });
+    }
   } catch (error) {
     return apiErrorResponse(error, "api/records/[rowNumber]");
   }
