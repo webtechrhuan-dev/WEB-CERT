@@ -144,6 +144,13 @@ export async function POST(request: Request, context: { params: Promise<{ rowNum
       return jsonError("CERTIFICATE_OPERATION_IN_PROGRESS", "Outra operação está em andamento para esta venda. Tente novamente.", 409);
     }
     try {
+      // Revalida o status depois de adquirir o lock: a venda pode ter sido
+      // alterada enquanto o arquivo era enviado/aguardava outra operação.
+      const saleAfterLock = await getSale(rowNumber);
+      if (!saleAfterLock) return jsonError("RECORD_NOT_FOUND", "Venda não encontrada.", 404);
+      if (!saleAllowsCertificate(saleAfterLock)) {
+        return jsonError("SALE_STATUS_NOT_ELIGIBLE", "O status desta venda não permite vincular certificado.", 409);
+      }
       const existing = await (await getCertificatesDb()).collection("certificate_files.files").findOne({ "metadata.rowNumber": rowNumber }, { projection: { _id: 1 } });
       if (existing) return jsonError("CERTIFICATE_ALREADY_LINKED", "Esta venda já possui um certificado vinculado. Exclua o atual antes de cadastrar outro.", 409);
       const uploadedAt = new Date();
