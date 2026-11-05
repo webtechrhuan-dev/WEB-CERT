@@ -4801,3 +4801,16 @@ body, .app-shell, .workspace, .content-panel, .table-panel, .record-form, .login
     justify-content: flex-start;
   }
 }
+
+
+/* Evita cursor de texto piscando sobre a marca do cabeçalho. */
+.brand-lockup,
+.brand-lockup * {
+  caret-color: transparent !important;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+.brand-logo {
+  pointer-events: none;
+}
