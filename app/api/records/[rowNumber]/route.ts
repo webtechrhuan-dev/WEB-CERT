@@ -4,6 +4,7 @@ import { apiErrorResponse } from "@/lib/server/api-errors";
 import { readCertificateData, updateCertificate } from "@/lib/server/certificate-store";
 import { validateRecordInput, valuesFromInput } from "@/lib/server/record-validation";
 import { writeAuditEvent } from "@/lib/server/audit-log";
+import { getCertificatesDb } from "@/lib/server/certificates-mongodb";
 
 function expiryFromIssueDate(value: unknown): string | null {
  if (typeof value !== "string" || !/^\d{4}-\d{2}-\d{2}$/.test(value)) return null;
@@ -38,6 +39,13 @@ export async function DELETE(request: Request, context: { params: Promise<{ rowN
     const password = typeof body?.password === "string" ? body.password : "";
     if (!username || username !== access.login.toLowerCase() || !password || !(await verifyReauthentication(username, password))) {
       return Response.json({ error: { code: "REAUTHENTICATION_FAILED", message: "Usuário ou senha incorretos. A venda não foi excluída." } }, { status: 401, headers: { "Cache-Control": "no-store" } });
+    }
+    // Não apagar a venda enquanto houver arquivos no cluster separado. Como
+    // os dois clusters não compartilham transação, isso evita órfãos silenciosos.
+    const certificateDb = await getCertificatesDb();
+    const attachedCount = await certificateDb.collection("certificate_files.files").countDocuments({ "metadata.rowNumber": rowNumber });
+    if (attachedCount > 0) {
+      return Response.json({ error: { code: "CERTIFICATES_ATTACHED", message: `Esta venda possui ${attachedCount} certificado(s) anexado(s). Remova ou transfira os arquivos antes de excluir a venda.` } }, { status: 409, headers: { "Cache-Control": "no-store" } });
     }
     const { deleteCertificate } = await import("@/lib/server/certificate-store");
     await deleteCertificate(rowNumber, body.expectedVersion);
