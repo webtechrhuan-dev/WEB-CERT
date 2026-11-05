@@ -42,6 +42,29 @@ export async function getCertificatesBucket(): Promise<GridFSBucket> {
   return new GridFSBucket(db, { bucketName: "certificate_files" });
 }
 
+
+let certificateIndexesPromise: Promise<void> | undefined;
+
+/** Índice para localizar anexos por venda sem varrer toda a coleção GridFS. */
+export async function ensureCertificateStoreIndexes(): Promise<void> {
+  if (!certificateIndexesPromise) {
+    certificateIndexesPromise = (async () => {
+      const db = await getCertificatesDb();
+      await db.collection("certificate_files.files").createIndex(
+        { "metadata.rowNumber": 1, uploadDate: -1 },
+        { name: "certificate_row_upload_date" },
+      );
+    })();
+  }
+
+  try {
+    await certificateIndexesPromise;
+  } catch (error) {
+    certificateIndexesPromise = undefined;
+    throw error;
+  }
+}
+
 export function parseObjectId(value: string): ObjectId | null {
   return ObjectId.isValid(value) ? new ObjectId(value) : null;
 }
