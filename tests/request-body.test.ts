@@ -42,4 +42,14 @@ describe("readJsonBody", () => {
     const request = new Request("https://example.test/upload", { method: "POST", body, duplex: "half" } as RequestInit);
     await expect(readBodyBytes(request, 10)).rejects.toMatchObject({ code: "PAYLOAD_TOO_LARGE" });
   });
+
+  it("returns a controlled client error when the request stream is interrupted", async () => {
+    const body = new ReadableStream<Uint8Array>({
+      start(controller) {
+        controller.error(new Error("connection reset"));
+      },
+    });
+    const request = new Request("https://example.test/upload", { method: "POST", body, duplex: "half" } as RequestInit);
+    await expect(readBodyBytes(request, 1024)).rejects.toMatchObject({ code: "BODY_READ_FAILED" });
+  });
 });
