@@ -92,7 +92,7 @@ export async function POST(request: Request, context: { params: Promise<{ rowNum
     const boundedRequest = new Request(request.url, {
       method: "POST",
       headers: boundedHeaders,
-      body: multipartBytes,
+      body: Buffer.from(multipartBytes),
     });
     const form = await boundedRequest.formData();
     const file = form.get("file");
