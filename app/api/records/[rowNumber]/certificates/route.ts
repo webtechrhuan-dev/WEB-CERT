@@ -130,7 +130,7 @@ export async function POST(request: Request, context: { params: Promise<{ rowNum
 
     const originalName = sanitizeCertificateFileName(file.name);
     if (!/\.(p12|pfx)$/i.test(originalName)) {
-      return jsonError("INVALID_CERTIFICATE_TYPE", "Envie somente arquivos de certificado .p12 ou .pfx.", 415);
+      return jsonError("INVALID_CERTIFICATE_TYPE", "Envie somente arquivos de certificado .pfx.", 415);
     }
 
     const bytes = Buffer.from(await file.arrayBuffer());
