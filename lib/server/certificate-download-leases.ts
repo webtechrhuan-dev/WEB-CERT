@@ -1,6 +1,7 @@
 import type { Document, ObjectId } from "mongodb";
 
 export const CERTIFICATE_DOWNLOAD_LEASE_MS = 30 * 60 * 1000;
+export const CERTIFICATE_DELETION_LEASE_MS = 30 * 60 * 1000;
 
 /** Pipeline atômico: remove leases vencidos e acrescenta a reserva atual. */
 export function buildAcquireDownloadLeasePipeline(
@@ -11,6 +12,9 @@ export function buildAcquireDownloadLeasePipeline(
   return [
     {
       $set: {
+        deleting: false,
+        deletingLeaseToken: null,
+        deletingLeaseExpiresAt: null,
         activeDownloadLeases: {
           $concatArrays: [
             {
@@ -54,11 +58,20 @@ export function buildCertificateDeletionClaimFilter(
   return {
     _id: id,
     "metadata.rowNumber": rowNumber,
-    deleting: { $ne: true },
-    $or: [
-      { activeDownloadLeases: { $exists: false } },
-      { activeDownloadLeases: { $size: 0 } },
-      { activeDownloadLeases: { $not: { $elemMatch: { expiresAt: { $gt: now } } } } },
+    $and: [
+      {
+        $or: [
+          { deleting: { $ne: true } },
+          { deletingLeaseExpiresAt: { $lte: now } },
+        ],
+      },
+      {
+        $or: [
+          { activeDownloadLeases: { $exists: false } },
+          { activeDownloadLeases: { $size: 0 } },
+          { activeDownloadLeases: { $not: { $elemMatch: { expiresAt: { $gt: now } } } } },
+        ],
+      },
     ],
   };
 }
