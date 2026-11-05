@@ -5,13 +5,14 @@ export class ApiRequestError extends Error {
   }
 }
 
-/** Lê o corpo em streaming e limita os bytes efetivamente recebidos (não confia em Content-Length). */
-export async function readJsonBody(request: Request, maxBytes = 512_000): Promise<unknown> {
-  const declaredLength = Number(request.headers.get("content-length"));
+/** Lê bytes em streaming e limita o total efetivamente recebido. */
+export async function readBodyBytes(request: Request, maxBytes: number): Promise<Uint8Array> {
+  const rawLength = request.headers.get("content-length");
+  const declaredLength = rawLength === null ? Number.NaN : Number(rawLength);
   if (Number.isFinite(declaredLength) && declaredLength > maxBytes) {
     throw new ApiRequestError("PAYLOAD_TOO_LARGE", "Requisição muito grande.");
   }
-  if (!request.body) throw new ApiRequestError("MALFORMED_JSON", "O corpo JSON da requisição está ausente ou inválido.");
+  if (!request.body) return new Uint8Array();
 
   const reader = request.body.getReader();
   const chunks: Uint8Array[] = [];
@@ -37,8 +38,18 @@ export async function readJsonBody(request: Request, maxBytes = 512_000): Promis
     bytes.set(chunk, offset);
     offset += chunk.byteLength;
   }
+  return bytes;
+}
+
+/** JSON de API precisa ser um objeto; arrays, null e escalares são recusados. */
+export async function readJsonBody(request: Request, maxBytes = 512_000): Promise<Record<string, unknown>> {
+  const bytes = await readBodyBytes(request, maxBytes);
   try {
-    return JSON.parse(new TextDecoder("utf-8", { fatal: true }).decode(bytes));
+    const parsed: unknown = JSON.parse(new TextDecoder("utf-8", { fatal: true }).decode(bytes));
+    if (parsed === null || typeof parsed !== "object" || Array.isArray(parsed)) {
+      throw new Error("JSON body must be an object");
+    }
+    return parsed as Record<string, unknown>;
   } catch {
     throw new ApiRequestError("MALFORMED_JSON", "O corpo JSON da requisição está ausente ou inválido.");
   }
