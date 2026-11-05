@@ -35,6 +35,10 @@ export function CertificateFiles({ rowNumber, canUpload, saleStatus, saleExpiry 
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
+  const [fileToDelete, setFileToDelete] = useState<CertificateFile | null>(null);
+  const [reauthUsername, setReauthUsername] = useState("");
+  const [reauthPassword, setReauthPassword] = useState("");
+  const [deleting, setDeleting] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
 
   const refresh = useCallback(async () => {
@@ -57,22 +61,39 @@ export function CertificateFiles({ rowNumber, canUpload, saleStatus, saleExpiry 
 
   useEffect(() => { void refresh(); }, [refresh]);
 
-  async function remove(file: CertificateFile) {
-    if (!canManageCertificate || !window.confirm(`Excluir permanentemente o certificado "${file.name}" desta venda?`)) return;
+  function remove(file: CertificateFile) {
+    if (!canManageCertificate || deleting) return;
     setError(null);
     setNotice(null);
+    setReauthUsername("");
+    setReauthPassword("");
+    setFileToDelete(file);
+  }
+
+  async function confirmRemove() {
+    if (!fileToDelete || !reauthUsername.trim() || !reauthPassword || deleting) {
+      setError("Informe seu usuário e sua senha para confirmar a exclusão.");
+      return;
+    }
+    setError(null);
+    setNotice(null);
+    setDeleting(true);
     try {
       const response = await fetch(`/api/records/${rowNumber}/certificates`, {
         method: "DELETE",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ fileId: file.id }),
+        body: JSON.stringify({ fileId: fileToDelete.id, username: reauthUsername.trim(), password: reauthPassword }),
       });
       const body: unknown = await response.json();
-      if (!response.ok) throw new Error(messageFrom(body) ?? "Não foi possível excluir o certificado.");
-      setNotice("Certificado excluído do armazenamento.");
+      if (!response.ok) throw new Error(messageFrom(body) ?? "Não foi possível validar suas credenciais.");
+      setFileToDelete(null);
+      setReauthPassword("");
+      setNotice("Certificado excluído permanentemente do armazenamento.");
       await refresh();
     } catch (removeError) {
       setError(removeError instanceof Error ? removeError.message : "Falha ao excluir certificado.");
+    } finally {
+      setDeleting(false);
     }
   }
 
@@ -145,10 +166,29 @@ export function CertificateFiles({ rowNumber, canUpload, saleStatus, saleExpiry 
           {files.map((file) => (
             <li key={file.id}>
               <div><strong>{file.name}</strong><span>{formatSize(file.size)} · Enviado em {new Date(file.uploadedAt).toLocaleString("pt-BR")} · Vence em {file.expiresAt ? new Date(file.expiresAt).toLocaleDateString("pt-BR", { timeZone: "UTC" }) : "não informado"} · {file.uploadedBy}</span></div>
-              <div className="certificate-file-actions"><a className="button button--secondary button--small" href={`/api/certificates/${file.id}`} rel="noreferrer">Baixar</a>{canManageCertificate && <button className="button button--danger button--small" onClick={() => void remove(file)} type="button">Excluir</button>}</div>
+              <div className="certificate-file-actions"><a className="button button--secondary button--small" href={`/api/certificates/${file.id}`} rel="noreferrer">Baixar</a>{canManageCertificate && <button className="button button--danger button--small" disabled={deleting} onClick={() => remove(file)} type="button">Excluir</button>}</div>
             </li>
           ))}
         </ul>
+      )}
+      {files.length > 0 && <p className="certificate-delete-dependency">Esta venda não pode ser excluída enquanto houver certificado vinculado. Exclua primeiro o certificado usando a confirmação de usuário e senha.</p>}
+      {fileToDelete && (
+        <div className="reauth-overlay" role="presentation" onMouseDown={(event) => { if (event.target === event.currentTarget && !deleting) setFileToDelete(null); }}>
+          <section className="reauth-dialog" role="dialog" aria-modal="true" aria-labelledby="certificate-delete-auth-title">
+            <div className="reauth-dialog-heading">
+              <span className="reauth-warning-icon" aria-hidden="true">!</span>
+              <div><h3 id="certificate-delete-auth-title">Confirmar exclusão do certificado</h3><p>O arquivo <strong>{fileToDelete.name}</strong> será removido permanentemente. Confirme sua identidade para continuar.</p></div>
+            </div>
+            <label className="record-form-field"><span>Usuário</span><input autoComplete="username" value={reauthUsername} onChange={(event) => setReauthUsername(event.target.value)} placeholder="Seu usuário de acesso" /></label>
+            <label className="record-form-field"><span>Senha</span><input autoComplete="current-password" type="password" value={reauthPassword} onChange={(event) => setReauthPassword(event.target.value)} placeholder="Digite sua senha novamente" onKeyDown={(event) => { if (event.key === "Enter") { event.preventDefault(); void confirmRemove(); } }} /></label>
+            {!fileToDelete && error && <p className="form-message form-message--error" role="alert">{error}</p>}
+            <p className="reauth-security-note">A senha é validada no servidor e não é armazenada. Somente o usuário conectado pode confirmar a exclusão.</p>
+            <div className="form-actions">
+              <button className="button button--secondary" type="button" disabled={deleting} onClick={() => { setFileToDelete(null); setReauthPassword(""); }}>Cancelar</button>
+              <button className="button button--danger" type="button" disabled={deleting || !reauthUsername.trim() || !reauthPassword} onClick={() => void confirmRemove()}>{deleting ? "Validando e excluindo…" : "Confirmar exclusão"}</button>
+            </div>
+          </section>
+        </div>
       )}
       {error && <p className="form-message form-message--error" role="alert">{error}</p>}
       {notice && <p className="form-message form-message--success" role="status">{notice}</p>}

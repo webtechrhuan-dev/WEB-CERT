@@ -4,6 +4,7 @@ import { encryptCertificatePassword } from "@/lib/server/certificate-password";
 import { sanitizeCertificateFileName } from "@/lib/certificate-file-name";
 import { buildCertificateDeletionClaimFilter, CERTIFICATE_DELETION_LEASE_MS } from "@/lib/server/certificate-download-leases";
 import { requireAccess } from "@/lib/server/access";
+import { verifyReauthentication } from "@/auth";
 import { apiErrorResponse } from "@/lib/server/api-errors";
 import { readBodyBytes, readJsonBody } from "@/lib/server/request-body";
 import { getMongoDb } from "@/lib/server/mongodb";
@@ -223,45 +224,62 @@ export async function DELETE(request: Request, context: { params: Promise<{ rowN
     const id = typeof body?.fileId === "string" ? parseObjectId(body.fileId) : null;
     if (!id) return jsonError("INVALID_FILE_ID", "Arquivo inválido.", 400);
 
-    await ensureCertificateStoreIndexes();
-    const db = await getCertificatesDb();
-    const file = await db.collection("certificate_files.files").findOne(
-      { _id: id, "metadata.rowNumber": rowNumber },
-      { projection: { _id: 1 } },
-    );
-    if (!file) return jsonError("FILE_NOT_FOUND", "Certificado não encontrado nesta venda.", 404);
+    const username = typeof body?.username === "string" ? body.username.trim().toLowerCase() : "";
+    const password = typeof body?.password === "string" ? body.password : "";
+    if (!username || username !== access.login.toLowerCase() || !password || !(await verifyReauthentication(username, password))) {
+      return jsonError("REAUTHENTICATION_FAILED", "Usuário ou senha incorretos. O certificado não foi excluído.", 401);
+    }
 
-    // A exclusão só reivindica o arquivo quando não há downloads ativos.
-    // O update é atômico com a reserva feita pela rota de download.
-    const deletionToken = randomUUID();
-    const deletionStartedAt = new Date();
-    const deletionClaim = await db.collection("certificate_files.files").updateOne(
-      buildCertificateDeletionClaimFilter(id, rowNumber, deletionStartedAt),
-      {
-        $set: {
-          deleting: true,
-          deletingLeaseToken: deletionToken,
-          deletingLeaseExpiresAt: new Date(deletionStartedAt.getTime() + CERTIFICATE_DELETION_LEASE_MS),
-        },
-      },
-    );
-    if (deletionClaim.modifiedCount !== 1) {
-      return jsonError("FILE_IN_USE", "O certificado está sendo baixado ou removido. Aguarde e tente novamente.", 409);
+    // Serializa exclusão do PFX e exclusão da venda para impedir condições de corrida.
+    const mutationToken = randomUUID();
+    if (!(await acquireCertificateMutationLock(rowNumber, mutationToken))) {
+      return jsonError("CERTIFICATE_OPERATION_IN_PROGRESS", "Há outra operação em andamento para esta venda. Tente novamente.", 409);
     }
 
     try {
-      const bucket = await getCertificatesBucket();
-      await bucket.delete(id);
-    } catch (error) {
-      await db.collection("certificate_files.files").updateOne(
-        { _id: id, deletingLeaseToken: deletionToken },
-        { $unset: { deleting: "", deletingLeaseToken: "", deletingLeaseExpiresAt: "" } },
-      ).catch(() => console.error("[certificates] Falha ao liberar marca de exclusão."));
-      throw error;
+      await ensureCertificateStoreIndexes();
+      const db = await getCertificatesDb();
+      const file = await db.collection("certificate_files.files").findOne(
+        { _id: id, "metadata.rowNumber": rowNumber },
+        { projection: { _id: 1 } },
+      );
+      if (!file) return jsonError("FILE_NOT_FOUND", "Certificado não encontrado nesta venda.", 404);
+
+      // A exclusão só reivindica o arquivo quando não há downloads ativos.
+      const deletionToken = randomUUID();
+      const deletionStartedAt = new Date();
+      const deletionClaim = await db.collection("certificate_files.files").updateOne(
+        buildCertificateDeletionClaimFilter(id, rowNumber, deletionStartedAt),
+        {
+          $set: {
+            deleting: true,
+            deletingLeaseToken: deletionToken,
+            deletingLeaseExpiresAt: new Date(deletionStartedAt.getTime() + CERTIFICATE_DELETION_LEASE_MS),
+          },
+        },
+      );
+      if (deletionClaim.modifiedCount !== 1) {
+        return jsonError("FILE_IN_USE", "O certificado está sendo baixado ou removido. Aguarde e tente novamente.", 409);
+      }
+
+      try {
+        const bucket = await getCertificatesBucket();
+        await bucket.delete(id);
+      } catch (error) {
+        await db.collection("certificate_files.files").updateOne(
+          { _id: id, deletingLeaseToken: deletionToken },
+          { $unset: { deleting: "", deletingLeaseToken: "", deletingLeaseExpiresAt: "" } },
+        ).catch(() => console.error("[certificates] Falha ao liberar marca de exclusão."));
+        throw error;
+      }
+      return Response.json({ ok: true, deleted: true }, {
+        headers: { "Cache-Control": "no-store" },
+      });
+    } finally {
+      await releaseCertificateMutationLock(rowNumber, mutationToken).catch(() => {
+        console.error("[certificates] Falha ao liberar lock de mutação.");
+      });
     }
-    return Response.json({ ok: true, deleted: true }, {
-      headers: { "Cache-Control": "no-store" },
-    });
   } catch (error) {
     return apiErrorResponse(error, "api/records/[rowNumber]/certificates");
   }
