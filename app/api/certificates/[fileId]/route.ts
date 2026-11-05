@@ -1,4 +1,5 @@
 import { randomUUID } from "node:crypto";
+import { sanitizeCertificateFileName } from "@/lib/certificate-file-name";
 import { Readable } from "node:stream";
 import { requireAccess } from "@/lib/server/access";
 import { apiErrorResponse } from "@/lib/server/api-errors";
@@ -96,8 +97,7 @@ export async function GET(_request: Request, context: { params: Promise<{ fileId
       stream = bucket.openDownloadStream(id);
       stream.once("close", releaseLease);
       stream.once("error", releaseLease);
-      const safeName = String(metadata.originalName || file.filename || "certificado.pfx")
-        .replace(/[\\r\\n"]/g, "_");
+      const safeName = sanitizeCertificateFileName(String(metadata.originalName || file.filename || "certificado.pfx"));
       const asciiName = safeName.replace(/[^\\x20-\\x7E]/g, "_");
       const encodedName = encodeURIComponent(safeName).replace(/['()*]/g, (char) => `%${char.charCodeAt(0).toString(16).toUpperCase()}`);
 
