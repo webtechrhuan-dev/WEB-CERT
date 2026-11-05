@@ -121,7 +121,7 @@ export async function POST(request: Request, context: { params: Promise<{ rowNum
     const password = form.get("password");
     const expiryInput = form.get("expiresAt");
     if (typeof password !== "string" || !password.trim()) return jsonError("CERTIFICATE_PASSWORD_REQUIRED", "Informe a senha do certificado PFX.", 400);
-    if (typeof expiryInput !== "string" || !/^\\d{4}-\\d{2}-\\d{2}$/.test(expiryInput)) return jsonError("INVALID_CERTIFICATE_EXPIRY", "Informe a data de vencimento do certificado.", 400);
+    if (typeof expiryInput !== "string" || !/^\d{4}-\d{2}-\d{2}$/.test(expiryInput)) return jsonError("INVALID_CERTIFICATE_EXPIRY", "Informe a data de vencimento do certificado.", 400);
     const expiresAt = new Date(`${expiryInput}T23:59:59.999Z`);
     if (!Number.isFinite(expiresAt.getTime()) || expiresAt.toISOString().slice(0, 10) !== expiryInput) return jsonError("INVALID_CERTIFICATE_EXPIRY", "A data de vencimento informada é inválida.", 400);
     if (!(file instanceof File)) return jsonError("FILE_REQUIRED", "Selecione um arquivo de certificado.", 400);
@@ -129,7 +129,7 @@ export async function POST(request: Request, context: { params: Promise<{ rowNum
     if (file.size > MAX_CERTIFICATE_SIZE) return jsonError("FILE_TOO_LARGE", "O arquivo excede o limite de 10 MB.", 413);
 
     const originalName = sanitizeCertificateFileName(file.name);
-    if (!/\.(p12|pfx)$/i.test(originalName)) {
+    if (!/\.pfx$/i.test(originalName)) {
       return jsonError("INVALID_CERTIFICATE_TYPE", "Envie somente arquivos de certificado .pfx.", 415);
     }
 
