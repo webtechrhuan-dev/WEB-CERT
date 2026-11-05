@@ -1,11 +1,11 @@
 import Link from "next/link";
 import { AuthControl } from "@/components/auth-control";
-import { AdminNavLink } from "@/components/admin-nav-link";
+import { AdminNavLink, AdminUsersNavLink } from "@/components/admin-nav-link";
 import { Icon } from "@/components/icon";
 import { ThemeToggle } from "@/components/theme-toggle";
 
 type AppHeaderProps = {
-  active: "home" | "records" | "register" | "edit" | "reports" | "audit";
+  active: "home" | "records" | "register" | "edit" | "reports" | "audit" | "admin";
 };
 
 const menu = [
@@ -76,6 +76,7 @@ export function AppHeader({ active }: AppHeaderProps) {
             </Link>
           ))}
           <AdminNavLink active={active === "audit"} />
+          <AdminUsersNavLink active={active === "admin"} />
         </div>
       </nav>
     </>
