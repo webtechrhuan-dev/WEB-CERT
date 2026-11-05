@@ -4546,3 +4546,30 @@ body, .app-shell, .workspace, .content-panel, .table-panel, .record-form, .login
 @media(max-width:620px){.records-pagination{align-items:stretch;flex-direction:column}.records-pagination-actions{justify-content:space-between;gap:8px}.records-pagination-actions .button{min-width:88px}}
 :root[data-theme="dark"] .records-pagination{border-color:#30495b;background:#122a3b;color:#a8bdca}
 :root[data-theme="dark"] .records-pagination-actions{color:#e0edf3}
+
+
+/* Ações dos anexos: mantém os botões alinhados sem comprimir o nome do arquivo. */
+.certificate-file-actions {
+  display: inline-flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 0.5rem;
+  flex: 0 0 auto;
+}
+.certificate-file-list li {
+  gap: 1rem;
+}
+.certificate-file-list li > div:first-child {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+@media (max-width: 640px) {
+  .certificate-file-list li {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+  .certificate-file-actions {
+    width: 100%;
+    justify-content: flex-start;
+  }
+}
