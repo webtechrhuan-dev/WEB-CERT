@@ -48,7 +48,7 @@ describe("datas dos relatórios", () => {
     ["31/02/2026", false],
     ["2026-13-01", false],
     ["", false],
-  ])("interpreta %s sem rollover", (value, valid) => {
+  ] as Array<[string, boolean]>)("interpreta %s sem rollover", (value, valid) => {
     expect(parseReportDate(value)?.toISOString().slice(0, 10) ?? null).toBe(
       valid ? (value.includes("/") ? "2026-02-28" : value) : null,
     );
