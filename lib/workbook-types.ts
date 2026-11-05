@@ -24,6 +24,7 @@ export type WorkbookRecord = {
   rowNumber: number;
   values: WorkbookCell[];
   version?: string;
+  hasCertificate?: boolean;
 };
 
 export type WorkbookData = {
