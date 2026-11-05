@@ -119,11 +119,13 @@ export async function POST(request: Request, context: { params: Promise<{ rowNum
     }
     const file = form.get("file");
     const password = form.get("password");
-    const expiryInput = form.get("expiresAt");
     if (typeof password !== "string" || !password.trim()) return jsonError("CERTIFICATE_PASSWORD_REQUIRED", "Informe a senha do certificado PFX.", 400);
-    if (typeof expiryInput !== "string" || !/^\d{4}-\d{2}-\d{2}$/.test(expiryInput)) return jsonError("INVALID_CERTIFICATE_EXPIRY", "Informe a data de vencimento do certificado.", 400);
+    const expiryIndex = WORKBOOK_HEADERS.indexOf("Data de vencimento");
+    const saleExpiry = sale.values?.[expiryIndex];
+    const expiryInput = typeof saleExpiry === "string" ? saleExpiry : (typeof saleExpiry === "object" && saleExpiry !== null && "parsed" in saleExpiry && typeof saleExpiry.parsed === "string" ? saleExpiry.parsed : "");
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(expiryInput)) return jsonError("SALE_EXPIRY_MISSING", "Defina uma data de vencimento válida no cadastro da venda antes de anexar o certificado.", 409);
     const expiresAt = new Date(`${expiryInput}T23:59:59.999Z`);
-    if (!Number.isFinite(expiresAt.getTime()) || expiresAt.toISOString().slice(0, 10) !== expiryInput) return jsonError("INVALID_CERTIFICATE_EXPIRY", "A data de vencimento informada é inválida.", 400);
+    if (!Number.isFinite(expiresAt.getTime()) || expiresAt.toISOString().slice(0, 10) !== expiryInput) return jsonError("SALE_EXPIRY_INVALID", "A data de vencimento cadastrada nesta venda é inválida.", 409);
     if (!(file instanceof File)) return jsonError("FILE_REQUIRED", "Selecione um arquivo de certificado.", 400);
     if (file.size <= 0) return jsonError("EMPTY_FILE", "O arquivo está vazio.", 400);
     if (file.size > MAX_CERTIFICATE_SIZE) return jsonError("FILE_TOO_LARGE", "O arquivo excede o limite de 10 MB.", 413);

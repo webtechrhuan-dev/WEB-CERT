@@ -25,7 +25,7 @@ function formatSize(bytes: number): string {
   return `${(bytes / (1024 * 1024)).toFixed(2)} MB`;
 }
 
-export function CertificateFiles({ rowNumber, canUpload, saleStatus }: { rowNumber: number; canUpload: boolean; saleStatus: string }) {
+export function CertificateFiles({ rowNumber, canUpload, saleStatus, saleExpiry }: { rowNumber: number; canUpload: boolean; saleStatus: string; saleExpiry: string }) {
   const normalizedStatus = saleStatus.trim().toLocaleLowerCase("pt-BR");
   const statusAllowsCertificate = ["emitido", "pendente instalar", "instalado", "concluido", "concluído"].includes(normalizedStatus);
   const canManageCertificate = canUpload && statusAllowsCertificate;
@@ -33,7 +33,6 @@ export function CertificateFiles({ rowNumber, canUpload, saleStatus }: { rowNumb
   const [loading, setLoading] = useState(true);
   const [uploading, setUploading] = useState(false);
   const [password, setPassword] = useState("");
-  const [expiresAt, setExpiresAt] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -90,11 +89,9 @@ export function CertificateFiles({ rowNumber, canUpload, saleStatus }: { rowNumb
       return;
     }
     if (!password) { setError("Informe a senha do certificado PFX."); return; }
-    if (!expiresAt) { setError("Informe a data de vencimento do certificado."); return; }
     const form = new FormData();
     form.set("file", file);
     form.set("password", password);
-    form.set("expiresAt", expiresAt);
     setUploading(true);
     try {
       const response = await fetch(`/api/records/${rowNumber}/certificates`, { method: "POST", body: form });
@@ -102,7 +99,6 @@ export function CertificateFiles({ rowNumber, canUpload, saleStatus }: { rowNumb
       if (!response.ok) throw new Error(messageFrom(body) ?? "Não foi possível enviar o certificado.");
       setNotice("Certificado armazenado com segurança e vinculado a esta venda.");
       setPassword("");
-      setExpiresAt("");
       if (inputRef.current) inputRef.current.value = "";
       await refresh();
     } catch (uploadError) {
@@ -125,8 +121,8 @@ export function CertificateFiles({ rowNumber, canUpload, saleStatus }: { rowNumb
             <input type="password" autoComplete="new-password" value={password} onChange={(event) => setPassword(event.target.value)} disabled={uploading} placeholder="Senha do arquivo PFX" />
           </label>
           <label className="record-form-field certificate-upload-field">
-            <span>Vencimento do certificado</span>
-            <input type="date" value={expiresAt} onChange={(event) => setExpiresAt(event.target.value)} disabled={uploading} />
+            <span>Exclusão automática em</span>
+            <input type="text" value={saleExpiry ? new Date(`${saleExpiry}T00:00:00`).toLocaleDateString("pt-BR") : "Defina a data no cadastro"} readOnly disabled aria-readonly="true" title="Esta data é obtida automaticamente do campo Data de vencimento da venda." />
           </label>
           <label className="record-form-field certificate-upload-field certificate-upload-file">
             <span>Arquivo do certificado</span>
@@ -139,7 +135,7 @@ export function CertificateFiles({ rowNumber, canUpload, saleStatus }: { rowNumb
               type="file"
             />
           </label>
-          <p className="certificate-upload-help">Máximo de 10 MB. Informe a senha e a validade do certificado. A senha será criptografada antes de ser armazenada.</p>
+          <p className="certificate-upload-help">Máximo de 10 MB. A exclusão automática seguirá a data de vencimento definida no cadastro da venda. A senha será criptografada antes de ser armazenada.</p>
         </div>
       )}
       {loading ? <p className="empty-state">Carregando arquivos…</p> : files.length === 0 ? (
