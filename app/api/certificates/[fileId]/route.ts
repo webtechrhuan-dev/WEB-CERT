@@ -1,3 +1,4 @@
+import { randomUUID } from "node:crypto";
 import { Readable } from "node:stream";
 import { requireAccess } from "@/lib/server/access";
 import { apiErrorResponse } from "@/lib/server/api-errors";
@@ -36,11 +37,30 @@ export async function GET(_request: Request, context: { params: Promise<{ fileId
       return Response.json({ error: { code: "SALE_NOT_FOUND", message: "A venda vinculada não existe mais. O arquivo não pode ser baixado." } }, { status: 404, headers: { "Cache-Control": "no-store" } });
     }
 
-    // Reserva atomicamente o download para impedir que a exclusão remova
-    // os chunks enquanto o arquivo está sendo transmitido ao navegador.
+    // Cada download possui um lease próprio. Isso evita que a expiração de
+    // um download antigo libere indevidamente outro download ainda ativo.
+    const leaseToken = randomUUID();
+    const now = new Date();
     const lease = await db.collection("certificate_files.files").updateOne(
       { _id: id, deleting: { $ne: true } },
-      { $inc: { activeDownloads: 1 }, $set: { activeDownloadLeaseExpiresAt: new Date(Date.now() + 30 * 60 * 1000) } },
+      [
+        {
+          $set: {
+            activeDownloadLeases: {
+              $concatArrays: [
+                {
+                  $filter: {
+                    input: { $ifNull: ["$activeDownloadLeases", []] },
+                    as: "activeLease",
+                    cond: { $gt: ["$$activeLease.expiresAt", now] },
+                  },
+                },
+                [{ token: leaseToken, expiresAt: new Date(now.getTime() + 30 * 60 * 1000) }],
+              ],
+            },
+          },
+        },
+      ],
     );
     if (lease.modifiedCount !== 1) {
       return Response.json({ error: { code: "FILE_NOT_AVAILABLE", message: "O certificado está sendo removido ou não está disponível." } }, { status: 409, headers: { "Cache-Control": "no-store" } });
@@ -52,7 +72,7 @@ export async function GET(_request: Request, context: { params: Promise<{ fileId
       leaseReleased = true;
       void db.collection("certificate_files.files").updateOne(
         { _id: id },
-        { $inc: { activeDownloads: -1 } },
+        { $pull: { activeDownloadLeases: { token: leaseToken } } },
       ).catch(() => console.error("[certificates] Falha ao liberar reserva de download."));
     };
 
