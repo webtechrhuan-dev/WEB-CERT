@@ -94,7 +94,12 @@ export async function POST(request: Request, context: { params: Promise<{ rowNum
       headers: boundedHeaders,
       body: Buffer.from(multipartBytes),
     });
-    const form = await boundedRequest.formData();
+    let form: FormData;
+    try {
+      form = await boundedRequest.formData();
+    } catch {
+      return jsonError("MALFORMED_MULTIPART", "O formulário de envio está inválido ou incompleto.", 400);
+    }
     const file = form.get("file");
     if (!(file instanceof File)) return jsonError("FILE_REQUIRED", "Selecione um arquivo de certificado.", 400);
     if (file.size <= 0) return jsonError("EMPTY_FILE", "O arquivo está vazio.", 400);
@@ -202,8 +207,8 @@ export async function DELETE(request: Request, context: { params: Promise<{ rowN
       return jsonError("FILE_IN_USE", "O certificado está sendo baixado ou removido. Aguarde e tente novamente.", 409);
     }
 
-    const bucket = await getCertificatesBucket();
     try {
+      const bucket = await getCertificatesBucket();
       await bucket.delete(id);
     } catch (error) {
       await db.collection("certificate_files.files").updateOne(
