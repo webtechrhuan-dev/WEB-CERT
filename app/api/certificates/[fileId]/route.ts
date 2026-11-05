@@ -1,5 +1,6 @@
 import { randomUUID } from "node:crypto";
 import { sanitizeCertificateFileName } from "@/lib/certificate-file-name";
+import { buildAcquireDownloadLeasePipeline, buildReleaseDownloadLeasePipeline } from "@/lib/server/certificate-download-leases";
 import { Readable } from "node:stream";
 import { requireAccess } from "@/lib/server/access";
 import { apiErrorResponse } from "@/lib/server/api-errors";
@@ -45,24 +46,7 @@ export async function GET(_request: Request, context: { params: Promise<{ fileId
     const now = new Date();
     const lease = await db.collection("certificate_files.files").updateOne(
       { _id: id, deleting: { $ne: true } },
-      [
-        {
-          $set: {
-            activeDownloadLeases: {
-              $concatArrays: [
-                {
-                  $filter: {
-                    input: { $ifNull: ["$activeDownloadLeases", []] },
-                    as: "activeLease",
-                    cond: { $gt: ["$$activeLease.expiresAt", now] },
-                  },
-                },
-                [{ token: leaseToken, expiresAt: new Date(now.getTime() + 30 * 60 * 1000) }],
-              ],
-            },
-          },
-        },
-      ],
+      buildAcquireDownloadLeasePipeline(leaseToken, now),
     );
     if (lease.modifiedCount !== 1) {
       return Response.json({ error: { code: "FILE_NOT_AVAILABLE", message: "O certificado está sendo removido ou não está disponível." } }, { status: 409, headers: { "Cache-Control": "no-store" } });
@@ -74,19 +58,7 @@ export async function GET(_request: Request, context: { params: Promise<{ fileId
       leaseReleased = true;
       void db.collection("certificate_files.files").updateOne(
         { _id: id },
-        [
-          {
-            $set: {
-              activeDownloadLeases: {
-                $filter: {
-                  input: { $ifNull: ["$activeDownloadLeases", []] },
-                  as: "activeLease",
-                  cond: { $ne: ["$activeLease.token", leaseToken] },
-                },
-              },
-            },
-          },
-        ],
+        buildReleaseDownloadLeasePipeline(leaseToken),
       ).catch(() => console.error("[certificates] Falha ao liberar reserva de download."));
     };
 
