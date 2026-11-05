@@ -181,6 +181,7 @@ export function CertificateFiles({ rowNumber, canUpload, saleStatus, saleExpiry 
             </div>
             <label className="record-form-field"><span>Usuário</span><input autoComplete="username" value={reauthUsername} onChange={(event) => setReauthUsername(event.target.value)} placeholder="Seu usuário de acesso" /></label>
             <label className="record-form-field"><span>Senha</span><input autoComplete="current-password" type="password" value={reauthPassword} onChange={(event) => setReauthPassword(event.target.value)} placeholder="Digite sua senha novamente" onKeyDown={(event) => { if (event.key === "Enter") { event.preventDefault(); void confirmRemove(); } }} /></label>
+            {!fileToDelete && error && <p className="form-message form-message--error" role="alert">{error}</p>}
             <p className="reauth-security-note">A senha é validada no servidor e não é armazenada. Somente o usuário conectado pode confirmar a exclusão.</p>
             <div className="form-actions">
               <button className="button button--secondary" type="button" disabled={deleting} onClick={() => { setFileToDelete(null); setReauthPassword(""); }}>Cancelar</button>
