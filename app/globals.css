@@ -4573,3 +4573,132 @@ body, .app-shell, .workspace, .content-panel, .table-panel, .record-form, .login
     justify-content: flex-start;
   }
 }
+
+/* Formulário de anexos PFX: grade responsiva, sem os estilos globais de .form-actions. */
+.certificate-files-panel {
+  min-width: 0;
+  overflow: hidden;
+}
+.certificate-upload-form {
+  display: grid;
+  grid-template-columns: minmax(170px, .9fr) minmax(155px, .75fr) minmax(250px, 1.35fr);
+  align-items: end;
+  gap: 14px;
+  min-width: 0;
+  margin: 18px 0 0;
+  padding: 18px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: linear-gradient(180deg, #fbfdfe 0%, #f5f8fa 100%);
+}
+.certificate-upload-field {
+  min-width: 0;
+  gap: 8px;
+}
+.certificate-upload-field > span {
+  line-height: 1.35;
+}
+.certificate-upload-field input {
+  display: block;
+  width: 100%;
+  min-width: 0;
+  max-width: 100%;
+  min-height: 42px;
+}
+.certificate-upload-file input[type="file"] {
+  padding: 5px;
+  overflow: hidden;
+  border: 1px dashed var(--line-strong);
+  border-radius: 9px;
+  background: var(--surface);
+  color: var(--ink);
+  font-size: 12px;
+  cursor: pointer;
+}
+.certificate-upload-file input[type="file"]::file-selector-button {
+  min-height: 30px;
+  margin-right: 9px;
+  padding: 0 10px;
+  border: 1px solid #c8dce5;
+  border-radius: 6px;
+  background: #eaf5f8;
+  color: #15516b;
+  font: inherit;
+  font-weight: 650;
+  cursor: pointer;
+}
+.certificate-upload-file input[type="file"]:disabled {
+  cursor: wait;
+  opacity: .6;
+}
+.certificate-upload-help {
+  grid-column: 1 / -1;
+  margin: 0;
+  padding: 10px 12px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: rgb(255 255 255 / 72%);
+  color: var(--muted);
+  font-size: 11px;
+  line-height: 1.55;
+}
+.certificate-files-panel > .empty-state {
+  min-height: 150px;
+  margin: 12px 0 0;
+  border: 1px dashed var(--line);
+  border-radius: 10px;
+  color: var(--muted);
+}
+:root[data-theme="dark"] .certificate-upload-form {
+  border-color: #30495b;
+  background: linear-gradient(180deg, #172c3d 0%, #132536 100%);
+}
+:root[data-theme="dark"] .certificate-upload-field {
+  color: #c7d7e1;
+}
+:root[data-theme="dark"] .certificate-upload-field input {
+  border-color: #3a5365;
+  background: #102131;
+  color: #e5eef3;
+}
+:root[data-theme="dark"] .certificate-upload-file input[type="file"] {
+  border-color: #40596b;
+  background: #102131;
+  color: #d6e4ec;
+}
+:root[data-theme="dark"] .certificate-upload-file input[type="file"]::file-selector-button {
+  border-color: #3a687b;
+  background: #1b4052;
+  color: #c9edf1;
+}
+:root[data-theme="dark"] .certificate-upload-help {
+  border-color: #30495b;
+  background: #102131;
+  color: #aebfcb;
+}
+:root[data-theme="dark"] .certificate-files-panel > .empty-state {
+  border-color: #30495b;
+  color: #aebfcb;
+}
+@media (max-width: 820px) {
+  .certificate-upload-form {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .certificate-upload-file {
+    grid-column: 1 / -1;
+  }
+}
+@media (max-width: 520px) {
+  .certificate-upload-form {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 12px;
+    padding: 14px;
+  }
+  .certificate-upload-file,
+  .certificate-upload-help {
+    grid-column: auto;
+  }
+  .certificate-upload-file input[type="file"] {
+    min-height: 46px;
+  }
+}
