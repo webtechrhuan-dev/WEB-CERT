@@ -45,7 +45,13 @@ export async function GET(_request: Request, context: { params: Promise<{ fileId
     const leaseToken = randomUUID();
     const now = new Date();
     const lease = await db.collection("certificate_files.files").updateOne(
-      { _id: id, deleting: { $ne: true } },
+      {
+        _id: id,
+        $or: [
+          { deleting: { $ne: true } },
+          { deletingLeaseExpiresAt: { $lte: now } },
+        ],
+      },
       buildAcquireDownloadLeasePipeline(leaseToken, now),
     );
     if (lease.modifiedCount !== 1) {
