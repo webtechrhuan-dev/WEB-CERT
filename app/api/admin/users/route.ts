@@ -2,6 +2,7 @@ import { requireAccess } from "@/lib/server/access";
 import { apiErrorResponse } from "@/lib/server/api-errors";
 import { writeAuditEvent } from "@/lib/server/audit-log";
 import { getMongoClient, getMongoDb } from "@/lib/server/mongodb";
+import { readJsonBody } from "@/lib/server/request-body";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -20,7 +21,7 @@ export async function GET() {
 export async function PATCH(request: Request) {
   try {
     const actor = await requireAccess("admin");
-    const body = await request.json().catch(() => null);
+    const body = await readJsonBody(request);
     const username = typeof body?.username === "string" ? body.username.trim().toLowerCase() : "";
     const requestedRole: unknown = body?.role;
     const active: unknown = body?.active;
