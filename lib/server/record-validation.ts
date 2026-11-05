@@ -28,7 +28,6 @@ export function validateRecordInput(input: unknown, requireCoreFields = false): 
   for (const [key, value] of Object.entries(input as Record<string, unknown>)) {
     if (!(WORKBOOK_HEADERS as readonly string[]).includes(key) || (value !== null && typeof value !== "string") || (typeof value === "string" && value.length > 32767)) invalid();
     const text = typeof value === "string" ? value.trim() : "";
-    if (REQUIRED_FIELDS.includes(key) && !text) invalid();
     // PATCH também não pode apagar campos estruturais de uma venda existente.
     if (REQUIRED_FIELDS.includes(key) && !text) invalid();
     if (key === "Mês da planilha" && text && !MONTHS.includes(text)) invalid();
