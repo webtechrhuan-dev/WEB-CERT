@@ -1,5 +1,5 @@
 import { randomUUID } from "node:crypto";
-import { sanitizeCertificateFileName } from "@/lib/certificate-file-name";
+import { sanitizeCertificateFileName, toAsciiCertificateFileName } from "@/lib/certificate-file-name";
 import { buildAcquireDownloadLeasePipeline, buildReleaseDownloadLeasePipeline } from "@/lib/server/certificate-download-leases";
 import { Readable } from "node:stream";
 import { requireAccess } from "@/lib/server/access";
@@ -76,7 +76,7 @@ export async function GET(_request: Request, context: { params: Promise<{ fileId
       stream.once("close", releaseLease);
       stream.once("error", releaseLease);
       const safeName = sanitizeCertificateFileName(String(metadata.originalName || file.filename || "certificado.pfx"));
-      const asciiName = safeName.replace(/[^\\x20-\\x7E]/g, "_");
+      const asciiName = toAsciiCertificateFileName(safeName);
       const encodedName = encodeURIComponent(safeName).replace(/['()*]/g, (char) => `%${char.charCodeAt(0).toString(16).toUpperCase()}`);
 
       return new Response(Readable.toWeb(stream) as ReadableStream, {
