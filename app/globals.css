@@ -4702,3 +4702,102 @@ body, .app-shell, .workspace, .content-panel, .table-panel, .record-form, .login
     min-height: 46px;
   }
 }
+
+/* Certificados PFX: contraste consistente nos temas e cartões sem fundo branco residual. */
+.certificate-files-panel .certificate-file-list {
+  display: grid;
+  gap: 10px;
+  margin: 14px 0;
+  padding: 0;
+  list-style: none;
+}
+.certificate-files-panel .certificate-file-list > li {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  min-width: 0;
+  padding: 16px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: var(--surface);
+  color: var(--ink);
+}
+.certificate-files-panel .certificate-file-list > li > div:first-child {
+  display: grid;
+  gap: 6px;
+  min-width: 0;
+}
+.certificate-files-panel .certificate-file-list strong {
+  display: block;
+  color: var(--ink);
+  font-size: 13px;
+  line-height: 1.45;
+  overflow-wrap: anywhere;
+}
+.certificate-files-panel .certificate-file-list span {
+  color: var(--muted);
+  font-size: 11px;
+  line-height: 1.5;
+  overflow-wrap: anywhere;
+}
+.certificate-files-panel .certificate-file-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 8px;
+}
+.certificate-files-panel .form-message--success {
+  padding: 11px 13px;
+  border-radius: 8px;
+  line-height: 1.5;
+}
+.certificate-delete-dependency {
+  margin: 10px 0;
+  padding: 10px 12px;
+  border: 1px solid #d9a441;
+  border-radius: 8px;
+  background: #fff8e8;
+  color: #80520b;
+  font-size: 12px;
+  line-height: 1.55;
+}
+:root[data-theme="dark"] .certificate-files-panel .certificate-file-list > li {
+  border-color: #30495b;
+  background: #102131;
+  color: #e4edf3;
+  box-shadow: 0 5px 16px rgb(0 0 0 / 12%);
+}
+:root[data-theme="dark"] .certificate-files-panel .certificate-file-list strong {
+  color: #e4edf3;
+}
+:root[data-theme="dark"] .certificate-files-panel .certificate-file-list span {
+  color: #aebfcb;
+}
+:root[data-theme="dark"] .certificate-files-panel .form-message--success {
+  border-color: #245c4c;
+  background: #12372f;
+  color: #a8e2c7;
+}
+:root[data-theme="dark"] .certificate-delete-dependency {
+  border-color: #85652e;
+  background: #382d1a;
+  color: #f2d59b;
+}
+:root[data-theme="dark"] .certificate-upload-field input:disabled {
+  border-color: #40596b;
+  background: #102131;
+  color: #d5e2ea;
+  opacity: 1;
+  -webkit-text-fill-color: #d5e2ea;
+}
+@media (max-width: 640px) {
+  .certificate-files-panel .certificate-file-list > li {
+    align-items: stretch;
+    flex-direction: column;
+  }
+  .certificate-files-panel .certificate-file-actions {
+    justify-content: flex-start;
+  }
+}
