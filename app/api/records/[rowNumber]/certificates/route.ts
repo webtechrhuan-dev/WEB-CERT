@@ -1,7 +1,9 @@
+import { randomUUID } from "node:crypto";
 import { requireAccess } from "@/lib/server/access";
 import { apiErrorResponse } from "@/lib/server/api-errors";
 import { writeAuditEvent } from "@/lib/server/audit-log";
 import { getMongoDb } from "@/lib/server/mongodb";
+import { acquireCertificateMutationLock, releaseCertificateMutationLock } from "@/lib/server/certificate-store";
 import {
   getCertificatesBucket,
   getCertificatesDb,
@@ -97,39 +99,47 @@ export async function POST(request: Request, context: { params: Promise<{ rowNum
       return jsonError("INVALID_CERTIFICATE_CONTENT", "O conteúdo não parece ser um arquivo PKCS#12 válido.", 415);
     }
 
-    const uploadedAt = new Date();
-    const bucket = await getCertificatesBucket();
-    const upload = bucket.openUploadStream(originalName, {
-      contentType: "application/x-pkcs12",
-      metadata: {
-        rowNumber,
-        originalName,
-        contentType: "application/x-pkcs12",
-        uploadedBy: access.login,
-        uploadedAt,
-      } satisfies CertificateMetadata,
-    });
-
-    await new Promise<void>((resolve, reject) => {
-      upload.once("error", reject);
-      upload.once("finish", resolve);
-      upload.end(bytes);
-    });
-
-    // Fecha a janela de corrida em que a venda poderia ser removida durante
-    // o upload. Se o vínculo deixou de existir, desfaz somente este upload.
-    if (!(await ensureSaleExists(rowNumber))) {
-      await bucket.delete(upload.id).catch(() => {
-        console.error("[certificates] Falha ao reverter upload sem venda vinculada.");
-      });
-      return jsonError("RECORD_NOT_FOUND", "A venda foi removida durante o envio. O arquivo não foi mantido.", 404);
+    const mutationToken = randomUUID();
+    if (!(await acquireCertificateMutationLock(rowNumber, mutationToken))) {
+      return jsonError("CERTIFICATE_OPERATION_IN_PROGRESS", "Outra operação está em andamento para esta venda. Tente novamente.", 409);
     }
+    try {
+      const uploadedAt = new Date();
+      const bucket = await getCertificatesBucket();
+      const upload = bucket.openUploadStream(originalName, {
+        contentType: "application/x-pkcs12",
+        metadata: {
+          rowNumber,
+          originalName,
+          contentType: "application/x-pkcs12",
+          uploadedBy: access.login,
+          uploadedAt,
+        } satisfies CertificateMetadata,
+      });
 
-    const auditRecorded = await writeAuditEvent({ actor: access.login, action: "certificate.uploaded", entity: "certificate", entityId: String(upload.id), metadata: { rowNumber, extension: originalName.toLowerCase().endsWith(".p12") ? ".p12" : ".pfx", size: file.size } });
-    return Response.json({ ok: true, id: String(upload.id), name: originalName, auditRecorded }, {
-      status: 201,
-      headers: { "Cache-Control": "no-store" },
-    });
+      await new Promise<void>((resolve, reject) => {
+        upload.once("error", reject);
+        upload.once("finish", resolve);
+        upload.end(bytes);
+      });
+
+      if (!(await ensureSaleExists(rowNumber))) {
+        await bucket.delete(upload.id).catch(() => {
+          console.error("[certificates] Falha ao reverter upload sem venda vinculada.");
+        });
+        return jsonError("RECORD_NOT_FOUND", "A venda foi removida durante o envio. O arquivo não foi mantido.", 404);
+      }
+
+      const auditRecorded = await writeAuditEvent({ actor: access.login, action: "certificate.uploaded", entity: "certificate", entityId: String(upload.id), metadata: { rowNumber, extension: originalName.toLowerCase().endsWith(".p12") ? ".p12" : ".pfx", size: file.size } });
+      return Response.json({ ok: true, id: String(upload.id), name: originalName, auditRecorded }, {
+        status: 201,
+        headers: { "Cache-Control": "no-store" },
+      });
+    } finally {
+      await releaseCertificateMutationLock(rowNumber, mutationToken).catch(() => {
+        console.error("[certificates] Falha ao liberar lock de mutação.");
+      });
+    }
   } catch (error) {
     return apiErrorResponse(error, "api/records/[rowNumber]/certificates");
   }
