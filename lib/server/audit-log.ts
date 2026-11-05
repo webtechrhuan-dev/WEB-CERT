@@ -6,12 +6,13 @@ export type AuditAction =
   | "sale.updated"
   | "sale.deleted"
   | "certificate.uploaded"
-  | "certificate.downloaded";
+  | "certificate.downloaded"
+  | "user.updated";
 
 type AuditEvent = {
   actor: string;
   action: AuditAction;
-  entity: "sale" | "certificate";
+  entity: "sale" | "certificate" | "user";
   entityId: string;
   occurredAt: Date;
   outcome: "success";
