@@ -23,7 +23,7 @@ describe("autorização baseada no estado atual da conta", () => {
   });
 
   it("usa a função atual do banco, não a função antiga presente no JWT", async () => {
-    await expect(requireAccess("admin")).rejects.toMatchObject<Partial<AccessError>>({
+    await expect(requireAccess("admin")).rejects.toMatchObject({
       code: "FORBIDDEN",
     });
     expect(findOne).toHaveBeenCalledWith(
