@@ -40,7 +40,7 @@ export async function GET(_request: Request, context: { params: Promise<{ fileId
     // os chunks enquanto o arquivo está sendo transmitido ao navegador.
     const lease = await db.collection("certificate_files.files").updateOne(
       { _id: id, deleting: { $ne: true } },
-      { $inc: { activeDownloads: 1 } },
+      { $inc: { activeDownloads: 1 }, $set: { activeDownloadLeaseExpiresAt: new Date(Date.now() + 30 * 60 * 1000) } },
     );
     if (lease.modifiedCount !== 1) {
       return Response.json({ error: { code: "FILE_NOT_AVAILABLE", message: "O certificado está sendo removido ou não está disponível." } }, { status: 409, headers: { "Cache-Control": "no-store" } });
