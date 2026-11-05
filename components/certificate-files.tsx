@@ -8,6 +8,7 @@ type CertificateFile = {
   size: number;
   uploadedAt: string;
   uploadedBy: string;
+  expiresAt: string | null;
 };
 
 function messageFrom(body: unknown): string | null {
@@ -28,6 +29,8 @@ export function CertificateFiles({ rowNumber, canUpload }: { rowNumber: number; 
   const [files, setFiles] = useState<CertificateFile[]>([]);
   const [loading, setLoading] = useState(true);
   const [uploading, setUploading] = useState(false);
+  const [password, setPassword] = useState("");
+  const [expiresAt, setExpiresAt] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -83,14 +86,20 @@ export function CertificateFiles({ rowNumber, canUpload }: { rowNumber: number; 
       setError("O arquivo excede o limite de 10 MB.");
       return;
     }
+    if (!password) { setError("Informe a senha do certificado PFX."); return; }
+    if (!expiresAt) { setError("Informe a data de vencimento do certificado."); return; }
     const form = new FormData();
     form.set("file", file);
+    form.set("password", password);
+    form.set("expiresAt", expiresAt);
     setUploading(true);
     try {
       const response = await fetch(`/api/records/${rowNumber}/certificates`, { method: "POST", body: form });
       const body: unknown = await response.json();
       if (!response.ok) throw new Error(messageFrom(body) ?? "Não foi possível enviar o certificado.");
       setNotice("Certificado armazenado com segurança e vinculado a esta venda.");
+      setPassword("");
+      setExpiresAt("");
       if (inputRef.current) inputRef.current.value = "";
       await refresh();
     } catch (uploadError) {
@@ -108,15 +117,17 @@ export function CertificateFiles({ rowNumber, canUpload }: { rowNumber: number; 
       </div>
       {canUpload && (
         <div className="form-actions">
+          <label className="record-form-field"><span>Senha do certificado PFX</span><input type="password" autoComplete="new-password" value={password} onChange={(event) => setPassword(event.target.value)} disabled={uploading} placeholder="Senha do arquivo PFX" /></label>
+          <label className="record-form-field"><span>Vencimento do certificado</span><input type="date" value={expiresAt} onChange={(event) => setExpiresAt(event.target.value)} disabled={uploading} /></label>
           <input
             ref={inputRef}
             aria-label="Selecionar arquivo de certificado"
-            accept=".p12,.pfx,application/x-pkcs12"
+            accept=".pfx,application/x-pkcs12"
             disabled={uploading}
             onChange={(event) => void upload(event.target.files?.[0])}
             type="file"
           />
-          <span className="form-help">Máximo de 10 MB por arquivo. A senha será protegida por criptografia no banco de dados.</span>
+          <span className="form-help">Máximo de 10 MB. Informe a senha e a validade do certificado; a senha será criptografada antes de ser armazenada.</span>
         </div>
       )}
       {loading ? <p className="empty-state">Carregando arquivos…</p> : files.length === 0 ? (
@@ -125,7 +136,7 @@ export function CertificateFiles({ rowNumber, canUpload }: { rowNumber: number; 
         <ul className="certificate-file-list">
           {files.map((file) => (
             <li key={file.id}>
-              <div><strong>{file.name}</strong><span>{formatSize(file.size)} · {new Date(file.uploadedAt).toLocaleString("pt-BR")} · {file.uploadedBy}</span></div>
+              <div><strong>{file.name}</strong><span>{formatSize(file.size)} · Enviado em {new Date(file.uploadedAt).toLocaleString("pt-BR")} · Vence em {file.expiresAt ? new Date(file.expiresAt).toLocaleDateString("pt-BR", { timeZone: "UTC" }) : "não informado"} · {file.uploadedBy}</span></div>
               <div className="certificate-file-actions"><a className="button button--secondary button--small" href={`/api/certificates/${file.id}`} rel="noreferrer">Baixar</a>{canUpload && <button className="button button--danger button--small" onClick={() => void remove(file)} type="button">Excluir</button>}</div>
             </li>
           ))}
