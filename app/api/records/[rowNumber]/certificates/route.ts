@@ -5,6 +5,7 @@ import { getMongoDb } from "@/lib/server/mongodb";
 import {
   getCertificatesBucket,
   getCertificatesDb,
+  parseObjectId,
   MAX_CERTIFICATE_SIZE,
 } from "@/lib/server/certificates-mongodb";
 
@@ -125,3 +126,37 @@ export async function POST(request: Request, context: { params: Promise<{ rowNum
   }
 }
 
+
+
+export async function DELETE(request: Request, context: { params: Promise<{ rowNumber: string }> }) {
+  try {
+    const access = await requireAccess("editor");
+    const rowNumber = Number((await context.params).rowNumber);
+    if (!Number.isSafeInteger(rowNumber) || rowNumber < 2) return jsonError("INVALID_ROW", "Venda inválida.", 400);
+    const body = await request.json().catch(() => null);
+    const id = typeof body?.fileId === "string" ? parseObjectId(body.fileId) : null;
+    if (!id) return jsonError("INVALID_FILE_ID", "Arquivo inválido.", 400);
+
+    const db = await getCertificatesDb();
+    const file = await db.collection("certificate_files.files").findOne(
+      { _id: id, "metadata.rowNumber": rowNumber },
+      { projection: { _id: 1 } },
+    );
+    if (!file) return jsonError("FILE_NOT_FOUND", "Certificado não encontrado nesta venda.", 404);
+
+    const bucket = await getCertificatesBucket();
+    await bucket.delete(id);
+    const auditRecorded = await writeAuditEvent({
+      actor: access.login,
+      action: "certificate.deleted",
+      entity: "certificate",
+      entityId: String(id),
+      metadata: { rowNumber },
+    });
+    return Response.json({ ok: true, deleted: true, auditRecorded }, {
+      headers: { "Cache-Control": "no-store" },
+    });
+  } catch (error) {
+    return apiErrorResponse(error, "api/records/[rowNumber]/certificates");
+  }
+}
