@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { ApiRequestError, readJsonBody } from "@/lib/server/request-body";
+import { readJsonBody } from "@/lib/server/request-body";
 
 describe("readJsonBody", () => {
   it("parses valid JSON", async () => {
@@ -13,7 +13,7 @@ describe("readJsonBody", () => {
 
   it("rejects malformed JSON with a client error", async () => {
     const request = new Request("https://example.test/api", { method: "POST", body: "{" });
-    await expect(readJsonBody(request)).rejects.toMatchObject<ApiRequestError>({ code: "MALFORMED_JSON" });
+    await expect(readJsonBody(request)).rejects.toMatchObject({ code: "MALFORMED_JSON" });
   });
 
   it("enforces the byte limit even without Content-Length", async () => {
