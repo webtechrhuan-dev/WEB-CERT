@@ -4,6 +4,7 @@ const MONTHS = ["janeiro", "fevereiro", "março", "abril", "maio", "junho", "jul
 const MODELS = ["CNPJ - A1", "CPF - A1"];
 const STATUSES = ["Cancelado", "não concluido", "Orçamento/oferta enviada ao cliente", "Emitido", "Pendente instalar", "Instalado", "Concluido"];
 const REQUIRED_FIELDS = ["Ano da planilha", "Mês da planilha", "Cliente", "Data de emissão/renovação", "Modelo", "Status / Observação"];
+const REQUIRED_FIELDS = ["Ano da planilha", "Mês da planilha", "Cliente", "Data de emissão/renovação", "Modelo", "Status / Observação"];
 
 function invalid(): never { throw new Error("INVALID_INPUT"); }
 function validIsoDate(value: string): boolean {
@@ -28,6 +29,7 @@ export function validateRecordInput(input: unknown, requireCoreFields = false): 
   for (const [key, value] of Object.entries(input as Record<string, unknown>)) {
     if (!(WORKBOOK_HEADERS as readonly string[]).includes(key) || (value !== null && typeof value !== "string") || (typeof value === "string" && value.length > 32767)) invalid();
     const text = typeof value === "string" ? value.trim() : "";
+    if (REQUIRED_FIELDS.includes(key) && !text) invalid();
     // PATCH também não pode apagar campos estruturais de uma venda existente.
     if (REQUIRED_FIELDS.includes(key) && !text) invalid();
     if (key === "Mês da planilha" && text && !MONTHS.includes(text)) invalid();
