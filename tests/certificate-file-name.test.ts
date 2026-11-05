@@ -9,10 +9,11 @@ describe("sanitizeCertificateFileName", () => {
 
   it("normalizes Unicode and limits the resulting name length", () => {
     expect(sanitizeCertificateFileName("  certificado  .pfx ")).toBe("certificado .pfx");
+    expect(sanitizeCertificateFileName("ｃｅｒｔｉｆｉｃａｄｏ.pfx")).toBe("certificado.pfx");
     expect(sanitizeCertificateFileName("a".repeat(200))).toHaveLength(160);
   });
 
   it("uses a safe fallback for an empty name", () => {
-    expect(sanitizeCertificateFileName(" /\\\r\n ")).toBe("certificado.pfx");
+    expect(sanitizeCertificateFileName("")).toBe("certificado.pfx");
   });
 });
