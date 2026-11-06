@@ -557,7 +557,7 @@ export default function ReportsPage() {
             <div className="report-health-primary"><span>Margem líquida</span><strong>{filteredSummary.revenue > 0 ? (filteredSummary.profit / filteredSummary.revenue * 100).toLocaleString("pt-BR",{maximumFractionDigits:1}) : "0"}%</strong></div>
             <div className="report-health-track"><span className={filteredSummary.profit >= 0 ? "is-positive" : "is-negative"} style={{width: `${Math.min(100,Math.max(0,filteredSummary.revenue > 0 ? filteredSummary.profit / filteredSummary.revenue * 100 : 0))}%`}} /></div>
             <div className="report-health-row"><span>Custos sobre o faturamento</span><strong>{filteredSummary.revenue > 0 ? (filteredSummary.cost / filteredSummary.revenue * 100).toLocaleString("pt-BR",{maximumFractionDigits:1}) : "0"}%</strong></div>
-            <div className="report-health-track report-health-track--cost"><span style={{width: `${Math.min(100,Math.max(0,filteredSummary.revenue > 0 ? filteredSummary.cost / filteredSummary.revenue * 100 : 0))}%`} /></div>
+            <div className="report-health-track report-health-track--cost"><span style={{width: `${Math.min(100,Math.max(0,filteredSummary.revenue > 0 ? filteredSummary.cost / filteredSummary.revenue * 100 : 0))}%`}} /></div>
             <div className="report-health-foot"><span>Ticket médio</span><strong>{currency.format(filteredSummary.eligibleCount ? filteredSummary.revenue / filteredSummary.eligibleCount : 0)}</strong></div>
           </article>
           <article className="report-insight-card report-status-distribution">
