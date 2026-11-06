@@ -556,7 +556,7 @@ export default function ReportsPage() {
             { label: "Ticket médio", value: currency.format(filteredSummary.eligibleCount ? filteredSummary.revenue / filteredSummary.eligibleCount : 0), note: "Faturamento por registro contabilizado", tone: "teal" },
             { label: "Aguardando revisão", value: numbers.format(filteredSummary.reviewCount), note: "Status ausente em planilhas de 2026 ou posteriores; confira pendências financeiras nos detalhes", tone: "muted" },
             { label: "Datas divergentes/ausentes", value: numbers.format(filteredRows.filter((row) => row.dateIssue).length), note: "Data vazia ou fora do mês/ano da pasta", tone: "warning" },
-          ].map((item) => <article key={item.label} className={`report-kpi-card report-kpi-card--${item.tone}`}><span>{item.label}</span><strong>{item.value}</strong><small>{item.note}</small></article>)}
+          ].map((item, index) => <article key={item.label} className={`report-kpi-card report-kpi-card--${item.tone} ${index < 4 ? "report-kpi-card--primary" : "report-kpi-card--secondary"}`}><span>{item.label}</span><strong>{item.value}</strong><small>{item.note}</small></article>)}
         </section>
         <section aria-labelledby="unified-chart-title" className="report-chart-panel">
           <div className="report-chart-heading">
