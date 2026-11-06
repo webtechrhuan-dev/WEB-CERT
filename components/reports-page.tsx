@@ -216,6 +216,7 @@ function UnifiedChart({ rows }: { rows: Group[] }) {
         {rows.map((row, index) => {
           const center = left + slot * (index + 0.5);
           return <g key={row.label}>
+            {activeIndex === index && <rect className="report-viz-selection" x={left + index * slot + 3} y={top + 2} width={Math.max(0, slot - 6)} height={plotHeight - 4} rx="9" />}
             {activeSeries.map((series, seriesIndex) => {
               const value = series.value(row);
               const valueY = y(value);
@@ -236,8 +237,11 @@ function UnifiedChart({ rows }: { rows: Group[] }) {
             </text>
             <text x={center} y={chartHeight - 16} textAnchor="middle" className="report-viz-category-count">{count(row.count)} registros</text>
             <rect x={left + index * slot} y={top} width={slot} height={plotHeight} fill="transparent" className="report-viz-hit"
-              tabIndex={0} role="button" aria-label={"Ver valores de " + row.label}
+              tabIndex={0} role="button" aria-pressed={activeIndex === index}
+              aria-label={"Ver valores de " + row.label}
               onMouseEnter={() => setActiveIndex(index)} onFocus={() => setActiveIndex(index)}
+              onClick={() => setActiveIndex(index)}
+              onKeyDown={(event) => { if (event.key === "Enter" || event.key === " ") { event.preventDefault(); setActiveIndex(index); } }}
               onBlur={() => setActiveIndex(null)} />
           </g>;
         })}
