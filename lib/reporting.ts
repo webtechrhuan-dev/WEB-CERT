@@ -138,7 +138,7 @@ export function summarizeWorkbook(data: WorkbookData, dimension: ReportDimension
       const hasRevenue = hasMoneyValue(revenueIndex >= 0 ? record.values[revenueIndex] : undefined);
       revenue += hasRevenue ? recordRevenue : 0;
       cost += recordCost;
-      if (hasRevenue && hasMoneyValue(costIndex >= 0 ? record.values[costIndex] : undefined)) profit += recordRevenue - recordCost;
+      profit += recordRevenue - recordCost;
     }
     const label = groupLabel(record, data, dimension);
     const group = groups.get(label) ?? { label, count: 0, revenue: 0, cost: 0, profit: 0, eligibleCount: 0 };
@@ -148,7 +148,7 @@ export function summarizeWorkbook(data: WorkbookData, dimension: ReportDimension
       const hasRevenue = hasMoneyValue(revenueIndex >= 0 ? record.values[revenueIndex] : undefined);
       group.revenue += hasRevenue ? recordRevenue : 0;
       group.cost += recordCost;
-      if (hasRevenue && hasMoneyValue(costIndex >= 0 ? record.values[costIndex] : undefined)) group.profit += recordRevenue - recordCost;
+      group.profit += recordRevenue - recordCost;
     }
     groups.set(label, group);
   }
@@ -223,7 +223,7 @@ export function getWorkbookReportRows(data: WorkbookData): DetailedReportRow[] {
       hasCertificate: record.hasCertificate === true,
       revenue: financiallyEligible && hasRevenue ? numericCell(record.values[index("Faturamento (R$)")]) : 0,
       cost: financiallyEligible && hasCost ? numericCell(record.values[index("Custo (R$)")]) : 0,
-      profit: financiallyEligible && hasRevenue && hasCost
+      profit: financiallyEligible
         ? numericCell(record.values[index("Faturamento (R$)")]) - numericCell(record.values[index("Custo (R$)")])
         : 0,
       financiallyEligible,
