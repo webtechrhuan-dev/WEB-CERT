@@ -476,3 +476,10 @@
 .report-page-heading > p:last-child { max-width:720px; }
 @media(max-width:1000px) { .report-kpi-grid { grid-template-columns:repeat(2,minmax(0,1fr)); } }
 @media(max-width:390px) { .report-kpi-grid { grid-template-columns:minmax(0,1fr); } }
+
+.report-model-ranking,.report-client-ranking { grid-column:auto; }
+.report-client-sales-count { display:block; margin-left:2px; color:var(--muted); font-size:9px; font-weight:600; }
+.report-client-ranking .report-model-bar-track > span { background:linear-gradient(90deg,#4778d5,#86a9ed); }
+:root[data-theme="dark"] .report-client-ranking .report-model-bar-track > span { background:linear-gradient(90deg,#4778d5,#86a9ed); }
+@media(max-width:900px) { .report-model-ranking,.report-client-ranking { grid-column:auto; } }
+@media(max-width:600px) { .report-model-ranking,.report-client-ranking { grid-column:1; } }
