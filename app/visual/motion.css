@@ -174,3 +174,88 @@
   .module-card--available:hover .module-icon,
   .module-card--available:hover .module-card-action { transform: none !important; }
 }
+
+
+/* Acabamento dos fluxos mais usados: login, certificados e relatórios. */
+.login-form--premium .login-input-wrap {
+  box-shadow: inset 0 1px 0 var(--wc-border-highlight), 0 1px 3px rgb(15 38 57 / 3%);
+  transition: border-color 200ms ease, box-shadow 220ms ease, background-color 200ms ease;
+}
+.login-form--premium .login-input-wrap:focus-within {
+  box-shadow: 0 0 0 3px rgb(22 168 196 / 13%), 0 5px 16px rgb(15 38 57 / 7%);
+}
+.login-form--premium .login-password-toggle:hover {
+  transform: scale(1.04);
+}
+.login-form--premium .login-submit:not(:disabled):active {
+  transform: translateY(1px) scale(.99);
+}
+.certificate-files-panel {
+  border-color: var(--wc-color-border);
+  box-shadow: inset 0 1px 0 var(--wc-border-highlight), var(--wc-shadow-md);
+  transition: border-color 220ms ease, box-shadow 220ms ease;
+}
+.certificate-files-panel input[type="file"]:focus-visible {
+  outline: 3px solid color-mix(in srgb, var(--wc-color-accent) 35%, transparent);
+  outline-offset: 3px;
+}
+.certificate-file-list li {
+  box-shadow: inset 0 1px 0 var(--wc-border-highlight), var(--wc-shadow-xs);
+}
+.report-chart-legend {
+  box-shadow: inset 0 1px 0 var(--wc-border-highlight), var(--wc-shadow-sm);
+}
+.report-chart-legend__item {
+  transition: transform 200ms var(--wc-ease-emphasis), border-color 180ms ease,
+    background-color 180ms ease, box-shadow 220ms ease, opacity 180ms ease;
+}
+.report-chart-legend__item:active { transform: scale(.99); }
+.report-detail-dialog {
+  animation: wc-modal-arrive 260ms var(--wc-ease-emphasis) both;
+  box-shadow: 0 30px 90px rgb(0 0 0 / 28%), inset 0 1px 0 var(--wc-border-highlight);
+}
+.report-detail-table-wrap {
+  box-shadow: inset 0 1px 0 var(--wc-border-highlight), var(--wc-shadow-xs);
+}
+.report-detail-search:focus-visible,.report-detail-status-filter:focus-visible {
+  outline: 0;
+  box-shadow: var(--wc-shadow-focus);
+}
+:root[data-theme="dark"] .certificate-files-panel {
+  border-color: var(--wc-color-border);
+  background: var(--wc-color-surface);
+  box-shadow: inset 0 1px 0 var(--wc-border-highlight), var(--wc-shadow-md);
+}
+:root[data-theme="dark"] .certificate-file-list li {
+  border-color: var(--wc-color-border);
+  background: var(--wc-color-surface-soft);
+  color: var(--wc-color-text);
+}
+:root[data-theme="dark"] .certificate-file-list span { color: var(--wc-color-muted); }
+
+/* Scrollbars discretas apenas em áreas que já possuem rolagem. */
+:where(.report-detail-content,.chart-data-details,.wc-help-dialog,.wc-legend-dialog) {
+  scrollbar-width: thin;
+  scrollbar-color: color-mix(in srgb, var(--wc-color-muted) 38%, transparent) transparent;
+}
+:where(.report-detail-content,.chart-data-details,.wc-help-dialog,.wc-legend-dialog)::-webkit-scrollbar {
+  width: 9px;
+  height: 9px;
+}
+:where(.report-detail-content,.chart-data-details,.wc-help-dialog,.wc-legend-dialog)::-webkit-scrollbar-thumb {
+  border: 2px solid transparent;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--wc-color-muted) 35%, transparent);
+  background-clip: padding-box;
+}
+:where(.report-detail-content,.chart-data-details,.wc-help-dialog,.wc-legend-dialog)::-webkit-scrollbar-thumb:hover {
+  background: color-mix(in srgb, var(--wc-color-muted) 55%, transparent);
+  background-clip: padding-box;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .login-form--premium .login-password-toggle:hover,
+  .login-form--premium .login-submit:not(:disabled):active,
+  .report-chart-legend__item:active { transform: none !important; }
+  .report-detail-dialog { animation: none !important; }
+}
