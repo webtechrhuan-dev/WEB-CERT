@@ -224,7 +224,7 @@ export function CertificateFiles({ rowNumber, canUpload, saleStatus, saleExpiry 
             </div>
             {!revealedPassword ? (
               <>
-                <label className="record-form-field"><span>Usuário</span><input autoComplete="username" value={revealUsername} onChange={(event) => setRevealUsername(event.target.value)} placeholder="Seu usuário de acesso" /></label>
+                <label className="record-form-field"><span>Usuário</span><select autoComplete="username" autoFocus value={revealUsername} onChange={(event) => setRevealUsername(event.target.value)}><option value="">Selecione seu usuário</option><option value="rhuan">Rhuan</option><option value="arthur">Arthur</option><option value="wesley">Wesley</option></select></label>
                 <label className="record-form-field"><span>Senha de acesso</span><input autoComplete="current-password" type="password" value={revealPassword} onChange={(event) => setRevealPassword(event.target.value)} placeholder="Digite sua senha novamente" onKeyDown={(event) => { if (event.key === "Enter") { event.preventDefault(); void confirmPasswordReveal(); } }} /></label>
                 <p className="reauth-security-note">A senha de acesso é validada no servidor. A senha PFX só será descriptografada após a confirmação e não ficará salva no navegador.</p>
               </>
@@ -249,7 +249,7 @@ export function CertificateFiles({ rowNumber, canUpload, saleStatus, saleExpiry 
               <span className="reauth-warning-icon" aria-hidden="true">!</span>
               <div><h3 id="certificate-delete-auth-title">Confirmar exclusão do certificado</h3><p>O arquivo <strong>{fileToDelete.name}</strong> será removido permanentemente. Confirme sua identidade para continuar.</p></div>
             </div>
-            <label className="record-form-field"><span>Usuário</span><input autoComplete="username" value={reauthUsername} onChange={(event) => setReauthUsername(event.target.value)} placeholder="Seu usuário de acesso" /></label>
+            <label className="record-form-field"><span>Usuário</span><select autoComplete="username" autoFocus value={reauthUsername} onChange={(event) => setReauthUsername(event.target.value)}><option value="">Selecione seu usuário</option><option value="rhuan">Rhuan</option><option value="arthur">Arthur</option><option value="wesley">Wesley</option></select></label>
             <label className="record-form-field"><span>Senha</span><input autoComplete="current-password" type="password" value={reauthPassword} onChange={(event) => setReauthPassword(event.target.value)} placeholder="Digite sua senha novamente" onKeyDown={(event) => { if (event.key === "Enter") { event.preventDefault(); void confirmRemove(); } }} /></label>
             {!fileToDelete && error && <p className="form-message form-message--error" role="alert">{error}</p>}
             <p className="reauth-security-note">A senha é validada no servidor e não é armazenada. Somente o usuário conectado pode confirmar a exclusão.</p>
