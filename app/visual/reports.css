@@ -415,3 +415,56 @@
 .report-chart-col--excluded { width:185px; }
 .report-chart-col--review { width:155px; }
 .report-chart-col--total { width:165px; }
+
+
+/* Dashboard analítico — estilos aplicados pelo entrypoint visual real do App Router */
+.report-dashboard-insights { display:grid; grid-template-columns:minmax(0,1.05fr) minmax(0,.95fr); gap:16px; min-width:0; }
+.report-insight-card { min-width:0; padding:21px 22px; border:1px solid var(--line); border-radius:18px; background:var(--surface); box-shadow:var(--wc-shadow-sm); }
+.report-insight-heading { display:flex; align-items:flex-start; justify-content:space-between; gap:12px; margin-bottom:20px; }
+.report-insight-heading .eyebrow { margin:0 0 5px; color:var(--muted); font-size:9px; font-weight:850; letter-spacing:.14em; }
+.report-insight-heading h3 { margin:0; color:var(--ink); font-size:16px; font-weight:850; letter-spacing:-.025em; }
+.report-insight-subtitle { flex:0 0 auto; color:var(--muted); font-size:10px; font-weight:700; }
+.report-health-badge { padding:6px 9px; border-radius:999px; font-size:9px; font-weight:800; white-space:nowrap; }
+.report-health-badge.is-positive { color:#087c63; background:#e1f5ee; }
+.report-health-badge.is-negative { color:#b64c4c; background:#fdeaea; }
+.report-health-primary,.report-health-row,.report-health-foot { display:flex; align-items:center; justify-content:space-between; gap:12px; }
+.report-health-primary { margin-bottom:10px; }
+.report-health-primary span,.report-health-row span,.report-health-foot span { color:var(--muted); font-size:11px; font-weight:650; }
+.report-health-primary strong { color:var(--ink); font-size:28px; font-weight:900; letter-spacing:-.045em; font-variant-numeric:tabular-nums; }
+.report-health-track { height:8px; overflow:hidden; margin:0 0 17px; border-radius:99px; background:var(--canvas); }
+.report-health-track > span { display:block; height:100%; border-radius:inherit; background:linear-gradient(90deg,#159b8c,#45c2a4); transition:width .35s ease; }
+.report-health-track > span.is-negative { background:#d96b6b; }
+.report-health-row strong,.report-health-foot strong { color:var(--ink); font-size:12px; font-weight:850; font-variant-numeric:tabular-nums; }
+.report-health-track--cost { height:6px; margin:8px 0 17px; }
+.report-health-track--cost > span { background:linear-gradient(90deg,#d99536,#efbd6c); }
+.report-health-foot { padding-top:14px; border-top:1px solid var(--line); }
+.report-status-distribution { grid-column:2; grid-row:1; }
+.report-donut-layout { display:flex; align-items:center; gap:clamp(16px,3vw,30px); min-width:0; }
+.report-donut-chart { flex:0 0 132px; width:132px; }
+.report-donut-chart svg { display:block; width:100%; overflow:visible; }
+.report-donut-total { fill:var(--ink); font-size:19px; font-weight:900; letter-spacing:-.04em; }
+.report-donut-caption { fill:var(--muted); font-size:8px; font-weight:700; }
+.report-donut-legend { display:grid; gap:13px; flex:1; min-width:0; }
+.report-donut-legend-item,.report-donut-legend-label { display:flex; align-items:center; justify-content:space-between; gap:10px; }
+.report-donut-legend-label { justify-content:flex-start; min-width:0; color:var(--muted); font-size:10px; font-weight:700; }
+.report-donut-legend-label i { width:8px; height:8px; flex:0 0 8px; border-radius:3px; }
+.report-donut-legend-item > strong { color:var(--ink); font-size:11px; font-weight:850; white-space:nowrap; }
+.report-donut-legend-item > strong small { margin-left:4px; color:var(--muted); font-size:9px; font-weight:700; }
+.report-model-ranking { grid-column:1 / -1; margin:0; padding:21px 22px; border:1px solid var(--line); border-radius:18px; background:var(--surface); box-shadow:var(--wc-shadow-sm); }
+.report-model-bars { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:18px 28px; }
+.report-model-bar-item { display:grid; gap:8px; min-width:0; }
+.report-model-bar-meta { display:flex; align-items:center; justify-content:space-between; gap:12px; }
+.report-model-bar-meta > span { display:flex; align-items:center; gap:9px; min-width:0; color:var(--ink); font-size:11px; font-weight:750; }
+.report-model-bar-meta > span b { color:var(--muted); font-size:9px; font-weight:850; font-variant-numeric:tabular-nums; }
+.report-model-bar-meta > strong { color:var(--ink); font-size:11px; font-weight:850; white-space:nowrap; font-variant-numeric:tabular-nums; }
+.report-model-bar-track { height:7px; overflow:hidden; border-radius:99px; background:var(--canvas); }
+.report-model-bar-track > span { display:block; height:100%; border-radius:inherit; background:linear-gradient(90deg,#168f91,#62c6b5); }
+.report-insight-empty { margin:0; color:var(--muted); font-size:12px; }
+:root[data-theme="dark"] .report-insight-card,:root[data-theme="dark"] .report-model-ranking { border-color:#30485a; background:#122536; }
+:root[data-theme="dark"] .report-insight-heading h3,:root[data-theme="dark"] .report-health-primary strong,:root[data-theme="dark"] .report-health-row strong,:root[data-theme="dark"] .report-health-foot strong,:root[data-theme="dark"] .report-donut-total,:root[data-theme="dark"] .report-donut-legend-item > strong,:root[data-theme="dark"] .report-model-bar-meta > span,:root[data-theme="dark"] .report-model-bar-meta > strong { color:#e5edf4; }
+:root[data-theme="dark"] .report-health-badge.is-positive { color:#80d8bb; background:#123e37; }
+:root[data-theme="dark"] .report-health-badge.is-negative { color:#f1a0a0; background:#482b32; }
+:root[data-theme="dark"] .report-health-foot { border-color:#30485a; }
+@media(max-width:900px) { .report-dashboard-insights { grid-template-columns:1fr 1fr; } .report-financial-health { grid-column:1/-1; } .report-status-distribution { grid-column:auto; grid-row:auto; } .report-model-ranking { grid-column:1/-1; } }
+@media(max-width:600px) { .report-dashboard-insights { grid-template-columns:1fr; gap:11px; } .report-financial-health,.report-status-distribution,.report-model-ranking { grid-column:1; grid-row:auto; padding:16px; } .report-donut-layout { gap:14px; } .report-donut-chart { flex-basis:112px; width:112px; } .report-model-bars { grid-template-columns:1fr; gap:14px; } .report-insight-heading { margin-bottom:15px; } }
+@media(prefers-reduced-motion:reduce) { .report-health-track > span { transition:none; } }
