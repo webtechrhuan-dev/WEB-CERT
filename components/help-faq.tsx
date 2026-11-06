@@ -52,7 +52,7 @@ export function HelpFaq({ topic }: { topic: Topic }) {
   const legendCloseRef = useRef<HTMLButtonElement>(null);
   useEffect(() => setMounted(true), []);
   useEffect(() => {
-    const openHelp = () => { setExpanded(0); setOpen(true); };
+    const openHelp = () => { setLegendOpen(false); setExpanded(0); setOpen(true); };
     window.addEventListener("webcert:open-help", openHelp);
     return () => window.removeEventListener("webcert:open-help", openHelp);
   }, []);
@@ -100,10 +100,10 @@ export function HelpFaq({ topic }: { topic: Topic }) {
   if (!mounted) return null;
   return createPortal(<>
     <div className="wc-floating-tools" aria-label="Ferramentas de ajuda">
-      <button ref={triggerRef} type="button" className="wc-help-trigger" aria-label="Abrir ajuda desta tela" title="Ajuda desta tela" onClick={() => { setExpanded(0); setOpen(true); }}>
+      <button ref={triggerRef} type="button" className="wc-help-trigger" aria-label="Abrir ajuda desta tela" title="Ajuda desta tela" onClick={() => { setLegendOpen(false); setExpanded(0); setOpen(true); }}>
         <span aria-hidden="true">?</span>
       </button>
-      <button ref={legendTriggerRef} type="button" className="wc-legend-trigger" aria-label="Abrir atalhos e legendas desta tela" title="Atalhos e legendas" onClick={() => setLegendOpen(true)}><span aria-hidden="true">i</span></button>
+      <button ref={legendTriggerRef} type="button" className="wc-legend-trigger" aria-label="Abrir atalhos e legendas desta tela" title="Atalhos e legendas" onClick={() => { setOpen(false); setLegendOpen(true); }}><span aria-hidden="true">i</span></button>
     </div>
     {legendOpen && <div className="wc-help-backdrop wc-legend-backdrop" onMouseDown={(event) => { if (event.target === event.currentTarget) setLegendOpen(false); }}>
       <section className="wc-help-dialog wc-legend-dialog" role="dialog" aria-modal="true" aria-labelledby="wc-legend-title">
@@ -131,11 +131,6 @@ export function HelpFaq({ topic }: { topic: Topic }) {
             </article>;
           })}
         </div>
-        <section className="wc-help-shortcuts" aria-label="Atalhos de teclado">
-          <div className="wc-help-shortcuts-heading"><div><p className="eyebrow">PRODUTIVIDADE</p><h3>Atalhos desta tela</h3></div><span aria-hidden="true">⌨</span></div>
-          <div className="wc-help-shortcuts-list">{SHORTCUTS[topic].map((shortcut) => <div className="wc-help-shortcut" key={shortcut.key}><kbd>{shortcut.key}</kbd><span>{shortcut.label}</span></div>)}</div>
-          <p className="wc-help-shortcuts-note">Os atalhos não são executados enquanto você digita em campos. F3 e F10 nativos do navegador são preservados; use Alt + F3 e Alt + F10 no sistema.</p>
-        </section>
         <footer className="wc-help-footer">As orientações e os atalhos são específicos desta tela.</footer>
       </section>
     </div>}
