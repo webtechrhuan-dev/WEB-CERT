@@ -84,3 +84,41 @@
   .login-form--premium .login-submit { transition: none; }
   .login-form--premium .login-submit:not(:disabled):hover { transform: none; }
 }
+
+
+/* O usuário é escolhido na lista; a senha é o único campo digitável. */
+.login-form--premium .login-input-wrap select {
+  width: 100%;
+  min-width: 0;
+  height: 48px;
+  padding: 0 28px 0 0;
+  border: 0;
+  outline: 0;
+  appearance: auto;
+  background: transparent;
+  color: var(--text, #183449);
+  font: inherit;
+  font-size: 13px;
+  font-weight: 550;
+  cursor: pointer;
+}
+.login-form--premium .login-input-wrap select:focus-visible {
+  outline: 2px solid var(--brand-500, #1684ad);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+.login-form--premium .login-input-wrap select option {
+  color: #183449;
+  background: #fff;
+}
+.login-form--premium .login-input-wrap:has(select[aria-invalid="true"]) {
+  border-color: var(--danger, #c74444);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--danger, #c74444) 12%, transparent);
+}
+:root[data-theme="dark"] .login-form--premium .login-input-wrap select {
+  color: #edf5f8;
+}
+:root[data-theme="dark"] .login-form--premium .login-input-wrap select option {
+  color: #edf5f8;
+  background: #102637;
+}
