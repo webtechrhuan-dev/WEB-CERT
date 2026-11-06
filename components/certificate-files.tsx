@@ -41,6 +41,11 @@ export function CertificateFiles({ rowNumber, canUpload, saleStatus, saleExpiry 
   const [reauthUsername, setReauthUsername] = useState("");
   const [reauthPassword, setReauthPassword] = useState("");
   const [deleting, setDeleting] = useState(false);
+  const [fileToReveal, setFileToReveal] = useState<CertificateFile | null>(null);
+  const [revealUsername, setRevealUsername] = useState("");
+  const [revealPassword, setRevealPassword] = useState("");
+  const [revealedPassword, setRevealedPassword] = useState<string | null>(null);
+  const [revealing, setRevealing] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
 
   const refresh = useCallback(async () => {
@@ -96,6 +101,42 @@ export function CertificateFiles({ rowNumber, canUpload, saleStatus, saleExpiry 
       setError(removeError instanceof Error ? removeError.message : "Falha ao excluir certificado.");
     } finally {
       setDeleting(false);
+    }
+  }
+
+  function openPasswordReveal(file: CertificateFile) {
+    setError(null);
+    setNotice(null);
+    setRevealUsername("");
+    setRevealPassword("");
+    setRevealedPassword(null);
+    setFileToReveal(file);
+  }
+
+  async function confirmPasswordReveal() {
+    if (!fileToReveal || !revealUsername.trim() || !revealPassword || revealing) {
+      setError("Informe seu usuário e sua senha para visualizar a senha do PFX.");
+      return;
+    }
+    setError(null);
+    setRevealing(true);
+    try {
+      const response = await fetch(`/api/records/${rowNumber}/certificates/${fileToReveal.id}/password`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        cache: "no-store",
+        body: JSON.stringify({ username: revealUsername.trim(), password: revealPassword }),
+      });
+      const body: unknown = await response.json();
+      if (!response.ok) throw new Error(messageFrom(body) ?? "Não foi possível validar suas credenciais.");
+      const value = typeof body === "object" && body !== null && "password" in body && typeof body.password === "string" ? body.password : null;
+      if (value === null) throw new Error("O servidor não retornou uma senha válida.");
+      setRevealedPassword(value);
+      setRevealPassword("");
+    } catch (revealError) {
+      setError(revealError instanceof Error ? revealError.message : "Falha ao consultar a senha do certificado.");
+    } finally {
+      setRevealing(false);
     }
   }
 
@@ -168,12 +209,39 @@ export function CertificateFiles({ rowNumber, canUpload, saleStatus, saleExpiry 
           {files.map((file) => (
             <li key={file.id}>
               <div><strong>{file.name}</strong><span>{formatSize(file.size)} · Enviado em {new Date(file.uploadedAt).toLocaleString("pt-BR")} · Vence em {file.expiresAt ? new Date(file.expiresAt).toLocaleDateString("pt-BR", { timeZone: "UTC" }) : "não informado"} · {file.uploadedBy}</span></div>
-              <div className="certificate-file-actions"><a className="button button--secondary button--small" href={`/api/certificates/${file.id}`} rel="noreferrer">Baixar</a>{canDeleteCertificate && <button className="button button--danger button--small" disabled={deleting} onClick={() => remove(file)} type="button">Excluir</button>}</div>
+              <div className="certificate-file-actions"><button className="button button--secondary button--small" type="button" onClick={() => openPasswordReveal(file)}>Ver senha</button><a className="button button--secondary button--small" href={`/api/certificates/${file.id}`} rel="noreferrer">Baixar</a>{canDeleteCertificate && <button className="button button--danger button--small" disabled={deleting} onClick={() => remove(file)} type="button">Excluir</button>}</div>
             </li>
           ))}
         </ul>
       )}
       {files.length > 0 && <p className="certificate-delete-dependency">{statusAllowsCertificate ? "Esta venda não pode ser excluída enquanto houver certificado vinculado. Exclua primeiro o certificado usando a confirmação de usuário e senha." : "Atenção: o status atual desta venda não permite manter certificado vinculado. Exclua o arquivo usando a confirmação de usuário e senha antes de continuar."}</p>}
+      {fileToReveal && (
+        <div className="reauth-overlay" role="presentation" onMouseDown={(event) => { if (event.target === event.currentTarget && !revealing) { setFileToReveal(null); setRevealedPassword(null); } }}>
+          <section className="reauth-dialog" role="dialog" aria-modal="true" aria-labelledby="certificate-password-auth-title">
+            <div className="reauth-dialog-heading">
+              <span className="reauth-warning-icon" aria-hidden="true">!</span>
+              <div><h3 id="certificate-password-auth-title">Visualizar senha do certificado</h3><p>Confirme sua identidade para revelar a senha do arquivo <strong>{fileToReveal.name}</strong>.</p></div>
+            </div>
+            {!revealedPassword ? (
+              <>
+                <label className="record-form-field"><span>Usuário</span><input autoComplete="username" value={revealUsername} onChange={(event) => setRevealUsername(event.target.value)} placeholder="Seu usuário de acesso" /></label>
+                <label className="record-form-field"><span>Senha de acesso</span><input autoComplete="current-password" type="password" value={revealPassword} onChange={(event) => setRevealPassword(event.target.value)} placeholder="Digite sua senha novamente" onKeyDown={(event) => { if (event.key === "Enter") { event.preventDefault(); void confirmPasswordReveal(); } }} /></label>
+                <p className="reauth-security-note">A senha de acesso é validada no servidor. A senha PFX só será descriptografada após a confirmação e não ficará salva no navegador.</p>
+              </>
+            ) : (
+              <div className="certificate-revealed-password">
+                <label className="record-form-field"><span>Senha do certificado PFX</span><input type="text" readOnly value={revealedPassword} onFocus={(event) => event.currentTarget.select()} /></label>
+                <p className="reauth-security-note">Mantenha esta informação protegida. Fechar esta janela ocultará a senha novamente.</p>
+              </div>
+            )}
+            {error && <p className="form-message form-message--error" role="alert">{error}</p>}
+            <div className="form-actions">
+              <button className="button button--secondary" type="button" disabled={revealing} onClick={() => { setFileToReveal(null); setRevealPassword(""); setRevealedPassword(null); }}>Fechar</button>
+              {!revealedPassword && <button className="button button--primary" type="button" disabled={revealing || !revealUsername.trim() || !revealPassword} onClick={() => void confirmPasswordReveal()}>{revealing ? "Validando…" : "Confirmar e visualizar"}</button>}
+            </div>
+          </section>
+        </div>
+      )}
       {fileToDelete && (
         <div className="reauth-overlay" role="presentation" onMouseDown={(event) => { if (event.target === event.currentTarget && !deleting) setFileToDelete(null); }}>
           <section className="reauth-dialog" role="dialog" aria-modal="true" aria-labelledby="certificate-delete-auth-title">
