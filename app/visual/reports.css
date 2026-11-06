@@ -483,3 +483,12 @@
 :root[data-theme="dark"] .report-client-ranking .report-model-bar-track > span { background:linear-gradient(90deg,#4778d5,#86a9ed); }
 @media(max-width:900px) { .report-model-ranking,.report-client-ranking { grid-column:auto; } }
 @media(max-width:600px) { .report-model-ranking,.report-client-ranking { grid-column:1; } }
+
+
+/* Seleção explícita do período ativo no gráfico */
+.report-viz-selection { fill:var(--brand-500,#168f91); fill-opacity:.075; stroke:var(--brand-500,#168f91); stroke-opacity:.24; stroke-width:1; pointer-events:none; }
+.report-viz-hit { cursor:pointer; outline:none; }
+.report-viz-hit:focus-visible { stroke:var(--focus); stroke-width:2; stroke-dasharray:4 3; }
+.report-viz-detail { border-color:var(--line-strong); }
+.report-viz-detail-heading strong { color:var(--ink); font-variant-numeric:tabular-nums; }
+:root[data-theme="dark"] .report-viz-selection { fill-opacity:.14; stroke-opacity:.45; }
