@@ -160,9 +160,9 @@ function UnifiedChart({ rows }: { rows: Group[] }) {
   const slot = plotWidth / rows.length;
   const groupWidth = Math.min(82, slot * 0.76);
   const barGap = 6;
-  const visibleBarCount = mode === "financial" ? 2 : 3;
-  const barWidth = Math.max(5, (groupWidth - barGap * (visibleBarCount - 1)) / visibleBarCount);
-  const profitPath = rows.map((row, index) => `${index === 0 ? "M" : "L"} ${left + slot * (index + 0.5)} ${y(row.profit)}`).join(" ");
+  const isMonthlyPeriod = (label: string) => /^.+\s+\d{4}$/.test(label);
+  const monthlyProfitRows = rows.map((row, index) => ({ row, index })).filter(({ row }) => isMonthlyPeriod(row.label));
+  const profitPath = monthlyProfitRows.map(({ row, index }, pointIndex) => `${pointIndex === 0 ? "M" : "L"} ${left + slot * (index + 0.5)} ${y(row.profit)}`).join(" ");
   const axisFormat = (value: number) => mode === "financial" ? "R$ " + currencyCompact(value) : count(Math.round(value));
   const metrics = mode === "financial"
     ? [
@@ -218,24 +218,28 @@ function UnifiedChart({ rows }: { rows: Group[] }) {
         {mode === "financial" && <path className="report-viz-profit-line" d={profitPath} fill="none" stroke="url(#reportVizProfit)" strokeWidth="3.5" strokeLinecap="round" strokeLinejoin="round" pointerEvents="none" />}
         {rows.map((row, index) => {
           const center = left + slot * (index + 0.5);
+          const isMonthly = isMonthlyPeriod(row.label);
+          const rowSeries = activeSeries.filter((series) => mode !== "financial" || isMonthly || series.key !== "profit");
+          const rowBarCount = rowSeries.length;
+          const rowBarWidth = Math.max(5, (groupWidth - barGap * (rowBarCount - 1)) / rowBarCount);
           return <g key={row.label}>
             {activeIndex === index && <rect className="report-viz-selection" x={left + index * slot + 3} y={top + 2} width={Math.max(0, slot - 6)} height={plotHeight - 4} rx="9" />}
-            {activeSeries.filter((series) => mode !== "financial" || series.key !== "profit").map((series, seriesIndex) => {
+            {rowSeries.map((series, seriesIndex) => {
               const value = series.value(row);
               const valueY = y(value);
-              const barX = center - (visibleBarCount * barWidth + (visibleBarCount - 1) * barGap) / 2 + seriesIndex * (barWidth + barGap);
+              const barX = center - (rowBarCount * rowBarWidth + (rowBarCount - 1) * barGap) / 2 + seriesIndex * (rowBarWidth + barGap);
               const barY = Math.min(baseline, valueY);
               const height = Math.max(1, Math.abs(baseline - valueY));
               const gradient = series.key === "revenue" || series.key === "eligible" ? "url(#reportVizRevenue)"
                 : series.key === "cost" || series.key === "excluded" ? "url(#reportVizCost)"
                 : series.key === "review" ? "url(#reportVizReview)" : "url(#reportVizProfit)";
               return <g key={series.key}>
-                <rect x={barX} y={barY} width={barWidth} height={height} rx="4" fill={gradient} className="report-viz-bar">
+                <rect x={barX} y={barY} width={rowBarWidth} height={height} rx="4" fill={gradient} className="report-viz-bar">
                   <title>{row.label} · {series.label}: {mode === "financial" ? money(value) : count(value)}</title>
                 </rect>
               </g>;
             })}
-            {mode === "financial" && <circle className="report-viz-profit-point" cx={center} cy={y(row.profit)} r={activeIndex === index ? 6 : 4.5}>
+            {mode === "financial" && isMonthly && <circle className="report-viz-profit-point" cx={center} cy={y(row.profit)} r={activeIndex === index ? 6 : 4.5}>
               <title>{row.label} · Valor líquido: {money(row.profit)}</title>
             </circle>}
             <text x={center} y={chartHeight - 34} textAnchor="middle" className="report-viz-category">
