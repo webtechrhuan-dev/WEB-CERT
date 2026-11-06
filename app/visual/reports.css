@@ -579,3 +579,12 @@
   .report-viz-switch button { padding-inline:10px; font-size:10px; }
 }
 @media(prefers-reduced-motion:reduce) { .report-viz-switch button,.report-viz-bar { transition:none; } }
+
+
+/* Hierarquia dos KPIs: resultado principal em destaque, métricas de apoio mais discretas */
+.report-kpi-card--primary { min-height:148px; }
+.report-kpi-card--secondary { min-height:118px; padding:15px 17px; background:var(--canvas); box-shadow:var(--wc-shadow-xs); }
+.report-kpi-card--secondary > strong { font-size:clamp(18px,1.7vw,22px); }
+.report-kpi-card--secondary > small { font-size:9px; }
+:root[data-theme="dark"] .report-kpi-card--secondary { border-color:#30485a; background:#102333; }
+@media(max-width:760px) { .report-kpi-card--primary { min-height:132px; } .report-kpi-card--secondary { min-height:112px; } }
