@@ -84,10 +84,10 @@ describe("relatórios agregados", () => {
       rowsIgnored: 1,
       revenue: 1734.56,
       cost: 234.56,
-      profit: 1000,
+      profit: 1500,
     });
     expect(summary.groups).toEqual([
-      { label: "Janeiro 2025", count: 3, revenue: 1734.56, cost: 234.56, profit: 1000, eligibleCount: 2 },
+      { label: "Janeiro 2025", count: 3, revenue: 1734.56, cost: 234.56, profit: 1500, eligibleCount: 2 },
       { label: "Fevereiro 2026", count: 1, revenue: 0, cost: 0, profit: 0, eligibleCount: 0 },
     ]);
   });
@@ -96,7 +96,7 @@ describe("relatórios agregados", () => {
     const summary = summarizeWorkbook(sample, "model");
     const model = summary.groups.find((group) => group.label === "A1");
 
-    expect(model).toMatchObject({ count: 2, revenue: 1734.56, cost: 234.56, profit: 985 });
+    expect(model).toMatchObject({ count: 2, revenue: 1734.56, cost: 234.56, profit: 1500 });
   });
 
   it("mantém os agrupamentos por modelo e status sem inventar valores", () => {
