@@ -46,3 +46,131 @@
 :where(input,select,textarea):focus-visible { animation: wc-focus-ring 260ms ease-out both; }
 :root[data-theme="dark"] :where(.report-kpi-card,.report-model-ranking-item,.report-detail-kpi):hover { box-shadow: 0 14px 34px rgb(0 0 0 / 28%), 0 0 0 1px rgb(71 180 198 / 14%); }
 @media (prefers-reduced-motion: reduce) { :where(.dashboard-hero,.report-chart-panel,.report-renewals-panel)::after { animation: none !important; } }
+
+
+/* Premium polish — acabamento transversal sem alterar a estrutura dos componentes. */
+:root {
+  --wc-border-highlight: rgb(255 255 255 / 72%);
+  --wc-glass-tint: rgb(255 255 255 / 56%);
+  --wc-shadow-focus: 0 0 0 3px rgb(22 168 196 / 13%), 0 5px 18px rgb(15 38 57 / 7%);
+}
+:root[data-theme="dark"] {
+  --wc-border-highlight: rgb(255 255 255 / 7%);
+  --wc-glass-tint: rgb(255 255 255 / 2%);
+  --wc-shadow-focus: 0 0 0 3px rgb(62 194 211 / 15%), 0 6px 20px rgb(0 0 0 / 22%);
+}
+
+/* Contornos mais nítidos e profundidade discreta nas superfícies principais. */
+:where(.module-card,.records-toolbar,.table-panel,.record-form,.unified-chart,
+ .chart-key-panel,.chart-data-details,.report-panel,.management-content,.state-panel,
+ .access-notice,.selected-record-form--inline,.login-panel,.dashboard-note,
+ .period-filter-bar,.content-panel) {
+  border: 1px solid var(--wc-color-border);
+  box-shadow: inset 0 1px 0 var(--wc-border-highlight), var(--wc-shadow-sm);
+}
+:where(.module-card--available,.records-toolbar,.table-panel,.record-form,
+ .unified-chart,.report-panel,.management-content,.state-panel) {
+  transition: border-color 220ms ease, box-shadow 260ms var(--wc-ease-standard),
+    transform 260ms var(--wc-ease-emphasis), background-color 220ms ease;
+}
+:where(.module-card--available,.report-kpi-card,.report-model-ranking-item,
+ .report-detail-kpi,.report-summary-card):hover {
+  border-color: color-mix(in srgb, var(--wc-color-accent) 38%, var(--wc-color-border));
+}
+:where(.button,.login-submit,.theme-toggle,.module-card-action,.search-clear,
+ .pagination button,.primary-nav-link) {
+  transition: color 180ms ease, background-color 180ms ease, border-color 180ms ease,
+    box-shadow 220ms ease, transform 220ms var(--wc-ease-emphasis), filter 180ms ease;
+}
+:where(.button,.login-submit,.module-card-action,.theme-toggle):focus-visible {
+  outline: 0;
+  box-shadow: var(--wc-shadow-focus);
+}
+:where(.button--secondary,.button--pagination,.module-card-action,.theme-toggle) {
+  box-shadow: inset 0 1px 0 var(--wc-border-highlight), 0 1px 2px rgb(15 38 57 / 4%);
+}
+:where(.button--secondary,.button--pagination):hover:not(:disabled) {
+  transform: translateY(-1px);
+  box-shadow: inset 0 1px 0 var(--wc-border-highlight), 0 4px 11px rgb(15 38 57 / 8%);
+}
+:where(.button--secondary,.button--pagination):active:not(:disabled) {
+  transform: translateY(0) scale(.985);
+}
+
+/* Navegação e controles: feedback claro, sem brilho excessivo. */
+.primary-nav-link { transition: color 180ms ease, background-color 180ms ease; }
+.primary-nav-link:not(.is-disabled):hover { background: color-mix(in srgb, var(--wc-color-accent) 7%, transparent); }
+.primary-nav-link.is-active::after { box-shadow: 0 -1px 8px rgb(22 182 199 / 24%); }
+:where(.record-form-field input,.record-form-field select,.record-form-field textarea,
+ .report-filter input,.report-filter select,.period-filter-bar select,.search-control) {
+  box-shadow: inset 0 1px 2px rgb(15 38 57 / 3%);
+}
+:where(.record-form-field input,.record-form-field select,.record-form-field textarea,
+ .report-filter input,.report-filter select,.period-filter-bar select):hover:not(:focus) {
+  border-color: var(--wc-color-border-strong);
+}
+:where(input,select,textarea):focus-visible {
+  box-shadow: var(--wc-shadow-focus);
+}
+
+/* Linhas e tabelas com separação sutil e estados de interação mais refinados. */
+:where(.records-table,.report-table,.chart-data-table) thead th {
+  box-shadow: inset 0 -1px 0 var(--wc-color-border-strong);
+}
+:where(.records-table,.report-table,.chart-data-table) tbody tr:hover td {
+  box-shadow: inset 0 1px 0 rgb(22 168 196 / 5%), inset 0 -1px 0 rgb(22 168 196 / 5%);
+}
+:where(.records-table,.report-table,.chart-data-table) tbody tr:focus-within td {
+  background: color-mix(in srgb, var(--wc-color-accent) 7%, var(--wc-color-surface));
+}
+:where(.sale-status-badge,.source-badge,.report-treatment-badge) {
+  border: 1px solid color-mix(in srgb, currentColor 18%, transparent);
+  box-shadow: inset 0 1px 0 rgb(255 255 255 / 30%);
+}
+
+/* Hero e cards ganham iluminação ambiente muito leve. */
+.dashboard-hero {
+  box-shadow: 0 12px 30px rgb(8 39 59 / 13%), inset 0 1px 0 rgb(255 255 255 / 9%);
+}
+.dashboard-hero-mark {
+  transition: transform 500ms var(--wc-ease-emphasis), box-shadow 500ms ease;
+}
+.dashboard-hero:hover .dashboard-hero-mark {
+  transform: translateY(-2px) rotate(-2deg);
+  box-shadow: 0 0 0 15px rgb(124 205 218 / 5%), 0 0 0 31px rgb(124 205 218 / 3%);
+}
+.module-icon,.dashboard-note-icon {
+  transition: transform 240ms var(--wc-ease-emphasis), box-shadow 240ms ease, border-color 180ms ease;
+}
+.module-card--available:hover .module-icon {
+  transform: translateY(-2px) scale(1.04);
+  box-shadow: 0 5px 13px rgb(8 124 159 / 12%);
+  border-color: color-mix(in srgb, var(--wc-color-accent) 35%, var(--wc-color-border));
+}
+.module-card-action { transition: transform 220ms var(--wc-ease-emphasis), background-color 180ms ease, border-color 180ms ease; }
+.module-card--available:hover .module-card-action { transform: translateX(2px); background: color-mix(in srgb, var(--wc-color-accent) 9%, var(--wc-color-surface)); }
+
+/* Modais com entrada curta e foco visual no conteúdo. */
+[role="dialog"] {
+  border: 1px solid var(--wc-color-border);
+  box-shadow: 0 24px 70px rgb(4 22 35 / 24%), inset 0 1px 0 var(--wc-border-highlight);
+}
+:where(.wc-help-dialog,.wc-legend-dialog) { backdrop-filter: blur(14px); }
+@keyframes wc-modal-arrive {
+  from { opacity: 0; transform: translateY(9px) scale(.985); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+:where([role="dialog"] > section,.wc-help-dialog,.wc-legend-dialog) {
+  animation: wc-modal-arrive 240ms var(--wc-ease-emphasis) both;
+}
+
+/* Respeita a preferência do sistema e evita movimento em interfaces táteis. */
+@media (hover: hover) and (pointer: fine) {
+  :where(.module-card--available,.report-kpi-card,.report-model-ranking-item,
+   .report-detail-kpi,.report-summary-card):hover { transform: translateY(-2px); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .dashboard-hero:hover .dashboard-hero-mark,
+  .module-card--available:hover .module-icon,
+  .module-card--available:hover .module-card-action { transform: none !important; }
+}
