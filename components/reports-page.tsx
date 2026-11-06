@@ -144,7 +144,7 @@ function UnifiedChart({ rows }: { rows: Group[] }) {
     excluded: acc.excluded + (row.excludedCount ?? 0),
     review: acc.review + (row.reviewCount ?? 0),
   }), { revenue: 0, cost: 0, profit: 0, eligible: 0, excluded: 0, review: 0 });
-  const activeRow = activeIndex === null ? rows[rows.length - 1] : rows[activeIndex];
+  const activeRow = activeIndex === null ? rows[rows.length - 1] : (rows[activeIndex] ?? rows[rows.length - 1]);
   const currencyCompact = (value: number) => new Intl.NumberFormat("pt-BR", { notation: "compact", maximumFractionDigits: 1 }).format(value);
   const money = (value: number) => currency.format(value);
   const count = (value: number) => numbers.format(value);
@@ -255,6 +255,38 @@ function UnifiedChart({ rows }: { rows: Group[] }) {
         <div><span>Em revisão</span><strong>{count(activeRow.reviewCount ?? 0)}</strong></div>
       </div>
     </section>
+  </div>;
+}
+
+
+function ReportDonut({ segments, total, label }: { segments: { label: string; value: number; color: string }[]; total: number; label: string }) {
+  const radius = 43;
+  const circumference = 2 * Math.PI * radius;
+  let offset = 0;
+  return <div className="report-donut-layout">
+    <div className="report-donut-chart">
+      <svg viewBox="0 0 112 112" role="img" aria-label={label}>
+        <circle cx="56" cy="56" r={radius} fill="none" stroke="var(--line)" strokeWidth="12" />
+        {total > 0 && segments.filter((segment) => segment.value > 0).map((segment) => {
+          const length = circumference * segment.value / total;
+          const currentOffset = offset;
+          offset += length;
+          return <circle key={segment.label} cx="56" cy="56" r={radius} fill="none" stroke={segment.color}
+            strokeWidth="12" strokeDasharray={`${length} ${circumference - length}`}
+            strokeDashoffset={-currentOffset} transform="rotate(-90 56 56)" strokeLinecap="butt">
+            <title>{segment.label}: {numbers.format(segment.value)} ({Math.round(segment.value / total * 100)}%)</title>
+          </circle>;
+        })}
+        <text x="56" y="52" textAnchor="middle" className="report-donut-total">{numbers.format(total)}</text>
+        <text x="56" y="67" textAnchor="middle" className="report-donut-caption">registros</text>
+      </svg>
+    </div>
+    <div className="report-donut-legend">
+      {segments.map((segment) => <div key={segment.label} className="report-donut-legend-item">
+        <span className="report-donut-legend-label"><i style={{ background: segment.color }} />{segment.label}</span>
+        <strong>{numbers.format(segment.value)} <small>{total ? Math.round(segment.value / total * 100) : 0}%</small></strong>
+      </div>)}
+    </div>
   </div>;
 }
 
@@ -518,12 +550,35 @@ export default function ReportsPage() {
             <span className="report-chart-record-count">{numbers.format(filteredRows.length)} registros no filtro</span>
           </div>
           <UnifiedChart rows={monthlyChart}/>
-          {modelRanking.length > 0 && <div className="report-model-ranking">
-            <h3 className="report-model-ranking-title">Modelos com maior faturamento</h3>
-            <div className="report-model-ranking-grid">
-              {modelRanking.map((item,index)=><div key={item.label} className="report-model-ranking-item"><span className="report-model-ranking-label">{index+1}. {item.label}</span><strong className="report-model-ranking-value">{currency.format(item.revenue)}</strong></div>)}
-            </div>
-          </div>}
+        </section>
+        <section className="report-dashboard-insights" aria-label="Indicadores complementares">
+          <article className="report-insight-card report-financial-health">
+            <div className="report-insight-heading"><div><p className="eyebrow">EFICIÊNCIA</p><h3>Saúde financeira</h3></div><span className={`report-health-badge ${filteredSummary.profit >= 0 ? "is-positive" : "is-negative"}`}>{filteredSummary.profit >= 0 ? "Resultado positivo" : "Resultado negativo"}</span></div>
+            <div className="report-health-primary"><span>Margem líquida</span><strong>{filteredSummary.revenue > 0 ? (filteredSummary.profit / filteredSummary.revenue * 100).toLocaleString("pt-BR",{maximumFractionDigits:1}) : "0"}%</strong></div>
+            <div className="report-health-track"><span className={filteredSummary.profit >= 0 ? "is-positive" : "is-negative"} style={{width: `${Math.min(100,Math.max(0,filteredSummary.revenue > 0 ? filteredSummary.profit / filteredSummary.revenue * 100 : 0))}%`}} /></div>
+            <div className="report-health-row"><span>Custos sobre o faturamento</span><strong>{filteredSummary.revenue > 0 ? (filteredSummary.cost / filteredSummary.revenue * 100).toLocaleString("pt-BR",{maximumFractionDigits:1}) : "0"}%</strong></div>
+            <div className="report-health-track report-health-track--cost"><span style={{width: `${Math.min(100,Math.max(0,filteredSummary.revenue > 0 ? filteredSummary.cost / filteredSummary.revenue * 100 : 0))}%`} /></div>
+            <div className="report-health-foot"><span>Ticket médio</span><strong>{currency.format(filteredSummary.eligibleCount ? filteredSummary.revenue / filteredSummary.eligibleCount : 0)}</strong></div>
+          </article>
+          <article className="report-insight-card report-status-distribution">
+            <div className="report-insight-heading"><div><p className="eyebrow">QUALIDADE DA CARTEIRA</p><h3>Distribuição dos registros</h3></div><span className="report-insight-subtitle">{numbers.format(filteredSummary.count)} no filtro</span></div>
+            <ReportDonut label="Distribuição de registros incluídos, excluídos e em revisão" total={filteredSummary.count} segments={[
+              {label:"No financeiro",value:filteredSummary.eligibleCount,color:"#159b8c"},
+              {label:"Excluídos",value:filteredSummary.excludedCount,color:"#d99536"},
+              {label:"Em revisão",value:filteredSummary.reviewCount,color:"#8b70c9"},
+            ]}/>
+          </article>
+          <article className="report-insight-card report-model-ranking">
+            <div className="report-insight-heading"><div><p className="eyebrow">MIX DE PRODUTOS</p><h3>Modelos com maior faturamento</h3></div><span className="report-insight-subtitle">Top {modelRanking.length}</span></div>
+            {modelRanking.length ? <div className="report-model-bars">{modelRanking.map((item,index)=>{
+              const maximum = Math.max(1,...modelRanking.map((entry)=>entry.revenue));
+              return <div className="report-model-bar-item" key={item.label}>
+                <div className="report-model-bar-meta"><span><b>{String(index+1).padStart(2,"0")}</b>{item.label}</span><strong>{currency.format(item.revenue)}</strong></div>
+                <div className="report-model-bar-track"><span style={{width:`${Math.max(2,item.revenue/maximum*100)}%`}} /></div>
+              </div>;
+            })}</div> : <p className="report-insight-empty">Sem faturamento por modelo neste filtro.</p>}
+          </article>
+        </section>
         </section>
         <section className="report-details-panel">
           <div className="report-details-header"><div className="report-details-copy"><h2>Relatórios detalhados</h2><p>Clique em qualquer linha para abrir os registros que formam aquele total.</p></div><div className="report-details-controls"><label className="report-control-label report-details-control">Tipo de relatório<select className="report-control-input" value={dimension} onChange={(e) => { setDimension(e.target.value as ReportDimension); setSelectedLabel(null); setSearch(""); }}><option value="period">Por período</option><option value="model">Por modelo</option><option value="status">Por status</option></select></label>{dimension === "period" && <label className="report-control-label report-details-control">Intervalo<select className="report-control-input" value={granularity} onChange={(e) => { setGranularity(e.target.value as Granularity); setSelectedLabel(null); }}><option value="month">Mensal</option><option value="week">Semanal</option><option value="year">Anual</option></select></label>}<label className="report-control-label report-details-control report-details-search">Pesquisar grupo<input className="report-control-input" value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Digite para pesquisar…" /></label></div></div>
