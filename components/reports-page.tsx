@@ -192,7 +192,7 @@ function UnifiedChart({ rows }: { rows: Group[] }) {
     </div>
 
     <div className="report-viz-legend" aria-label="Legenda do gráfico">
-      {activeSeries.map((item) => <span key={item.key} className={item.key === "profit" ? "is-line" : ""}><i style={{ backgroundColor: item.color, borderColor: item.color }} />{item.label}</span>)}
+      {activeSeries.map((item) => <span key={item.key} className={item.key === "profit" ? "is-line" : ""}><i style={{ backgroundColor: item.color, borderColor: item.color }} />{item.key === "profit" && mode === "financial" ? "Valor líquido (linha mensal / barra anual)" : item.label}</span>)}
     </div>
 
     <div className="report-viz-scroll" role="region" aria-label="Gráfico por período. Role horizontalmente para consultar todo o histórico." tabIndex={0}>
