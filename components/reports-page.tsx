@@ -435,6 +435,18 @@ export default function ReportsPage() {
     });
   }, [filteredRows]);
   const modelRanking = useMemo(() => { const totals = new Map<string, number>(); filteredRows.filter((row) => row.financiallyEligible).forEach((row) => totals.set(textValue(row.model), (totals.get(textValue(row.model)) ?? 0) + row.revenue)); return [...totals.entries()].map(([label, revenue]) => ({ label, revenue })).sort((a,b) => b.revenue-a.revenue).slice(0,5); }, [filteredRows]);
+  const clientRanking = useMemo(() => {
+    const totals = new Map<string, { revenue: number; sales: number }>();
+    filteredRows.filter((row) => row.financiallyEligible).forEach((row) => {
+      const client = row.client.trim() || "Cliente não identificado";
+      const current = totals.get(client) ?? { revenue: 0, sales: 0 };
+      current.revenue += row.revenue;
+      current.sales += 1;
+      totals.set(client, current);
+    });
+    return [...totals.entries()].map(([label, value]) => ({ label, ...value }))
+      .sort((a,b) => b.revenue-a.revenue).slice(0,5);
+  }, [filteredRows]);
   const dimensionLabels: Record<ReportDimension, string> = { period: "Período", model: "Modelo do certificado", status: "Status / observação" };
 
   const monthlyYearGroups = useMemo(() => {
@@ -565,6 +577,16 @@ export default function ReportsPage() {
                 <div className="report-model-bar-track"><span style={{width:`${Math.max(2,item.revenue/maximum*100)}%`}} /></div>
               </div>;
             })}</div> : <p className="report-insight-empty">Sem faturamento por modelo neste filtro.</p>}
+          </article>
+          <article className="report-insight-card report-client-ranking">
+            <div className="report-insight-heading"><div><p className="eyebrow">CARTEIRA DE CLIENTES</p><h3>Clientes com maior faturamento</h3></div><span className="report-insight-subtitle">Top {clientRanking.length}</span></div>
+            {clientRanking.length ? <div className="report-model-bars">{clientRanking.map((item,index)=>{
+              const maximum = Math.max(1,...clientRanking.map((entry)=>entry.revenue));
+              return <div className="report-model-bar-item" key={item.label}>
+                <div className="report-model-bar-meta"><span><b>{String(index+1).padStart(2,"0")}</b>{item.label}<small className="report-client-sales-count">{numbers.format(item.sales)} vendas</small></span><strong>{currency.format(item.revenue)}</strong></div>
+                <div className="report-model-bar-track"><span style={{width:`${Math.max(2,item.revenue/maximum*100)}%`}} /></div>
+              </div>;
+            })}</div> : <p className="report-insight-empty">Sem vendas contabilizadas neste filtro.</p>}
           </article>
         </section>
         <section aria-labelledby="renewals-title" className="report-renewals-panel">
