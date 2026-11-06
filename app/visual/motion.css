@@ -259,3 +259,15 @@
   .report-chart-legend__item:active { transform: none !important; }
   .report-detail-dialog { animation: none !important; }
 }
+
+
+/* Preferência de movimento reduzido: neutraliza também as animações-base do sistema. */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation: none !important;
+    transition: none !important;
+    scroll-behavior: auto !important;
+  }
+}
