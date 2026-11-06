@@ -1,8 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { Fragment, useMemo, useState, type CSSProperties } from "react";
-import { createPortal } from "react-dom";
+import { Fragment, useMemo, useState } from "react";
 import { useSession } from "next-auth/react";
 import { AppHeader } from "@/components/app-header";
 import { Icon } from "@/components/icon";
@@ -122,300 +121,140 @@ function ReportError({ message }: { message: string }) {
   return <section className="state-panel state-panel--error"><span className="state-icon state-icon--error"><Icon name="alert" /></span><div className="state-copy"><h2>Não foi possível carregar os relatórios</h2><p>{message}</p></div></section>;
 }
 function UnifiedChart({ rows }: { rows: Group[] }) {
-  const [hidden, setHidden] = useState<string[]>([]);
-  const [hoveredRow, setHoveredRow] = useState<Group | null>(null);
-  const [hoverPosition, setHoverPosition] = useState({ x: 24, y: 100 });
-  const visible = rows;
-  if (!visible.length) return <div className="unified-chart-empty">Sem dados suficientes para gerar o gráfico neste filtro.</div>;
+  const [mode, setMode] = useState<"financial" | "volume">("financial");
+  const [activeIndex, setActiveIndex] = useState<number | null>(null);
+  if (!rows.length) return <div className="unified-chart-empty">Sem dados suficientes para gerar o gráfico neste filtro.</div>;
 
-  const width = Math.max(900, visible.length * 148 + 132);
-  const height = 390;
-  const left = 82, right = 76, top = 34, bottom = 88;
-  const plotWidth = width - left - right;
-  const plotHeight = height - top - bottom;
-  const minMoney = Math.min(0, ...visible.map((row) => row.profit)) * 1.16;
-  const maxMoney = Math.max(1, ...visible.flatMap((row) => [row.revenue, row.cost, row.profit])) * 1.16;
-  const maxCount = Math.max(1, ...visible.map((row) => row.count)) * 1.2;
-  const x = (index: number) => left + (index + 0.5) * plotWidth / visible.length;
-  const yMoney = (value: number) => top + ((maxMoney - value) / (maxMoney - minMoney || 1)) * plotHeight;
-  const yCount = (value: number) => top + plotHeight - (value / maxCount) * plotHeight;
-  const colors = { revenue: "#0e9aa7", cost: "#f0a34a", profit: "#4778e8", completed: "#16a477", excluded: "#e58b42", review: "#8b6be8" };
-  const compactMoney = (value: number) => new Intl.NumberFormat("pt-BR", { notation: "compact", maximumFractionDigits: 2 }).format(value);
-  const series = [
-    { key: "completed", label: "Incluídos no financeiro", value: (row: Group) => row.eligibleCount, color: colors.completed },
-    { key: "excluded", label: "Excluídos do financeiro", value: (row: Group) => row.excludedCount ?? 0, color: colors.excluded },
-    { key: "review", label: "Em revisão", value: (row: Group) => row.reviewCount ?? 0, color: colors.review },
+  const financialSeries = [
+    { key: "revenue", label: "Faturamento", color: "#168f91", value: (row: Group) => row.revenue },
+    { key: "cost", label: "Custos", color: "#d99536", value: (row: Group) => row.cost },
+    { key: "profit", label: "Valor líquido", color: "#4778d5", value: (row: Group) => row.profit },
   ];
-  const financial = [
-    { key: "revenue", label: "Faturamento", value: (row: Group) => row.revenue, color: colors.revenue, gradient: "chartRevenue" },
-    { key: "cost", label: "Custos", value: (row: Group) => row.cost, color: colors.cost, gradient: "chartCost" },
-    { key: "profit", label: "Resultado líquido", value: (row: Group) => row.profit, color: colors.profit, gradient: "chartProfit" },
+  const volumeSeries = [
+    { key: "eligible", label: "Incluídos no financeiro", color: "#168f91", value: (row: Group) => row.eligibleCount },
+    { key: "excluded", label: "Excluídos", color: "#d99536", value: (row: Group) => row.excludedCount ?? 0 },
+    { key: "review", label: "Em revisão", color: "#8b70c9", value: (row: Group) => row.reviewCount ?? 0 },
   ];
-  const isVisible = (key: string) => !hidden.includes(key);
-  const toggle = (key: string) => setHidden((current) => current.includes(key) ? current.filter((item) => item !== key) : [...current, key]);
-  const linePath = (value: (row: Group) => number) => visible.map((row, index) => (index ? "L" : "M") + " " + x(index) + " " + yCount(value(row))).join(" ");
+  const activeSeries = mode === "financial" ? financialSeries : volumeSeries;
+  const total = rows.reduce((acc, row) => ({
+    revenue: acc.revenue + row.revenue,
+    cost: acc.cost + row.cost,
+    profit: acc.profit + row.profit,
+    eligible: acc.eligible + row.eligibleCount,
+    excluded: acc.excluded + (row.excludedCount ?? 0),
+    review: acc.review + (row.reviewCount ?? 0),
+  }), { revenue: 0, cost: 0, profit: 0, eligible: 0, excluded: 0, review: 0 });
+  const activeRow = activeIndex === null ? rows[rows.length - 1] : rows[activeIndex];
+  const currencyCompact = (value: number) => new Intl.NumberFormat("pt-BR", { notation: "compact", maximumFractionDigits: 1 }).format(value);
+  const money = (value: number) => currency.format(value);
+  const count = (value: number) => numbers.format(value);
+  const chartWidth = Math.max(760, rows.length * 108 + 112);
+  const chartHeight = 352;
+  const left = 78, right = 28, top = 24, bottom = 66;
+  const plotWidth = chartWidth - left - right;
+  const plotHeight = chartHeight - top - bottom;
+  const minValue = mode === "financial" ? Math.min(0, ...rows.map((row) => row.profit)) * 1.12 : 0;
+  const maxValue = Math.max(1, ...rows.flatMap((row) => activeSeries.map((series) => series.value(row)))) * 1.12;
+  const y = (value: number) => top + ((maxValue - value) / (maxValue - minValue || 1)) * plotHeight;
+  const baseline = y(0);
+  const slot = plotWidth / rows.length;
+  const groupWidth = Math.min(78, slot * 0.72);
+  const barGap = 4;
+  const barWidth = Math.max(5, (groupWidth - barGap * 2) / 3);
+  const axisFormat = (value: number) => mode === "financial" ? "R$ " + currencyCompact(value) : count(Math.round(value));
+  const metrics = mode === "financial"
+    ? [
+        { label: "Faturamento", value: money(total.revenue), tone: "revenue" },
+        { label: "Custos", value: money(total.cost), tone: "cost" },
+        { label: "Valor líquido", value: money(total.profit), tone: "profit" },
+      ]
+    : [
+        { label: "Incluídos no financeiro", value: count(total.eligible), tone: "revenue" },
+        { label: "Excluídos", value: count(total.excluded), tone: "cost" },
+        { label: "Em revisão", value: count(total.review), tone: "review" },
+      ];
 
-  // Motor de posicionamento: mede caixas de texto e procura posições alternativas
-  // antes de renderizar. Prioriza rótulos financeiros e distribui os rótulos das linhas
-  // acima/abaixo/laterais dos pontos, sem permitir colisões entre textos.
-  type LabelBox = { x: number; y: number; w: number; h: number };
-  const placedLabelBoxes: LabelBox[] = [];
-  const labelPositions = new Map<string, { x: number; y: number }>();
-  const overlaps = (a: LabelBox, b: LabelBox, gap = 3) =>
-    a.x < b.x + b.w + gap && a.x + a.w + gap > b.x &&
-    a.y < b.y + b.h + gap && a.y + a.h + gap > b.y;
-  const clampLabel = (box: LabelBox) => ({
-    x: Math.max(left + 2, Math.min(width - right - box.w - 2, box.x)),
-    y: Math.max(top + 2, Math.min(top + plotHeight - box.h - 2, box.y)),
-  });
-  const lineSegments = series.filter((item) => isVisible(item.key)).flatMap((item) =>
-    visible.slice(0, -1).map((row, index) => ({
-      x1: x(index), y1: yCount(item.value(row)),
-      x2: x(index + 1), y2: yCount(item.value(visible[index + 1])),
-    }))
-  );
-  const pointObstacles = series.filter((item) => isVisible(item.key)).flatMap((item) =>
-    visible.map((row, index) => ({ x: x(index), y: yCount(item.value(row)) }))
-      .filter((point) => Number.isFinite(point.y))
-  );
-  const distanceToSegment = (px: number, py: number, seg: {x1:number;y1:number;x2:number;y2:number}) => {
-    const dx = seg.x2 - seg.x1, dy = seg.y2 - seg.y1;
-    const t = Math.max(0, Math.min(1, ((px-seg.x1)*dx+(py-seg.y1)*dy)/(dx*dx+dy*dy || 1)));
-    return Math.hypot(px-(seg.x1+t*dx), py-(seg.y1+t*dy));
-  };
-  const collidesWithLine = (box: LabelBox) => lineSegments.some((seg) => {
-    const samples = 5;
-    return Array.from({length:samples+1},(_,n)=>n/samples).some((t) => {
-      const px=seg.x1+(seg.x2-seg.x1)*t, py=seg.y1+(seg.y2-seg.y1)*t;
-      return px >= box.x-3 && px <= box.x+box.w+3 && py >= box.y-3 && py <= box.y+box.h+3 &&
-        distanceToSegment(px,py,seg) < 8;
-    });
-  });
-  const registerLabel = (key: string, anchorX: number, anchorY: number, text: string, kind: "bar" | "line") => {
-    const w = Math.max(18, text.length * (kind === "bar" ? 4.7 : 5.1));
-    const h = 12;
-    const offsets = kind === "bar"
-      ? [[-w/2,-16],[-w/2,-29],[-w/2,5],[-w/2,18],[-w/2-10,-16],[-w/2+10,-29],[-w/2-18,5],[-w/2+18,18]]
-      : [[-w/2,-20],[-w/2,12],[-w/2-18,-8],[18,-8],[-w/2,-34],[-w/2,26],[-w/2-28,10],[28,10]];
-    let selected: {x:number;y:number} | null = null;
-    for (const [dx,dy] of offsets) {
-      const candidate = clampLabel({x:anchorX+dx,y:anchorY+dy,w,h});
-      const box = {...candidate,w,h};
-      const textCollision = placedLabelBoxes.some((other) => overlaps(box,other,4));
-      const pointCollision = kind === "line" && pointObstacles.some((p) =>
-        Math.hypot(p.x-(box.x+w/2),p.y-(box.y+h/2)) < 12
-      );
-      if (!textCollision && !pointCollision && !collidesWithLine(box)) { selected=candidate; break; }
-    }
-    // Se nenhuma posição estiver livre, omite somente esse rótulo (o valor exato
-    // continua no tooltip), em vez de desenhar texto por cima de outro elemento.
-    if (!selected) return;
-    // O SVG usa textAnchor="middle": converte a caixa (canto superior esquerdo)
-    // em ponto central para alinhar o texto exatamente ao centro da coluna/ponto.
-    labelPositions.set(key,{x:selected.x+w/2,y:selected.y+h-2});
-    placedLabelBoxes.push({...selected,w,h});
-  };
-  visible.forEach((row,index) => financial.forEach((item,itemIndex) => {
-    if (!isVisible(item.key)) return;
-    const value=item.value(row);
-    if (!value) return;
-    const groupWidth=Math.min(96,plotWidth/visible.length*.78);
-    const barWidth=groupWidth/3;
-    const barX=x(index)-groupWidth/2+itemIndex*barWidth;
-    const valueY=yMoney(value);
-    const text=new Intl.NumberFormat("pt-BR",{notation:"compact",maximumFractionDigits:2}).format(value);
-    registerLabel("bar:"+index+":"+item.key,barX+(barWidth-4)/2,valueY,text,"bar");
-  }));
-  series.forEach((item) => {
-    if (!isVisible(item.key)) return;
-    visible.forEach((row,index) => {
-      const count=item.value(row);
-      if (!count || plotWidth/visible.length<116) return;
-      registerLabel("line:"+index+":"+item.key,x(index),yCount(count),
-        numbers.format(count),"line");
-    });
-  });
-
-  return <div className="unified-chart">
-    <section className="chart-key-panel report-chart-legend" aria-label="Legenda e instruções do gráfico">
-      <header className="report-chart-legend__header">
-        <div>
-          <strong className="report-chart-legend__title">Legenda do gráfico</strong>
-          <p className="report-chart-legend__intro">Cada cor identifica uma informação. As colunas mostram dinheiro; as linhas mostram quantidade de vendas.</p>
-        </div>
-        <span className="report-chart-legend__hint">Clique em uma legenda para ocultar ou exibir</span>
-      </header>
-      <div className="report-chart-legend__groups">
-        <section className="report-chart-legend__group" aria-label="Séries financeiras">
-          <h3 className="report-chart-legend__eyebrow">COLUNAS · EIXO ESQUERDO · VALORES EM R$</h3>
-          <div className="report-chart-legend__items">
-            {financial.map((item) => <button key={item.key} type="button" className={"chart-legend-item report-chart-legend__item" + (isVisible(item.key) ? "" : " is-muted")} aria-pressed={isVisible(item.key)} onClick={() => toggle(item.key)} style={{ "--legend-color": item.color } as CSSProperties}>
-              <span aria-hidden="true" className="report-chart-legend__swatch report-chart-legend__swatch--bar" />
-              <span className="report-chart-legend__copy"><strong>{item.label}</strong><small>{item.key === "revenue" ? "Total bruto vendido no período" : item.key === "cost" ? "Soma dos custos das vendas" : "Faturamento menos custos"}</small></span>
-              <span className="report-chart-legend__state">{isVisible(item.key) ? "VISÍVEL" : "OCULTA"}</span>
-            </button>)}
-          </div>
-        </section>
-        <section className="report-chart-legend__group" aria-label="Séries de quantidade">
-          <h3 className="report-chart-legend__eyebrow">LINHAS E PONTOS · EIXO DIREITO · QUANTIDADE</h3>
-          <div className="report-chart-legend__items">
-            {series.map((item) => <button key={item.key} type="button" className={"chart-legend-item report-chart-legend__item" + (isVisible(item.key) ? "" : " is-muted")} aria-pressed={isVisible(item.key)} onClick={() => toggle(item.key)} style={{ "--legend-color": item.color } as CSSProperties}>
-              <span aria-hidden="true" className="report-chart-legend__swatch report-chart-legend__swatch--line"><i /></span>
-              <span className="report-chart-legend__copy"><strong>{item.label}</strong><small>{item.key === "completed" ? "Registros considerados nos cálculos financeiros conforme a regra de status" : item.key === "excluded" ? "Canceladas ou não concluídas" : "Registros que precisam de revisão"}</small></span>
-              <span className="report-chart-legend__state">{isVisible(item.key) ? "VISÍVEL" : "OCULTA"}</span>
-            </button>)}
-          </div>
-        </section>
+  return <div className="report-viz">
+    <div className="report-viz-toolbar">
+      <div className="report-viz-switch" role="group" aria-label="Tipo de visualização">
+        <button type="button" className={mode === "financial" ? "is-active" : ""} aria-pressed={mode === "financial"} onClick={() => { setMode("financial"); setActiveIndex(null); }}>Financeiro</button>
+        <button type="button" className={mode === "volume" ? "is-active" : ""} aria-pressed={mode === "volume"} onClick={() => { setMode("volume"); setActiveIndex(null); }}>Volume de registros</button>
       </div>
-      <footer className="report-chart-legend__reading-guide">
-        <p><strong>Como ler as colunas:</strong> em cada período, as três colunas coloridas representam faturamento, custos e resultado líquido. A altura corresponde ao valor em reais.</p>
-        <p><strong>Como ler as linhas:</strong> cada linha liga os pontos da mesma situação ao longo dos períodos. O ponto indica quantos registros existem naquela situação.</p>
-        <p><strong>Eixos e períodos:</strong> escala esquerda = dinheiro (R$); escala direita = quantidade de registros. O nome abaixo identifica o mês ou ano analisado.</p>
-      </footer>
-    </section>
-    <div className="unified-chart-scroll report-chart-scroll" role="region" aria-label="Gráfico com rolagem horizontal; use Shift e a roda do mouse ou a barra inferior para navegar" tabIndex={0}>
-      <svg role="img" aria-label="Gráfico combinado de faturamento, custos, resultado e quantidade de registros por período" viewBox={"0 0 " + width + " " + height} className="unified-chart-svg" style={{ width: width + "px", minWidth: width + "px" }} onMouseLeave={() => setHoveredRow(null)}>
+      <span className="report-viz-period-count">{count(rows.length)} períodos</span>
+    </div>
+
+    <div className="report-viz-metrics" aria-live="polite">
+      {metrics.map((item) => <article key={item.label} className={"report-viz-metric report-viz-metric--" + item.tone}>
+        <span><i />{item.label}</span><strong>{item.value}</strong>
+      </article>)}
+    </div>
+
+    <div className="report-viz-legend" aria-label="Legenda do gráfico">
+      {activeSeries.map((item) => <span key={item.key}><i style={{ backgroundColor: item.color }} />{item.label}</span>)}
+    </div>
+
+    <div className="report-viz-scroll" role="region" aria-label="Gráfico por período. Role horizontalmente para consultar todo o histórico." tabIndex={0}>
+      <svg className="report-viz-svg" role="img"
+        aria-label={mode === "financial" ? "Comparação de faturamento, custos e valor líquido por período" : "Comparação de registros incluídos, excluídos e em revisão por período"}
+        viewBox={"0 0 " + chartWidth + " " + chartHeight}
+        style={{ width: chartWidth + "px", minWidth: chartWidth + "px" }}>
         <defs>
-          <linearGradient id="chartRevenue" x1="0" x2="0" y1="0" y2="1"><stop offset="0%" stopColor={colors.revenue} stopOpacity=".96"/><stop offset="100%" stopColor={colors.revenue} stopOpacity=".62"/></linearGradient>
-          <linearGradient id="chartCost" x1="0" x2="0" y1="0" y2="1"><stop offset="0%" stopColor={colors.cost} stopOpacity=".96"/><stop offset="100%" stopColor={colors.cost} stopOpacity=".62"/></linearGradient>
-          <linearGradient id="chartProfit" x1="0" x2="0" y1="0" y2="1"><stop offset="0%" stopColor={colors.profit} stopOpacity=".96"/><stop offset="100%" stopColor={colors.profit} stopOpacity=".62"/></linearGradient>
-          <filter id="chartPointShadow" x="-80%" y="-80%" width="260%" height="260%"><feDropShadow dx="0" dy="2" stdDeviation="2" floodColor="#0f172a" floodOpacity=".2"/></filter>
-          <filter id="chartBarShadow" x="-50%" y="-30%" width="200%" height="180%"><feDropShadow dx="0" dy="2" stdDeviation="2" floodColor="#0f172a" floodOpacity=".12"/></filter>
+          <linearGradient id="reportVizRevenue" x1="0" x2="0" y1="0" y2="1"><stop offset="0%" stopColor="#25aaa6" /><stop offset="100%" stopColor="#147c80" /></linearGradient>
+          <linearGradient id="reportVizCost" x1="0" x2="0" y1="0" y2="1"><stop offset="0%" stopColor="#efb65f" /><stop offset="100%" stopColor="#c47c27" /></linearGradient>
+          <linearGradient id="reportVizProfit" x1="0" x2="0" y1="0" y2="1"><stop offset="0%" stopColor="#7199e8" /><stop offset="100%" stopColor="#3d68bd" /></linearGradient>
+          <linearGradient id="reportVizReview" x1="0" x2="0" y1="0" y2="1"><stop offset="0%" stopColor="#aa96e2" /><stop offset="100%" stopColor="#7860b4" /></linearGradient>
         </defs>
-        <rect x={left} y={top} width={plotWidth} height={plotHeight} rx="12" fill="#f8fafc"/>
+        <rect className="report-viz-plot" x={left} y={top} width={plotWidth} height={plotHeight} rx="12" />
         {[0, 1, 2, 3, 4].map((tick) => {
-          const value = minMoney + (maxMoney - minMoney) * tick / 4;
-          const y = yMoney(value);
+          const value = minValue + (maxValue - minValue) * tick / 4;
+          const tickY = y(value);
           return <g key={tick}>
-            <line x1={left} x2={width - right} y1={y} y2={y} stroke={Math.abs(value) < 0.0001 ? "#94a3b8" : "#e3eaf2"} strokeWidth={Math.abs(value) < 0.0001 ? 1.6 : 1} strokeDasharray={Math.abs(value) < 0.0001 ? undefined : "3 6"}/>
-            <text x={left - 12} y={y + 4} textAnchor="end" className="chart-axis-label">{compactMoney(value)}</text>
-            <text x={width - right + 12} y={y + 4} className="chart-axis-label">{Math.round(maxCount * tick / 4)}</text>
+            <line x1={left} x2={chartWidth - right} y1={tickY} y2={tickY} className={Math.abs(value) < 0.00001 ? "report-viz-zero" : "report-viz-gridline"} />
+            <text x={left - 12} y={tickY + 4} textAnchor="end" className="report-viz-axis">{axisFormat(value)}</text>
           </g>;
         })}
-        <text x="16" y="19" className="chart-axis-caption">VALOR (R$)</text>
-        <text x={width - 12} y="19" textAnchor="end" className="chart-axis-caption">REGISTROS</text>
-        {visible.map((row, index) => {
-          const center = x(index);
-          const groupWidth = Math.min(96, plotWidth / visible.length * .78);
-          const barWidth = groupWidth / 3;
-          const base = yMoney(0);
+        {rows.map((row, index) => {
+          const center = left + slot * (index + 0.5);
           return <g key={row.label}>
-            {financial.map((item, itemIndex) => {
-              if (!isVisible(item.key)) return null;
-              const value = item.value(row);
-              const valueY = yMoney(value);
-              const fill = item.key === "profit" && value < 0 ? "#df5b65" : "url(#" + item.gradient + ")";
-              const barX = center - groupWidth / 2 + itemIndex * barWidth;
-              const labelFits = plotWidth / visible.length >= 116 && barWidth >= 30 && Math.abs(value) > 0;
-              const labelPosition = labelPositions.get("bar:" + index + ":" + item.key);
-              const tinyValue = new Intl.NumberFormat("pt-BR", { notation: "compact", maximumFractionDigits: 2 }).format(value);
-              return <g key={item.key}>
-                <rect x={barX} y={Math.min(valueY, base)} width={Math.max(2, barWidth - 4)} height={Math.max(1.5, Math.abs(base - valueY))} rx="4" fill={fill} className="chart-bar" filter="url(#chartBarShadow)" pointerEvents="none">
-                  <title>{row.label}: {item.label} — {currency.format(value)}</title>
+            {activeSeries.map((series, seriesIndex) => {
+              const value = series.value(row);
+              const valueY = y(value);
+              const barX = center - groupWidth / 2 + seriesIndex * (barWidth + barGap);
+              const barY = Math.min(baseline, valueY);
+              const height = Math.max(1, Math.abs(baseline - valueY));
+              const gradient = series.key === "revenue" || series.key === "eligible" ? "url(#reportVizRevenue)"
+                : series.key === "cost" || series.key === "excluded" ? "url(#reportVizCost)"
+                : series.key === "review" ? "url(#reportVizReview)" : "url(#reportVizProfit)";
+              return <g key={series.key}>
+                <rect x={barX} y={barY} width={barWidth} height={height} rx="4" fill={gradient} className="report-viz-bar">
+                  <title>{row.label} · {series.label}: {mode === "financial" ? money(value) : count(value)}</title>
                 </rect>
-                {labelFits && labelPosition && isVisible(item.key) && <text
-                  x={labelPosition.x}
-                  y={labelPosition.y}
-                  textAnchor="middle"
-                  fontSize="8"
-                  fontWeight="750"
-                  fill="#26384b"
-                  stroke="#f8fafc"
-                  strokeWidth="2.5"
-                  paintOrder="stroke"
-                  pointerEvents="none"
-                  aria-hidden="true"
-                >{tinyValue}</text>}
               </g>;
             })}
-            <text x={center} y={height - 48} textAnchor="middle" className="chart-category-label">{row.label.length > 18 ? row.label.slice(0, 16) + "…" : row.label}</text>
-            <text x={center} y={height - 27} textAnchor="middle" className="chart-category-count">{numbers.format(row.count)} registros</text>
+            <text x={center} y={chartHeight - 34} textAnchor="middle" className="report-viz-category">
+              <title>{row.label}</title>{row.label.length > 16 ? row.label.slice(0, 14) + "…" : row.label}
+            </text>
+            <text x={center} y={chartHeight - 16} textAnchor="middle" className="report-viz-category-count">{count(row.count)} registros</text>
+            <rect x={left + index * slot} y={top} width={slot} height={plotHeight} fill="transparent" className="report-viz-hit"
+              tabIndex={0} role="button" aria-label={"Ver valores de " + row.label}
+              onMouseEnter={() => setActiveIndex(index)} onFocus={() => setActiveIndex(index)}
+              onBlur={() => setActiveIndex(null)} />
           </g>;
         })}
-        {series.map((item, seriesIndex) => isVisible(item.key) && <g key={item.key}>
-          <path d={linePath(item.value)} fill="none" stroke={item.color} strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" className="chart-series-line"/>
-          {visible.map((row, index) => {
-            const count = item.value(row);
-            const pointY = yCount(count);
-            // Só exibe rótulos quando há espaço entre os períodos; cada série recebe
-            // um pequeno deslocamento horizontal para evitar que números se encostem.
-            const showPointLabel = count > 0 && plotWidth / visible.length >= 116;
-            const labelPosition = labelPositions.get("line:" + index + ":" + item.key);
-            const labelX = labelPosition?.x ?? x(index);
-            const labelY = labelPosition?.y ?? Math.max(top + 12, pointY - 19);
-            return <g key={row.label}>
-              {count > 0 && <circle cx={x(index)} cy={pointY} r="5.5" fill={item.color} stroke="#fff" strokeWidth="2.2" filter="url(#chartPointShadow)" pointerEvents="none">
-                <title>{row.label}: {item.label} — {numbers.format(count)} registros</title>
-              </circle>}
-              {showPointLabel && labelPosition && <text
-                x={labelX}
-                y={labelY}
-                textAnchor="middle"
-                fontSize="8"
-                fontWeight="800"
-                fill={item.color}
-                stroke="#f8fafc"
-                strokeWidth="2.8"
-                paintOrder="stroke"
-                pointerEvents="none"
-                aria-hidden="true"
-              >{numbers.format(count)}</text>}
-            </g>;
-          })}
-        </g>)}
-        {visible.map((row, index) => <rect
-          key={"hover-" + row.label}
-          x={left + index * (plotWidth / visible.length)}
-          y={top}
-          width={plotWidth / visible.length}
-          height={plotHeight}
-          fill="transparent"
-          pointerEvents="all"
-          tabIndex={0}
-          role="button"
-          aria-label={"Ver resumo de " + row.label}
-          onMouseEnter={() => setHoveredRow(row)}
-          onMouseMove={(event) => {
-            const cardWidth = 340;
-            const cardHeight = 300;
-            setHoverPosition({
-              x: Math.max(12, Math.min(event.clientX + 18, window.innerWidth - cardWidth - 12)),
-              y: Math.max(12, Math.min(event.clientY + 18, window.innerHeight - cardHeight - 12)),
-            });
-          }}
-          onFocus={() => setHoveredRow(row)}
-          onBlur={() => setHoveredRow(null)}
-        />)}
       </svg>
     </div>
-    {hoveredRow && typeof document !== "undefined" && createPortal(
-      <div className="chart-hover-tooltip" role="status" aria-live="polite" style={{ left: hoverPosition.x, top: hoverPosition.y }}>
-        <div className="chart-hover-tooltip__eyebrow">RESUMO DO PERÍODO</div>
-        <div className="chart-hover-tooltip__heading">{hoveredRow.label}</div>
-        <div className="chart-hover-tooltip__grid">
-          <div><span><i className="chart-tooltip-swatch chart-tooltip-swatch--revenue" />Faturamento</span><strong>{currency.format(hoveredRow.revenue)}</strong></div>
-          <div><span><i className="chart-tooltip-swatch chart-tooltip-swatch--cost" />Custos</span><strong>{currency.format(hoveredRow.cost)}</strong></div>
-          <div><span><i className="chart-tooltip-swatch chart-tooltip-swatch--profit" />Resultado líquido</span><strong>{currency.format(hoveredRow.profit)}</strong></div>
-          <div><span><i className="chart-tooltip-swatch chart-tooltip-swatch--completed" />Incluídos no financeiro</span><strong>{numbers.format(hoveredRow.eligibleCount)}</strong></div>
-          <div><span><i className="chart-tooltip-swatch chart-tooltip-swatch--excluded" />Excluídos do financeiro</span><strong>{numbers.format(hoveredRow.excludedCount ?? 0)}</strong></div>
-          <div><span><i className="chart-tooltip-swatch chart-tooltip-swatch--review" />Em revisão</span><strong>{numbers.format(hoveredRow.reviewCount ?? 0)}</strong></div>
-          <div><span><i className="chart-tooltip-swatch chart-tooltip-swatch--total" />Total de registros</span><strong>{numbers.format(hoveredRow.count)}</strong></div>
-        </div>
-      </div>,
-      document.body
-    )}
-    <details className="chart-data-details">
-      <summary>Consultar valores exatos por período</summary>
-      <div className="chart-data-table-scroll report-data-scroll">
-        <table className="chart-data-table report-chart-data-table">
-          <colgroup><col className="report-chart-col report-chart-col--period" /><col className="report-chart-col report-chart-col--revenue" /><col className="report-chart-col report-chart-col--cost" /><col className="report-chart-col report-chart-col--profit" /><col className="report-chart-col report-chart-col--completed" /><col className="report-chart-col report-chart-col--excluded" /><col className="report-chart-col report-chart-col--review" /><col className="report-chart-col report-chart-col--total" /></colgroup><thead><tr><th>Período</th><th>Faturamento</th><th>Custos</th><th>Resultado líquido</th><th>Incluídos no financeiro</th><th>Excluídos do financeiro</th><th>Em revisão</th><th>Total de registros</th></tr></thead>
-          <tbody>{visible.map((row) => <tr key={row.label}>
-            <th scope="row">{row.label}</th><td>{currency.format(row.revenue)}</td><td>{currency.format(row.cost)}</td><td>{currency.format(row.profit)}</td><td>{numbers.format(row.eligibleCount)}</td><td>{numbers.format(row.excludedCount ?? 0)}</td><td>{numbers.format(row.reviewCount ?? 0)}</td><td>{numbers.format(row.count)}</td>
-          </tr>)}</tbody>
-        </table>
+
+    <section className="report-viz-detail" aria-live="polite">
+      <div className="report-viz-detail-heading"><span>RESUMO DO PERÍODO</span><strong>{activeRow.label}</strong></div>
+      <div className="report-viz-detail-values">
+        <div><span>Faturamento</span><strong>{money(activeRow.revenue)}</strong></div>
+        <div><span>Custos</span><strong>{money(activeRow.cost)}</strong></div>
+        <div><span>Valor líquido</span><strong>{money(activeRow.profit)}</strong></div>
+        <div><span>Incluídos no financeiro</span><strong>{count(activeRow.eligibleCount)}</strong></div>
+        <div><span>Excluídos</span><strong>{count(activeRow.excludedCount ?? 0)}</strong></div>
+        <div><span>Em revisão</span><strong>{count(activeRow.reviewCount ?? 0)}</strong></div>
       </div>
-    </details>
-    <div className="unified-chart-footnote"><span className="chart-footnote-dot" /> Os valores financeiros são exibidos nas barras e as quantidades nas linhas. Consulte a tabela abaixo para conferir os totais exatos de cada período.</div>
+    </section>
   </div>;
 }
 
@@ -675,7 +514,7 @@ export default function ReportsPage() {
         </section>
         <section aria-labelledby="unified-chart-title" className="report-chart-panel">
           <div className="report-chart-heading">
-            <div className="report-chart-heading-copy"><p className="eyebrow">VISÃO CONSOLIDADA</p><h2 id="unified-chart-title">Desempenho financeiro e comercial</h2><p>Anos anteriores consolidados por ano; o ano atual detalhado mês a mês, com valores exibidos diretamente nas barras e nos pontos das linhas.</p></div>
+            <div className="report-chart-heading-copy"><p className="eyebrow">VISÃO CONSOLIDADA</p><h2 id="unified-chart-title">Desempenho financeiro e comercial</h2><p>Alterne entre a visão financeira e o volume de registros. Passe o cursor sobre um período para consultar os valores exatos.</p></div>
             <span className="report-chart-record-count">{numbers.format(filteredRows.length)} registros no filtro</span>
           </div>
           <UnifiedChart rows={monthlyChart}/>
