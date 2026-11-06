@@ -47,20 +47,25 @@ export function LoginButton() {
         <span className="login-input-label">Usuário</span>
         <span className="login-input-wrap">
           <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><circle cx="12" cy="8" r="3.5" stroke="currentColor" strokeWidth="1.7"/><path d="M5 20c.6-3.4 3-5.2 7-5.2s6.4 1.8 7 5.2" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round"/></svg>
-          <input
+          <select
             id="login-username"
             autoComplete="username"
-            autoCapitalize="none"
-            autoCorrect="off"
-            spellCheck={false}
             autoFocus
             aria-invalid={Boolean(error)}
             aria-describedby={error ? "login-error-message" : undefined}
-            onChange={(event) => { setUsername(event.target.value); setError(""); }}
-            placeholder="Digite seu usuário"
+            onChange={(event) => {
+              setUsername(event.target.value);
+              setError("");
+              passwordRef.current?.focus();
+            }}
             required
             value={username}
-          />
+          >
+            <option value="">Selecione seu usuário</option>
+            <option value="rhuan">Rhuan</option>
+            <option value="arthur">Arthur</option>
+            <option value="wesley">Wesley</option>
+          </select>
         </span>
       </label>
 
