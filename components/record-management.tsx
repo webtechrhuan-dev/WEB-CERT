@@ -322,7 +322,7 @@ function RecordForm({
               <span className="reauth-warning-icon"><Icon name="alert" /></span>
               <div><h3 id="delete-auth-title">Confirmar exclusão permanente</h3><p>Esta venda será removida definitivamente do banco de dados. Confirme sua identidade para continuar.</p></div>
             </div>
-            <label className="record-form-field"><span>Usuário</span><input autoComplete="username" value={reauthUsername} onChange={(event) => setReauthUsername(event.target.value)} placeholder="Seu usuário de acesso" /></label>
+            <label className="record-form-field"><span>Usuário</span><select autoComplete="username" autoFocus value={reauthUsername} onChange={(event) => setReauthUsername(event.target.value)}><option value="">Selecione seu usuário</option><option value="rhuan">Rhuan</option><option value="arthur">Arthur</option><option value="wesley">Wesley</option></select></label>
             <label className="record-form-field"><span>Senha</span><input autoComplete="current-password" type="password" value={reauthPassword} onChange={(event) => setReauthPassword(event.target.value)} placeholder="Digite sua senha novamente" onKeyDown={(event) => { if (event.key === "Enter") { event.preventDefault(); void confirmDelete(); } }} /></label>
             <p className="reauth-security-note">A senha é validada no servidor e não é armazenada. Somente o usuário atualmente conectado pode confirmar a exclusão.</p>
             <div className="form-actions">
