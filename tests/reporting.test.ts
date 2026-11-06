@@ -92,11 +92,11 @@ describe("relatórios agregados", () => {
     ]);
   });
 
-  it("não calcula lucro quando falta faturamento ou custo, mantendo o faturamento informado", () => {
+  it("deduz custos mesmo quando o faturamento está ausente", () => {
     const summary = summarizeWorkbook(sample, "model");
     const model = summary.groups.find((group) => group.label === "A1");
 
-    expect(model).toMatchObject({ count: 2, revenue: 1734.56, cost: 234.56, profit: 1000 });
+    expect(model).toMatchObject({ count: 2, revenue: 1734.56, cost: 234.56, profit: 985 });
   });
 
   it("mantém os agrupamentos por modelo e status sem inventar valores", () => {
@@ -107,14 +107,14 @@ describe("relatórios agregados", () => {
 });
 
 describe("relatório detalhado", () => {
-  it("mantém o mesmo critério de lucro do resumo e sinaliza custo ausente", () => {
+  it("mantém o mesmo critério de resultado líquido e sinaliza valores ausentes", () => {
     const rows = getWorkbookReportRows(sample);
     const rowA = rows.find((row) => row.client === "A");
     const rowB = rows.find((row) => row.client === "B");
     const rowC = rows.find((row) => row.client === "C");
 
     expect(rowA).toMatchObject({ revenue: 1234.56, cost: 234.56, profit: 1000, financiallyEligible: true, financialIssue: false });
-    expect(rowB).toMatchObject({ revenue: 500, cost: 0, profit: 0, financiallyEligible: true, financialIssue: true });
+    expect(rowB).toMatchObject({ revenue: 500, cost: 0, profit: 500, financiallyEligible: true, financialIssue: true });
     expect(rowC).toMatchObject({ revenue: 0, cost: 0, profit: 0, financiallyEligible: false, treatment: "Revisar" });
   });
 });
