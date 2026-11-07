@@ -551,8 +551,12 @@
 .report-viz-axis { fill:var(--muted); font-size:10px; font-weight:650; font-variant-numeric:tabular-nums; }
 .report-viz-category { fill:var(--ink); font-size:10px; font-weight:800; }
 .report-viz-category-count { fill:var(--muted); font-size:9px; font-weight:650; }
-.report-viz-bar { transition:opacity .16s ease,filter .16s ease; }
-.report-viz-hit:hover ~ .report-viz-bar,.report-viz-hit:focus-visible ~ .report-viz-bar { filter:brightness(1.08); }
+.report-viz-group .report-viz-bar { transition:opacity .16s ease,filter .16s ease; }
+.report-viz-group.is-active .report-viz-bar { filter:brightness(1.12) drop-shadow(0 2px 3px rgb(15 35 55 / 18%)); }
+.report-viz-group.is-active .report-viz-selection { fill-opacity:.13; stroke-opacity:.55; }
+.report-viz-profit-overlay { isolation:isolate; }
+.report-viz-profit-line { paint-order:stroke; }
+.report-viz-profit-point { filter:drop-shadow(0 1px 2px rgb(20 45 80 / 22%)); }
 .report-viz-detail { display:grid; gap:12px; padding:15px 17px; border:1px solid var(--line); border-radius:13px; background:var(--canvas); }
 .report-viz-detail-heading { display:flex; align-items:center; justify-content:space-between; gap:12px; flex-wrap:wrap; }
 .report-viz-detail-heading > span { color:var(--muted); font-size:9px; font-weight:850; letter-spacing:.12em; }
