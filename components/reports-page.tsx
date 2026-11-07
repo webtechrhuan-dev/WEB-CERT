@@ -150,7 +150,25 @@ function UnifiedChart({ rows }: { rows: Group[] }) {
   const currencyCompact = (value: number) => new Intl.NumberFormat("pt-BR", { notation: "compact", maximumFractionDigits: 1 }).format(value);
   const money = (value: number) => currency.format(value);
   const count = (value: number) => numbers.format(value);
-  const previousRow = activeDisplayIndex > 0 ? rows[activeDisplayIndex - 1] : null;
+  const candidatePreviousRow = activeDisplayIndex > 0 ? rows[activeDisplayIndex - 1] : null;
+  const periodOrdinal = (label: string) => {
+    const monthMatch = /^(.+)\\s+(\\d{4})$/.exec(label);
+    if (monthMatch) {
+      const monthIndex = MONTHS.indexOf(canonicalMonth(monthMatch[1]));
+      return monthIndex >= 0 ? Number(monthMatch[2]) * 12 + monthIndex : null;
+    }
+    const year = Number(label);
+    return /^\\d{4}$/.test(label) && Number.isInteger(year) ? year : null;
+  };
+  const currentOrdinal = periodOrdinal(activeRow.label);
+  const candidateOrdinal = candidatePreviousRow ? periodOrdinal(candidatePreviousRow.label) : null;
+  const sameGranularity = candidatePreviousRow
+    ? isMonthlyPeriod(activeRow.label) === isMonthlyPeriod(candidatePreviousRow.label)
+    : false;
+  const adjacentPeriod = currentOrdinal !== null && candidateOrdinal !== null
+    && currentOrdinal - candidateOrdinal === (isMonthlyPeriod(activeRow.label) ? 1 : 1);
+  const comparisonCompatible = Boolean(candidatePreviousRow && sameGranularity && adjacentPeriod);
+  const previousRow = comparisonCompatible ? candidatePreviousRow : null;
   const variation = (current: number, previous: number) => previous === 0
     ? current === 0 ? "0%" : "Novo"
     : `${current - previous > 0 ? "+" : ""}${((current - previous) / Math.abs(previous) * 100).toLocaleString("pt-BR", { maximumFractionDigits: 1 })}%`;
@@ -329,9 +347,11 @@ function UnifiedChart({ rows }: { rows: Group[] }) {
         {comparisonCompatible && previousRow ? <div className="report-viz-comparison-grid">
           {comparisonItems.map((item) => {
             const delta = item.current - item.previous;
-            const isCost = item.label === "Custos" || item.label === "Excluídos";
+            const isNeutralMetric = item.label === "Excluídos" || item.label === "Em revisão";
+            const isCost = item.label === "Custos";
             const positive = isCost ? delta <= 0 : delta >= 0;
-            return <article key={item.label} className={`report-viz-comparison-item ${delta === 0 ? "is-neutral" : positive ? "is-positive" : "is-negative"}`}>
+            const tone = delta === 0 || isNeutralMetric ? "is-neutral" : positive ? "is-positive" : "is-negative";
+            return <article key={item.label} className={`report-viz-comparison-item ${tone}`}>
               <span>{item.label}</span>
               <strong>{variation(item.current, item.previous)}</strong>
               <small>{delta > 0 ? "+" : ""}{item.format(delta)} em relação ao período anterior</small>
