@@ -797,3 +797,10 @@
 :root[data-theme="dark"] .report-viz-comparison { border-color:#30485a; background:#172d3e; }
 :root[data-theme="dark"] .report-viz-comparison-item { border-color:#30485a; background:#102333; }
 @media(max-width:600px) { .report-viz-comparison-grid { grid-template-columns:1fr; } .report-viz-comparison-item { grid-template-columns:1fr auto; align-items:center; } .report-viz-comparison-item > small { grid-column:1/-1; } }
+
+
+/* Participação dos rankings no faturamento filtrado */
+.report-ranking-share { display:block; margin-left:2px; color:var(--muted); font-size:9px; font-weight:650; line-height:1.35; }
+.report-client-sales-count { line-height:1.4; }
+.report-model-bar-meta > span { line-height:1.35; }
+:root[data-theme="dark"] .report-ranking-share,:root[data-theme="dark"] .report-client-sales-count { color:#9fb3c2; }
