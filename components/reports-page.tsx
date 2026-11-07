@@ -162,7 +162,20 @@ function UnifiedChart({ rows }: { rows: Group[] }) {
   const barGap = 6;
   const isMonthlyPeriod = (label: string) => /^.+\s+\d{4}$/.test(label);
   const monthlyProfitRows = rows.map((row, index) => ({ row, index })).filter(({ row }) => isMonthlyPeriod(row.label));
-  const profitPath = monthlyProfitRows.map(({ row, index }, pointIndex) => `${pointIndex === 0 ? "M" : "L"} ${left + slot * (index + 0.5)} ${y(row.profit)}`).join(" ");
+  // Interrompe a linha quando há meses sem registros, evitando sugerir continuidade inexistente.
+  const monthlyProfitSegments: { row: Group; index: number }[][] = [];
+  monthlyProfitRows.forEach((point) => {
+    const match = /^(.+)\s+(\d{4})$/.exec(point.row.label);
+    const monthIndex = match ? MONTHS.indexOf(canonicalMonth(match[1])) : -1;
+    const periodOrdinal = match && monthIndex >= 0 ? Number(match[2]) * 12 + monthIndex : null;
+    const currentSegment = monthlyProfitSegments[monthlyProfitSegments.length - 1];
+    const previous = currentSegment?.[currentSegment.length - 1];
+    const previousMatch = previous ? /^(.+)\s+(\d{4})$/.exec(previous.row.label) : null;
+    const previousMonth = previousMatch ? MONTHS.indexOf(canonicalMonth(previousMatch[1])) : -1;
+    const previousOrdinal = previousMatch && previousMonth >= 0 ? Number(previousMatch[2]) * 12 + previousMonth : null;
+    if (currentSegment && periodOrdinal !== null && previousOrdinal !== null && periodOrdinal === previousOrdinal + 1) currentSegment.push(point);
+    else monthlyProfitSegments.push([point]);
+  });
   const axisFormat = (value: number) => mode === "financial" ? "R$ " + currencyCompact(value) : count(Math.round(value));
   const metrics = mode === "financial"
     ? [
@@ -243,16 +256,28 @@ function UnifiedChart({ rows }: { rows: Group[] }) {
             </text>
             <text x={center} y={chartHeight - 16} textAnchor="middle" className="report-viz-category-count">{count(row.count)} registros</text>
             <rect x={left + index * slot} y={top} width={slot} height={plotHeight} fill="transparent" className="report-viz-hit"
-              tabIndex={0} role="button" aria-pressed={activeIndex === index}
+              tabIndex={activeIndex === index || (activeIndex === null && index === rows.length - 1) ? 0 : -1}
+              role="button" aria-pressed={activeIndex === index} aria-controls="report-viz-detail"
               aria-label={"Ver valores de " + row.label}
               onMouseEnter={() => setActiveIndex(index)} onFocus={() => setActiveIndex(index)}
               onClick={() => setActiveIndex(index)}
-              onKeyDown={(event) => { if (event.key === "Enter" || event.key === " ") { event.preventDefault(); setActiveIndex(index); } }}
+              onKeyDown={(event) => {
+                const targets = Array.from(event.currentTarget.ownerSVGElement?.querySelectorAll<SVGRectElement>(".report-viz-hit") ?? []);
+                let nextIndex: number | null = null;
+                if (event.key === "ArrowRight") nextIndex = Math.min(rows.length - 1, index + 1);
+                if (event.key === "ArrowLeft") nextIndex = Math.max(0, index - 1);
+                if (event.key === "Home") nextIndex = 0;
+                if (event.key === "End") nextIndex = rows.length - 1;
+                if (nextIndex !== null) { event.preventDefault(); setActiveIndex(nextIndex); targets[nextIndex]?.focus(); }
+                else if (event.key === "Enter" || event.key === " ") { event.preventDefault(); setActiveIndex(index); }
+              }}
               onBlur={() => setActiveIndex(null)} />
           </g>;
         })}
         {mode === "financial" && <g className="report-viz-profit-overlay" pointerEvents="none">
-          <path className="report-viz-profit-line" d={profitPath} fill="none" stroke="url(#reportVizProfit)" strokeWidth="3.5" strokeLinecap="round" strokeLinejoin="round" />
+          {monthlyProfitSegments.map((segment, segmentIndex) => <path key={`profit-segment-${segmentIndex}`} className="report-viz-profit-line"
+            d={segment.map(({ row, index }, pointIndex) => `${pointIndex === 0 ? "M" : "L"} ${left + slot * (index + 0.5)} ${y(row.profit)}`).join(" ")}
+            fill="none" stroke="url(#reportVizProfit)" strokeWidth="3.5" strokeLinecap="round" strokeLinejoin="round" />)}
           {monthlyProfitRows.map(({ row, index }) => <circle key={`profit-${row.label}`} className="report-viz-profit-point" cx={left + slot * (index + 0.5)} cy={y(row.profit)} r={activeIndex === index ? 6 : 4.5}>
             <title>{row.label} · Valor líquido: {money(row.profit)}</title>
           </circle>)}
@@ -260,7 +285,7 @@ function UnifiedChart({ rows }: { rows: Group[] }) {
       </svg>
     </div>
 
-    <section className="report-viz-detail" aria-live="polite">
+    <section id="report-viz-detail" className="report-viz-detail" aria-live="polite">
       <div className="report-viz-detail-heading"><span>RESUMO DO PERÍODO</span><strong>{activeRow.label}</strong></div>
       <div className="report-viz-detail-values">
         <div><span>Faturamento</span><strong>{money(activeRow.revenue)}</strong></div>
