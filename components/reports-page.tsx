@@ -288,15 +288,20 @@ function UnifiedChart({ rows }: { rows: Group[] }) {
       </svg>
     </div>
 
-    <section id="report-viz-detail" className="report-viz-detail" aria-live="polite">
-      <div className="report-viz-detail-heading"><span>RESUMO DO PERÍODO</span><strong>{activeRow.label}</strong></div>
+    <section id="report-viz-detail" className="report-viz-detail" aria-live="polite" aria-atomic="true">
+      <div className="report-viz-detail-heading"><span>{mode === "financial" ? "RESUMO FINANCEIRO DO PERÍODO" : "RESUMO DO VOLUME NO PERÍODO"}</span><strong>{activeRow.label}</strong></div>
       <div className="report-viz-detail-values">
-        <div><span>Faturamento</span><strong>{money(activeRow.revenue)}</strong></div>
-        <div><span>Custos</span><strong>{money(activeRow.cost)}</strong></div>
-        <div><span>Valor líquido</span><strong>{money(activeRow.profit)}</strong></div>
-        <div><span>Incluídos no financeiro</span><strong>{count(activeRow.eligibleCount)}</strong></div>
-        <div><span>Excluídos</span><strong>{count(activeRow.excludedCount ?? 0)}</strong></div>
-        <div><span>Em revisão</span><strong>{count(activeRow.reviewCount ?? 0)}</strong></div>
+        {mode === "financial" ? <>
+          <div><span>Faturamento</span><strong>{money(activeRow.revenue)}</strong></div>
+          <div><span>Custos</span><strong>{money(activeRow.cost)}</strong></div>
+          <div><span>Valor líquido</span><strong>{money(activeRow.profit)}</strong></div>
+          <div><span>Registros contabilizados</span><strong>{count(activeRow.eligibleCount)}</strong></div>
+        </> : <>
+          <div><span>Incluídos no financeiro</span><strong>{count(activeRow.eligibleCount)}</strong></div>
+          <div><span>Excluídos</span><strong>{count(activeRow.excludedCount ?? 0)}</strong></div>
+          <div><span>Em revisão</span><strong>{count(activeRow.reviewCount ?? 0)}</strong></div>
+          <div><span>Total de registros</span><strong>{count(activeRow.count)}</strong></div>
+        </>}
       </div>
     </section>
   </div>;
