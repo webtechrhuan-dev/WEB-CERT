@@ -586,14 +586,16 @@ export default function ReportsPage() {
         </section>
         <section aria-label="Indicadores financeiros" className="report-kpi-grid">
           {[
-            { label: "Registros de clientes", value: numbers.format(filteredSummary.count), note: `${numbers.format(filteredSummary.eligibleCount)} incluídos no financeiro (exceto cancelados e não concluídos)`, tone: "navy" },
-            { label: "Faturamento contabilizado", value: currency.format(filteredSummary.revenue), note: "Soma apenas os registros classificados para o cálculo financeiro", tone: "positive" },
-            { label: "Custos contabilizados", value: currency.format(filteredSummary.cost), note: "Custos dos registros contabilizados", tone: "warning" },
-            { label: "Valor líquido estimado", value: currency.format(filteredSummary.profit), note: "Faturamento bruto menos custos dos registros contabilizados", tone: filteredSummary.profit >= 0 ? "profit-positive" : "profit-negative" },
-            { label: "Ticket médio", value: currency.format(filteredSummary.eligibleCount ? filteredSummary.revenue / filteredSummary.eligibleCount : 0), note: "Faturamento por registro contabilizado", tone: "teal" },
-            { label: "Aguardando revisão", value: numbers.format(filteredSummary.reviewCount), note: "Status ausente em planilhas de 2026 ou posteriores; confira pendências financeiras nos detalhes", tone: "muted" },
-            { label: "Datas divergentes/ausentes", value: numbers.format(filteredRows.filter((row) => row.dateIssue).length), note: "Data vazia ou fora do mês/ano da pasta", tone: "warning" },
-          ].map((item, index) => <article key={item.label} className={`report-kpi-card report-kpi-card--${item.tone} ${index < 4 ? "report-kpi-card--primary" : "report-kpi-card--secondary"}`}><span>{item.label}</span><strong>{item.value}</strong><small>{item.note}</small></article>)}
+            { label: "Registros de clientes", value: numbers.format(filteredSummary.count), note: `${numbers.format(filteredSummary.eligibleCount)} incluídos no financeiro; cancelados e não concluídos ficam fora dos valores`, tone: "navy" },
+            { label: "Faturamento contabilizado", value: currency.format(filteredSummary.revenue), note: "Soma dos registros elegíveis dentro dos filtros aplicados", tone: "positive" },
+            { label: "Custos contabilizados", value: currency.format(filteredSummary.cost), note: "Custo total dos registros elegíveis", tone: "warning" },
+            { label: "Valor líquido estimado", value: currency.format(filteredSummary.profit), note: "Faturamento menos custos dos registros elegíveis", tone: filteredSummary.profit >= 0 ? "profit-positive" : "profit-negative" },
+            { label: "Ticket médio", value: currency.format(filteredSummary.eligibleCount ? filteredSummary.revenue / filteredSummary.eligibleCount : 0), note: "Faturamento médio por registro elegível", tone: "teal" },
+            { label: "Margem líquida", value: `${filteredSummary.revenue > 0 ? (filteredSummary.profit / filteredSummary.revenue * 100).toLocaleString("pt-BR", { maximumFractionDigits: 1 }) : "0"}%`, note: "Parcela do faturamento que permanece após os custos", tone: "teal" },
+            { label: "Aguardando revisão", value: numbers.format(filteredSummary.reviewCount), note: "Registros sem situação financeira definida; confira os detalhes", tone: "muted" },
+            { label: "Dados financeiros incompletos", value: numbers.format(filteredRows.filter((row) => row.financialIssue).length), note: "Registros elegíveis sem faturamento ou custo preenchido", tone: "warning" },
+            { label: "Datas divergentes/ausentes", value: numbers.format(filteredRows.filter((row) => row.dateIssue).length), note: "Data vazia ou diferente do mês/ano da pasta", tone: "warning" },
+          ].map((item, index) => <article key={item.label} className={`report-kpi-card report-kpi-card--${item.tone} ${index < 4 ? "report-kpi-card--primary" : "report-kpi-card--secondary"}`}><div className="report-kpi-card__top"><span>{item.label}</span><i>{String(index + 1).padStart(2, "0")}</i></div><strong>{item.value}</strong><small>{item.note}</small></article>)}
         </section>
         <section aria-labelledby="unified-chart-title" className="report-chart-panel">
           <div className="report-chart-heading">
