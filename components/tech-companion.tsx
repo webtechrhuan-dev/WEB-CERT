@@ -34,7 +34,7 @@ export function TechCompanion() {
   const lastAction = useRef(0);
   const characterRef = useRef<HTMLButtonElement | null>(null);
 
-  const speak = (text: string, nextMood: GuideMood = "wave", duration = 5200) => {
+  const speak = (text: string, nextMood: GuideMood = "wave", _duration = 10000) => {
     setMessage(text);
     setMood(nextMood);
     setExpanded(true);
@@ -42,7 +42,7 @@ export function TechCompanion() {
     timer.current = setTimeout(() => {
       setExpanded(false);
       setMood("idle");
-    }, duration);
+    }, 10000);
   };
 
   useEffect(() => {
@@ -112,6 +112,7 @@ export function TechCompanion() {
       else if (/salvar|confirmar|gravar|cadastrar|emitir/.test(label)) speak("Confira os campos e aguarde a confirmação do sistema.", "think", 5600);
       else if (/novo|adicionar|cadastrar venda/.test(label)) speak("Vamos lá! Preencha os dados necessários para continuar.", "wave", 5600);
       else if (/pesquis|buscar|localizar|filtro/.test(label)) speak("Use o campo ou os filtros para refinar sua busca.", "search", 5200);
+      else if (/ver senha|visualizar senha|senha do certificado/.test(label)) speak("Para revelar a senha PFX, confirme o usuário e a senha de acesso. O conteúdo aparece apenas depois da validação.", "think");
       else if (/relat|gráfico|grafico|exportar|baixar/.test(label)) speak("Estou analisando com você. Ajuste o período para comparar os resultados.", "chart", 6000);
       else if (/editar|alterar/.test(label)) speak("Faça os ajustes necessários e revise antes de salvar.", "think", 5200);
       else if (/instal|conclu|status/.test(label)) speak("Atualize o andamento conforme a etapa real do atendimento.", "happy", 5200);
@@ -144,6 +145,7 @@ export function TechCompanion() {
       else if (/vencimento|validade/.test(context)) speak("Este campo é informativo quando a data vem automaticamente do cadastro.", "alert", 4800);
       else if (/status|situação|situacao/.test(context)) speak("Escolha o status que representa a etapa atual do atendimento.", "think", 4700);
       else if (/senha|password/.test(context)) speak("Digite sua senha com tranquilidade. Não vou olhar! 🤖", "happy", 3600);
+      else if (/senha do certificado|senha pfx/.test(context)) speak("Esta é a senha do arquivo PFX. Ela fica protegida e só é revelada após confirmar sua identidade.", "think");
       else if (/pfx|arquivo|upload/.test(context)) speak("Confira se selecionou o arquivo PFX correto antes de vinculá-lo.", "think", 5000);
     };
 
