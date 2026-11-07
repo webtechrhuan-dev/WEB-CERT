@@ -19,8 +19,8 @@ export function LoginMascot() {
     let targetY = 0;
 
     const paint = () => {
-      x += (targetX - x) * 0.16;
-      y += (targetY - y) * 0.16;
+      x += (targetX - x) * 0.14;
+      y += (targetY - y) * 0.14;
       stage.style.setProperty("--gaze-x", `${(x * 5).toFixed(2)}px`);
       stage.style.setProperty("--gaze-y", `${(y * 4).toFixed(2)}px`);
       if (Math.abs(targetX - x) + Math.abs(targetY - y) > 0.01) frame = requestAnimationFrame(paint);
@@ -50,81 +50,87 @@ export function LoginMascot() {
   }, []);
 
   return (
-    <div ref={stageRef} className={`webit-stage webit-stage--${mood}`} role="img" aria-label="Wébit, guardião digital da Web Tech">
-      <span className="webit-halo" aria-hidden="true" />
-      <span className="webit-orbit webit-orbit--a" aria-hidden="true" />
-      <span className="webit-orbit webit-orbit--b" aria-hidden="true" />
-      <svg className="webit-art" viewBox="0 0 260 300" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+    <div ref={stageRef} className={`wt-character-stage wt-character-stage--${mood}`} role="img" aria-label="Personagem da Web Tech">
+      <span className="wt-character-aura" aria-hidden="true" />
+      <svg className="wt-character-art" viewBox="0 0 320 360" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
         <defs>
-          <linearGradient id="wb-fur" x1="54" y1="38" x2="205" y2="248" gradientUnits="userSpaceOnUse">
-            <stop stopColor="#F8FFFF"/><stop offset=".48" stopColor="#BCECF0"/><stop offset="1" stopColor="#4BA8C4"/>
+          <linearGradient id="char-skin" x1="102" y1="90" x2="221" y2="228" gradientUnits="userSpaceOnUse">
+            <stop stopColor="#FFE8D4"/><stop offset=".52" stopColor="#E9B99B"/><stop offset="1" stopColor="#C98970"/>
           </linearGradient>
-          <linearGradient id="wb-blue" x1="77" y1="52" x2="193" y2="249" gradientUnits="userSpaceOnUse">
-            <stop stopColor="#287DC0"/><stop offset=".56" stopColor="#086D9C"/><stop offset="1" stopColor="#073D63"/>
+          <linearGradient id="char-hair" x1="95" y1="36" x2="231" y2="148" gradientUnits="userSpaceOnUse">
+            <stop stopColor="#243D60"/><stop offset=".55" stopColor="#102943"/><stop offset="1" stopColor="#071A30"/>
           </linearGradient>
-          <linearGradient id="wb-face" x1="80" y1="100" x2="185" y2="182" gradientUnits="userSpaceOnUse">
-            <stop stopColor="#174F70"/><stop offset="1" stopColor="#061F38"/>
+          <linearGradient id="char-jacket" x1="75" y1="230" x2="249" y2="354" gradientUnits="userSpaceOnUse">
+            <stop stopColor="#168EB8"/><stop offset=".5" stopColor="#086A98"/><stop offset="1" stopColor="#073D66"/>
           </linearGradient>
-          <linearGradient id="wb-tail" x1="38" y1="194" x2="96" y2="251" gradientUnits="userSpaceOnUse">
-            <stop stopColor="#74E8E9"/><stop offset="1" stopColor="#087BA8"/>
+          <linearGradient id="char-shirt" x1="132" y1="239" x2="192" y2="337" gradientUnits="userSpaceOnUse">
+            <stop stopColor="#F5FFFF"/><stop offset="1" stopColor="#B8E4E9"/>
           </linearGradient>
-          <filter id="wb-shadow" x="12" y="12" width="236" height="280" filterUnits="userSpaceOnUse">
-            <feGaussianBlur stdDeviation="8"/>
+          <linearGradient id="char-ear" x1="82" y1="152" x2="239" y2="201" gradientUnits="userSpaceOnUse">
+            <stop stopColor="#F8D7C2"/><stop offset="1" stopColor="#D89D83"/>
+          </linearGradient>
+          <filter id="char-shadow" x="25" y="12" width="270" height="350" filterUnits="userSpaceOnUse">
+            <feGaussianBlur stdDeviation="11"/>
           </filter>
-          <filter id="wb-eye-glow" x="0" y="0" width="260" height="300" filterUnits="userSpaceOnUse">
-            <feGaussianBlur stdDeviation="3" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>
+          <filter id="char-glow" x="0" y="0" width="320" height="360" filterUnits="userSpaceOnUse">
+            <feGaussianBlur stdDeviation="2.5" result="blur"/><feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
           </filter>
         </defs>
-
-        <ellipse cx="130" cy="272" rx="72" ry="11" fill="#020E1B" opacity=".22" filter="url(#wb-shadow)"/>
-        <path className="webit-tail" d="M91 216C48 237 39 204 57 190C68 181 82 189 77 201C73 210 62 207 63 200" stroke="url(#wb-tail)" strokeWidth="17" strokeLinecap="round"/>
-        <path d="M91 216C48 237 39 204 57 190C68 181 82 189 77 201" stroke="#B7FFFF" strokeOpacity=".7" strokeWidth="3" strokeLinecap="round"/>
-
-        <g className="webit-body">
-          <path d="M91 202C91 184 105 173 130 173C155 173 169 184 169 202L179 244C151 264 109 264 81 244L91 202Z" fill="url(#wb-fur)" stroke="#5BBBCB" strokeWidth="3"/>
-          <path d="M103 199C111 190 149 190 157 199L163 237C143 250 117 250 97 237L103 199Z" fill="url(#wb-blue)" stroke="#0C668D" strokeWidth="2"/>
-          <path d="M110 210H120L130 229L140 210H150L135 240H125L110 210Z" fill="#72E8E8"/>
-          <path d="M117 245Q130 249 143 245" stroke="#E7FFFF" strokeWidth="3" strokeLinecap="round" opacity=".8"/>
-          <path d="M97 190L78 208L88 222M163 190L182 208L172 222" stroke="#8DE8EA" strokeWidth="9" strokeLinecap="round"/>
+        <ellipse cx="160" cy="333" rx="95" ry="13" fill="#04182B" opacity=".23" filter="url(#char-shadow)"/>
+        <g className="wt-character-body">
+          <path d="M77 286C83 246 111 226 146 220H178C215 226 240 246 245 286L257 342H63L77 286Z" fill="url(#char-jacket)" stroke="#54B9D0" strokeWidth="3"/>
+          <path d="M126 229L160 270L194 229L211 342H109L126 229Z" fill="url(#char-shirt)"/>
+          <path d="M126 229L160 270L145 294L117 244L126 229Z" fill="#0B4C75"/>
+          <path d="M194 229L160 270L175 294L203 244L194 229Z" fill="#0B4C75"/>
+          <path d="M160 271V342" stroke="#79D9E2" strokeWidth="3" opacity=".75"/>
+          <path d="M91 267L111 278L101 342H63L77 286Z" fill="#0B527D" opacity=".8"/>
+          <path d="M229 267L209 278L219 342H257L245 286Z" fill="#06395F" opacity=".7"/>
+          <path d="M112 258L127 247M208 258L193 247" stroke="#A4F1F1" strokeWidth="3" strokeLinecap="round" opacity=".7"/>
+          <path d="M145 294L160 309L175 294" stroke="#55C6D7" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"/>
         </g>
-
-        <g className="webit-head">
-          <path d="M62 113L44 35C42 25 53 19 61 27L105 66C121 58 139 58 155 66L199 27C207 19 218 25 216 35L198 113" fill="url(#wb-blue)" stroke="#54C8D9" strokeWidth="4" strokeLinejoin="round"/>
-          <path d="M59 48L91 77L75 91L59 48ZM201 48L169 77L185 91L201 48Z" fill="#0B385D" opacity=".9"/>
-          <path d="M70 113C70 82 94 64 130 64C166 64 190 82 190 113V158C190 194 164 216 130 216C96 216 70 194 70 158V113Z" fill="url(#wb-fur)" stroke="#6AD3DE" strokeWidth="4"/>
-          <path d="M83 100C94 82 111 76 130 76C149 76 166 82 177 100" stroke="white" strokeWidth="5" strokeLinecap="round" opacity=".65"/>
-          <path d="M81 113C81 103 91 95 104 95H156C169 95 179 103 179 113V157C179 172 166 184 150 184H110C94 184 81 172 81 157V113Z" fill="url(#wb-face)" stroke="#1A6585" strokeWidth="3"/>
-          <path d="M88 111C105 99 155 99 172 111" stroke="#73E8E9" strokeWidth="2" opacity=".25"/>
-          <g className="webit-eyes" filter="url(#wb-eye-glow)">
-            <ellipse cx="111" cy="132" rx="8" ry="12" fill="#61E7EA"/>
-            <ellipse cx="149" cy="132" rx="8" ry="12" fill="#61E7EA"/>
-            <ellipse cx="113" cy="128" rx="3" ry="4" fill="white"/>
-            <ellipse cx="151" cy="128" rx="3" ry="4" fill="white"/>
+        <g className="wt-character-neck">
+          <path d="M139 205H181V248C169 261 151 261 139 248V205Z" fill="url(#char-skin)"/>
+          <path d="M139 219Q160 238 181 219V239Q160 256 139 239V219Z" fill="#C98970" opacity=".35"/>
+        </g>
+        <g className="wt-character-head">
+          <path d="M99 132C99 79 124 51 163 51C205 51 226 83 222 137L218 190C214 226 190 246 160 246C129 246 105 225 101 190L99 132Z" fill="url(#char-skin)" stroke="#C78E78" strokeWidth="2.5"/>
+          <path d="M88 141C79 128 78 105 85 83C94 52 122 29 162 29C198 29 222 48 232 77C239 98 234 122 227 139L217 117L211 94C190 102 166 102 144 94C131 110 112 118 96 119L88 141Z" fill="url(#char-hair)"/>
+          <path d="M103 82C116 49 151 39 179 48C193 53 204 64 210 77C187 70 170 72 151 83C133 94 116 97 96 96L103 82Z" fill="#355477" opacity=".7"/>
+          <path d="M90 143C77 134 73 148 80 166C85 178 96 182 105 177L101 146L90 143Z" fill="url(#char-ear)"/>
+          <path d="M230 143C243 134 247 148 240 166C235 178 224 182 215 177L219 146L230 143Z" fill="url(#char-ear)"/>
+          <path d="M87 151Q94 146 99 156M233 151Q226 146 221 156" stroke="#B97868" strokeWidth="2" strokeLinecap="round"/>
+          <path d="M115 142Q130 132 144 141" stroke="#493C42" strokeWidth="5" strokeLinecap="round"/>
+          <path d="M176 141Q190 132 204 142" stroke="#493C42" strokeWidth="5" strokeLinecap="round"/>
+          <g className="wt-character-eyes" filter="url(#char-glow)">
+            <ellipse cx="131" cy="159" rx="6" ry="8" fill="#17364C"/>
+            <ellipse cx="189" cy="159" rx="6" ry="8" fill="#17364C"/>
+            <circle cx="133" cy="156" r="2" fill="white"/>
+            <circle cx="191" cy="156" r="2" fill="white"/>
           </g>
-          <path d="M124 151Q130 156 136 151" stroke="#73E8E9" strokeWidth="3" strokeLinecap="round"/>
-          <path d="M95 174Q130 192 165 174" stroke="#56B8CC" strokeWidth="3" strokeLinecap="round"/>
-          <path d="M80 150C88 155 96 157 104 157M180 150C172 155 164 157 156 157" stroke="#72D8E0" strokeWidth="2" opacity=".5"/>
-          <path d="M101 188Q130 199 159 188" stroke="white" strokeWidth="3" strokeLinecap="round" opacity=".65"/>
+          <path d="M160 161L154 183Q160 188 166 183" stroke="#B87968" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"/>
+          <path d="M143 204Q160 217 178 203" stroke="#9E4F53" strokeWidth="3" strokeLinecap="round"/>
+          <path d="M145 204Q160 211 176 203" stroke="#FFF0E6" strokeWidth="2" strokeLinecap="round"/>
+          <path d="M111 184Q119 190 128 187M192 187Q201 190 209 184" stroke="#D68D80" strokeWidth="5" strokeLinecap="round" opacity=".38"/>
+          <path d="M111 115C122 105 134 99 145 92" stroke="#4E6E91" strokeWidth="4" strokeLinecap="round" opacity=".55"/>
+          <path d="M211 105C202 95 195 89 186 85" stroke="#4E6E91" strokeWidth="4" strokeLinecap="round" opacity=".45"/>
         </g>
-
-        <g className="webit-paws">
-          <path d="M83 190C69 180 58 190 61 204C63 215 77 218 91 207" fill="url(#wb-fur)" stroke="#56B8CC" strokeWidth="3"/>
-          <path d="M177 190C191 180 202 190 199 204C197 215 183 218 169 207" fill="url(#wb-fur)" stroke="#56B8CC" strokeWidth="3"/>
+        <g className="wt-character-arms">
+          <path d="M87 258C70 263 61 279 65 297L77 315C84 324 99 318 99 307L94 286L112 276" fill="url(#char-skin)" stroke="#C98970" strokeWidth="3"/>
+          <path d="M233 258C250 263 259 279 255 297L243 315C236 324 221 318 221 307L226 286L208 276" fill="url(#char-skin)" stroke="#C98970" strokeWidth="3"/>
         </g>
-        <g className="webit-cover-paws">
-          <path d="M81 118C64 107 56 119 64 134L93 153" fill="url(#wb-fur)" stroke="#55B6C8" strokeWidth="4" strokeLinecap="round"/>
-          <path d="M179 118C196 107 204 119 196 134L167 153" fill="url(#wb-fur)" stroke="#55B6C8" strokeWidth="4" strokeLinecap="round"/>
-          <path d="M66 126L77 132M194 126L183 132" stroke="white" strokeWidth="3" strokeLinecap="round"/>
+        <g className="wt-character-cover">
+          <path d="M102 151C88 137 75 143 78 160L91 186C98 197 111 195 116 184L124 169" fill="url(#char-skin)" stroke="#C98970" strokeWidth="3"/>
+          <path d="M218 151C232 137 245 143 242 160L229 186C222 197 209 195 204 184L196 169" fill="url(#char-skin)" stroke="#C98970" strokeWidth="3"/>
+          <path d="M88 160L102 174M232 160L218 174" stroke="#FFE8D4" strokeWidth="3" strokeLinecap="round"/>
         </g>
-        <path d="M130 53V39" stroke="#62DCE2" strokeWidth="4" strokeLinecap="round"/>
-        <path d="M130 26L136 33L130 40L124 33L130 26Z" fill="#35C6D4" stroke="#D8FFFF" strokeWidth="2"/>
-        <circle cx="130" cy="33" r="13" stroke="#67E5E9" strokeOpacity=".3" strokeWidth="2"/>
+        <path d="M236 228L246 218L256 228L246 238L236 228Z" fill="#35C2D0" stroke="#D7FFFF" strokeWidth="2"/>
+        <circle cx="246" cy="228" r="17" stroke="#55D3DF" strokeOpacity=".35" strokeWidth="2"/>
       </svg>
-      <div className="webit-wordmark">
-        <span className="webit-live-dot" />
-        <strong>WÉBIT</strong>
-        <span className="webit-wordmark-line" />
-        <small>{mood === "covering" ? "Sua senha fica só com você." : mood === "curious" ? "Olá! Pronto para começar?" : "Guardião digital Web Tech"}</small>
+      <div className="wt-character-caption">
+        <span className="wt-character-status" />
+        <strong>WEB TECH</strong>
+        <span className="wt-character-divider" />
+        <small>{mood === "covering" ? "Privacidade em primeiro lugar" : mood === "curious" ? "Vamos começar?" : "Seu parceiro digital"}</small>
       </div>
     </div>
   );
