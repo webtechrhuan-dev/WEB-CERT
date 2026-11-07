@@ -55,6 +55,38 @@ export function TechCompanion() {
   }, [pathname]);
 
   useEffect(() => {
+    const character = characterRef.current;
+    if (!character) return;
+    let frame = 0;
+    let targetX = 0;
+    let targetY = 0;
+    let currentX = 0;
+    let currentY = 0;
+    const update = () => {
+      currentX += (targetX - currentX) * 0.2;
+      currentY += (targetY - currentY) * 0.2;
+      character.style.setProperty("--look-x", `${(currentX * 3.2).toFixed(2)}px`);
+      character.style.setProperty("--look-y", `${(currentY * 2.4).toFixed(2)}px`);
+      if (Math.abs(targetX-currentX) > 0.01 || Math.abs(targetY-currentY) > 0.01) frame = requestAnimationFrame(update);
+      else frame = 0;
+    };
+    const move = (event: PointerEvent) => {
+      const bounds = character.getBoundingClientRect();
+      targetX = Math.max(-1, Math.min(1, (event.clientX - (bounds.left + bounds.width / 2)) / (bounds.width * 0.8)));
+      targetY = Math.max(-1, Math.min(1, (event.clientY - (bounds.top + bounds.height / 2)) / (bounds.height * 0.8)));
+      if (!frame) frame = requestAnimationFrame(update);
+    };
+    const reset = () => { targetX = 0; targetY = 0; if (!frame) frame = requestAnimationFrame(update); };
+    window.addEventListener("pointermove", move, { passive: true });
+    window.addEventListener("blur", reset);
+    return () => {
+      window.removeEventListener("pointermove", move);
+      window.removeEventListener("blur", reset);
+      if (frame) cancelAnimationFrame(frame);
+    };
+  }, []);
+
+  useEffect(() => {
     const labelOf = (element: Element) => {
       const node = element.closest("button, a, [role='button'], input, select, textarea");
       if (!node) return "";
