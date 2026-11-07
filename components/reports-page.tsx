@@ -151,7 +151,6 @@ function UnifiedChart({ rows }: { rows: Group[] }) {
   const money = (value: number) => currency.format(value);
   const count = (value: number) => numbers.format(value);
   const previousRow = activeDisplayIndex > 0 ? rows[activeDisplayIndex - 1] : null;
-  const comparisonCompatible = Boolean(previousRow) && isMonthlyPeriod(activeRow.label) === isMonthlyPeriod(previousRow!.label);
   const variation = (current: number, previous: number) => previous === 0
     ? current === 0 ? "0%" : "Novo"
     : `${current - previous > 0 ? "+" : ""}${((current - previous) / Math.abs(previous) * 100).toLocaleString("pt-BR", { maximumFractionDigits: 1 })}%`;
@@ -179,6 +178,7 @@ function UnifiedChart({ rows }: { rows: Group[] }) {
   const groupWidth = Math.min(82, slot * 0.76);
   const barGap = 6;
   const isMonthlyPeriod = (label: string) => /^.+\s+\d{4}$/.test(label);
+  const comparisonCompatible = Boolean(previousRow) && isMonthlyPeriod(activeRow.label) === isMonthlyPeriod(previousRow!.label);
   const monthlyProfitRows = rows.map((row, index) => ({ row, index })).filter(({ row }) => isMonthlyPeriod(row.label));
   // Interrompe a linha quando há meses sem registros, evitando sugerir continuidade inexistente.
   const monthlyProfitSegments: { row: Group; index: number }[][] = [];
