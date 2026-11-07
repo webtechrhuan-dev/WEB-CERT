@@ -139,13 +139,13 @@ export function TechCompanion() {
       if (!(target instanceof HTMLInputElement || target instanceof HTMLTextAreaElement || target instanceof HTMLSelectElement)) return;
       const context = [target.id, target.name, target.getAttribute("placeholder"), target.closest("label")?.textContent].filter(Boolean).join(" ").toLocaleLowerCase("pt-BR");
       if (/cliente|nome/.test(context)) speak("Aqui você informa o cliente. Confira a grafia para facilitar as próximas buscas.", "think", 4800);
+      else if (/senha do certificado|senha pfx/.test(context)) speak("Digite sua senha de acesso para confirmar sua identidade. A senha do arquivo só aparece depois da validação.", "think");
       else if (/modelo|tipo.*certificado|certificado/.test(context)) speak("Selecione o tipo correto do certificado antes de avançar.", "think", 4600);
       else if (/valor|faturamento|preço|preco|custo/.test(context)) speak("Confira os valores. O custo e o valor de venda alimentam os indicadores financeiros.", "chart", 5200);
       else if (/emissão|emissao|data/.test(context)) speak("Atenção às datas: a validade é calculada a partir da emissão.", "think", 5000);
       else if (/vencimento|validade/.test(context)) speak("Este campo é informativo quando a data vem automaticamente do cadastro.", "alert", 4800);
       else if (/status|situação|situacao/.test(context)) speak("Escolha o status que representa a etapa atual do atendimento.", "think", 4700);
       else if (/senha|password/.test(context)) speak("Digite sua senha com tranquilidade. Não vou olhar! 🤖", "happy", 3600);
-      else if (/senha do certificado|senha pfx/.test(context)) speak("Esta é a senha do arquivo PFX. Ela fica protegida e só é revelada após confirmar sua identidade.", "think");
       else if (/pfx|arquivo|upload/.test(context)) speak("Confira se selecionou o arquivo PFX correto antes de vinculá-lo.", "think", 5000);
     };
 
