@@ -308,8 +308,7 @@ function UnifiedChart({ rows }: { rows: Group[] }) {
                 if (event.key === "End") nextIndex = rows.length - 1;
                 if (nextIndex !== null) { event.preventDefault(); setActiveIndex(nextIndex); targets[nextIndex]?.focus(); }
                 else if (event.key === "Enter" || event.key === " ") { event.preventDefault(); setActiveIndex(index); }
-              }}
-              onBlur={() => setActiveIndex(null)} />
+              }} />
           </g>;
         })}
         {mode === "financial" && <g className="report-viz-profit-overlay" pointerEvents="none">
