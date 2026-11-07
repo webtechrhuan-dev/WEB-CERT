@@ -258,7 +258,10 @@ function UnifiedChart({ rows }: { rows: Group[] }) {
             <rect x={left + index * slot} y={top} width={slot} height={plotHeight} fill="transparent" className="report-viz-hit"
               tabIndex={activeIndex === index || (activeIndex === null && index === rows.length - 1) ? 0 : -1}
               role="button" aria-pressed={activeIndex === index} aria-controls="report-viz-detail"
-              aria-label={"Ver valores de " + row.label}
+              aria-keyshortcuts="ArrowLeft ArrowRight Home End Enter Space"
+              aria-label={mode === "financial"
+                ? `${row.label}. Faturamento: ${money(row.revenue)}. Custos: ${money(row.cost)}. Valor líquido: ${money(row.profit)}. ${count(row.count)} registros. Pressione Enter para selecionar.`
+                : `${row.label}. ${count(row.eligibleCount)} incluídos no financeiro, ${count(row.excludedCount ?? 0)} excluídos e ${count(row.reviewCount ?? 0)} em revisão. ${count(row.count)} registros no total. Pressione Enter para selecionar.`}
               onMouseEnter={() => setActiveIndex(index)} onFocus={() => setActiveIndex(index)}
               onClick={() => setActiveIndex(index)}
               onKeyDown={(event) => {
