@@ -209,8 +209,8 @@ function UnifiedChart({ rows }: { rows: Group[] }) {
     </div>
 
     <div className="report-viz-scroll" role="region" aria-label="Gráfico por período. Role horizontalmente para consultar todo o histórico." tabIndex={0}>
-      <svg className="report-viz-svg" role="img"
-        aria-label={mode === "financial" ? "Comparação de faturamento, custos e valor líquido por período" : "Comparação de registros incluídos, excluídos e em revisão por período"}
+      <svg className="report-viz-svg" role="group" aria-roledescription="gráfico interativo"
+        aria-label={mode === "financial" ? "Gráfico interativo: comparação de faturamento, custos e valor líquido por período. Use as setas para navegar entre os períodos." : "Gráfico interativo: comparação de registros incluídos, excluídos e em revisão por período. Use as setas para navegar entre os períodos."}
         viewBox={"0 0 " + chartWidth + " " + chartHeight}
         style={{ width: chartWidth + "px", minWidth: chartWidth + "px" }}>
         <defs>
