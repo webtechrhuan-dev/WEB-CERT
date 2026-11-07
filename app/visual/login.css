@@ -304,3 +304,89 @@
   .webit-art,.webit-head,.webit-tail,.webit-body,.webit-paws,.webit-eyes { animation:none!important; }
   .webit-eyes,.webit-cover-paws { transition:none!important; }
 }
+
+
+/* Personagem original Web Tech — ilustração 3D estilizada, expressiva e responsiva. */
+.wt-character-stage {
+  --gaze-x: 0px;
+  --gaze-y: 0px;
+  position: absolute;
+  z-index: 4;
+  top: 22px;
+  right: 18px;
+  width: 190px;
+  height: 255px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  isolation: isolate;
+  pointer-events: none;
+}
+.wt-character-aura {
+  position: absolute;
+  z-index: -1;
+  width: 220px;
+  height: 220px;
+  top: 43%;
+  left: 50%;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgb(25 167 198 / 24%), rgb(18 111 158 / 10%) 48%, transparent 72%);
+  transform: translate(-50%, -50%);
+  filter: blur(3px);
+}
+.wt-character-aura::after {
+  content: "";
+  position: absolute;
+  inset: 16px;
+  border: 1px solid rgb(92 214 226 / 22%);
+  border-radius: 50%;
+  box-shadow: inset 0 0 35px rgb(53 194 208 / 8%), 0 0 35px rgb(53 194 208 / 8%);
+}
+.wt-character-art {
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+  filter: drop-shadow(0 16px 18px rgb(0 12 27 / 25%));
+  animation: wt-character-float 5.4s ease-in-out infinite;
+}
+.wt-character-head { transform-origin: 160px 180px; animation: wt-character-head-idle 7s ease-in-out infinite; }
+.wt-character-body { transform-origin: 160px 300px; animation: wt-character-breathe 4.4s ease-in-out infinite; }
+.wt-character-eyes { transform: translate(var(--gaze-x), var(--gaze-y)); transition: transform 100ms linear; animation: wt-character-blink 6.5s infinite; }
+.wt-character-cover { opacity: 0; transform: translateY(17px); transform-origin: 160px 170px; transition: opacity 180ms ease, transform 260ms cubic-bezier(.2,.8,.2,1); }
+.wt-character-stage--covering .wt-character-cover { opacity: 1; transform: translateY(0); }
+.wt-character-stage--covering .wt-character-eyes { opacity: .08; }
+.wt-character-stage--curious .wt-character-head { animation: wt-character-curious 900ms ease-in-out 1; }
+.wt-character-caption {
+  position: absolute;
+  bottom: -3px;
+  left: 50%;
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  width: max-content;
+  max-width: 230px;
+  padding: 8px 11px;
+  border: 1px solid rgb(112 220 231 / 24%);
+  border-radius: 999px;
+  background: linear-gradient(110deg, rgb(6 32 51 / 97%), rgb(8 57 78 / 95%));
+  box-shadow: 0 8px 25px rgb(0 10 22 / 22%), inset 0 1px rgb(255 255 255 / 7%);
+  color: #d9fbfa;
+  transform: translateX(-50%);
+  white-space: nowrap;
+}
+.wt-character-caption strong { color: #fff; font-size: 9px; font-weight: 900; letter-spacing: .14em; }
+.wt-character-caption small { color: #b1d5df; font-size: 8px; font-weight: 650; }
+.wt-character-status { flex: 0 0 6px; width: 6px; height: 6px; border-radius: 50%; background: #55e0d9; box-shadow: 0 0 9px rgb(85 224 217 / 90%); }
+.wt-character-divider { width: 1px; height: 12px; background: rgb(154 229 234 / 30%); }
+@keyframes wt-character-float { 0%,100% { transform: translateY(0) rotate(-.4deg); } 50% { transform: translateY(-7px) rotate(.4deg); } }
+@keyframes wt-character-head-idle { 0%,100% { transform: rotate(0); } 35% { transform: rotate(1.2deg); } 72% { transform: rotate(-1deg); } }
+@keyframes wt-character-curious { 0%,100% { transform: rotate(0) translateY(0); } 35% { transform: rotate(-5deg) translateY(-3px); } 70% { transform: rotate(2deg); } }
+@keyframes wt-character-breathe { 0%,100% { transform: translateY(0) scale(1); } 50% { transform: translateY(1px) scale(1.012); } }
+@keyframes wt-character-blink { 0%,45%,48%,100% { opacity: 1; } 46.5% { opacity: .08; } }
+@media (max-width: 1100px) { .wt-character-stage { top: 17px; right: 10px; width: 160px; height: 218px; } }
+@media (max-width: 760px) { .wt-character-stage { top: 10px; right: 10px; width: 132px; height: 180px; } .wt-character-caption { gap: 5px; padding: 7px 9px; } .wt-character-caption small { display: none; } }
+@media (max-width: 390px) { .wt-character-stage { top: 8px; right: 6px; width: 112px; height: 155px; } }
+@media (prefers-reduced-motion: reduce) {
+  .wt-character-art, .wt-character-head, .wt-character-body, .wt-character-eyes { animation: none !important; }
+  .wt-character-eyes, .wt-character-cover { transition: none !important; }
+}
