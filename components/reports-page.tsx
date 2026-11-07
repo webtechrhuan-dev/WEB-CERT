@@ -215,14 +215,13 @@ function UnifiedChart({ rows }: { rows: Group[] }) {
             <text x={left - 12} y={tickY + 4} textAnchor="end" className="report-viz-axis">{axisFormat(value)}</text>
           </g>;
         })}
-        {mode === "financial" && <path className="report-viz-profit-line" d={profitPath} fill="none" stroke="url(#reportVizProfit)" strokeWidth="3.5" strokeLinecap="round" strokeLinejoin="round" pointerEvents="none" />}
         {rows.map((row, index) => {
           const center = left + slot * (index + 0.5);
           const isMonthly = isMonthlyPeriod(row.label);
           const rowSeries = activeSeries.filter((series) => mode !== "financial" || isMonthly || series.key !== "profit");
           const rowBarCount = rowSeries.length;
           const rowBarWidth = Math.max(5, (groupWidth - barGap * (rowBarCount - 1)) / rowBarCount);
-          return <g key={row.label}>
+          return <g key={row.label} className={activeIndex === index ? "report-viz-group is-active" : "report-viz-group"}>
             {activeIndex === index && <rect className="report-viz-selection" x={left + index * slot + 3} y={top + 2} width={Math.max(0, slot - 6)} height={plotHeight - 4} rx="9" />}
             {rowSeries.map((series, seriesIndex) => {
               const value = series.value(row);
@@ -239,9 +238,6 @@ function UnifiedChart({ rows }: { rows: Group[] }) {
                 </rect>
               </g>;
             })}
-            {mode === "financial" && isMonthly && <circle className="report-viz-profit-point" cx={center} cy={y(row.profit)} r={activeIndex === index ? 6 : 4.5}>
-              <title>{row.label} · Valor líquido: {money(row.profit)}</title>
-            </circle>}
             <text x={center} y={chartHeight - 34} textAnchor="middle" className="report-viz-category">
               <title>{row.label}</title>{row.label.length > 16 ? row.label.slice(0, 14) + "…" : row.label}
             </text>
@@ -255,6 +251,12 @@ function UnifiedChart({ rows }: { rows: Group[] }) {
               onBlur={() => setActiveIndex(null)} />
           </g>;
         })}
+        {mode === "financial" && <g className="report-viz-profit-overlay" pointerEvents="none">
+          <path className="report-viz-profit-line" d={profitPath} fill="none" stroke="url(#reportVizProfit)" strokeWidth="3.5" strokeLinecap="round" strokeLinejoin="round" />
+          {monthlyProfitRows.map(({ row, index }) => <circle key={`profit-${row.label}`} className="report-viz-profit-point" cx={left + slot * (index + 0.5)} cy={y(row.profit)} r={activeIndex === index ? 6 : 4.5}>
+            <title>{row.label} · Valor líquido: {money(row.profit)}</title>
+          </circle>)}
+        </g>}
       </svg>
     </div>
 
