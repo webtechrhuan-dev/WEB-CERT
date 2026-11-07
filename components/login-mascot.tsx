@@ -38,13 +38,15 @@ export function LoginMascot() {
       setCoverEyes(active instanceof HTMLElement && active.id === "login-password");
       setCurious(active instanceof HTMLElement && active.id === "login-username");
     };
+    const onFocusOut = () => window.setTimeout(syncFocus, 0);
 
     window.addEventListener("pointermove", onPointerMove, { passive: true });
     document.addEventListener("focusin", syncFocus);
-    document.addEventListener("focusout", () => window.setTimeout(syncFocus, 0));
+    document.addEventListener("focusout", onFocusOut);
     return () => {
       window.removeEventListener("pointermove", onPointerMove);
       document.removeEventListener("focusin", syncFocus);
+      document.removeEventListener("focusout", onFocusOut);
       if (frame) window.cancelAnimationFrame(frame);
     };
   }, []);
