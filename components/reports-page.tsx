@@ -150,6 +150,40 @@ function UnifiedChart({ rows }: { rows: Group[] }) {
   const currencyCompact = (value: number) => new Intl.NumberFormat("pt-BR", { notation: "compact", maximumFractionDigits: 1 }).format(value);
   const money = (value: number) => currency.format(value);
   const count = (value: number) => numbers.format(value);
+  const isMonthlyPeriod = (label: string) => /^.+\s+\d{4}$/.test(label);
+  const candidatePreviousRow = activeDisplayIndex > 0 ? rows[activeDisplayIndex - 1] : null;
+  const periodOrdinal = (label: string) => {
+    const monthMatch = /^(.+)\s+(\d{4})$/.exec(label);
+    if (monthMatch) {
+      const monthIndex = MONTHS.indexOf(canonicalMonth(monthMatch[1]));
+      return monthIndex >= 0 ? Number(monthMatch[2]) * 12 + monthIndex : null;
+    }
+    const year = Number(label);
+    return /^\d{4}$/.test(label) && Number.isInteger(year) ? year : null;
+  };
+  const currentOrdinal = periodOrdinal(activeRow.label);
+  const candidateOrdinal = candidatePreviousRow ? periodOrdinal(candidatePreviousRow.label) : null;
+  const sameGranularity = candidatePreviousRow
+    ? isMonthlyPeriod(activeRow.label) === isMonthlyPeriod(candidatePreviousRow.label)
+    : false;
+  const adjacentPeriod = currentOrdinal !== null && candidateOrdinal !== null
+    && currentOrdinal - candidateOrdinal === 1;
+  const comparisonCompatible = Boolean(candidatePreviousRow && sameGranularity && adjacentPeriod);
+  const previousRow = comparisonCompatible ? candidatePreviousRow : null;
+  const variation = (current: number, previous: number) => previous === 0
+    ? current === 0 ? "0%" : "Novo"
+    : `${current - previous > 0 ? "+" : ""}${((current - previous) / Math.abs(previous) * 100).toLocaleString("pt-BR", { maximumFractionDigits: 1 })}%`;
+  const comparisonItems = mode === "financial"
+    ? [
+        { label: "Faturamento", current: activeRow.revenue, previous: previousRow?.revenue ?? 0, format: money },
+        { label: "Custos", current: activeRow.cost, previous: previousRow?.cost ?? 0, format: money },
+        { label: "Valor líquido", current: activeRow.profit, previous: previousRow?.profit ?? 0, format: money },
+      ]
+    : [
+        { label: "Incluídos", current: activeRow.eligibleCount, previous: previousRow?.eligibleCount ?? 0, format: count },
+        { label: "Excluídos", current: activeRow.excludedCount ?? 0, previous: previousRow?.excludedCount ?? 0, format: count },
+        { label: "Em revisão", current: activeRow.reviewCount ?? 0, previous: previousRow?.reviewCount ?? 0, format: count },
+      ];
   const chartWidth = Math.max(760, rows.length * 108 + 112);
   const chartHeight = 352;
   const left = 78, right = 28, top = 24, bottom = 66;
@@ -162,7 +196,6 @@ function UnifiedChart({ rows }: { rows: Group[] }) {
   const slot = plotWidth / rows.length;
   const groupWidth = Math.min(82, slot * 0.76);
   const barGap = 6;
-  const isMonthlyPeriod = (label: string) => /^.+\s+\d{4}$/.test(label);
   const monthlyProfitRows = rows.map((row, index) => ({ row, index })).filter(({ row }) => isMonthlyPeriod(row.label));
   // Interrompe a linha quando há meses sem registros, evitando sugerir continuidade inexistente.
   const monthlyProfitSegments: { row: Group; index: number }[][] = [];
@@ -304,6 +337,26 @@ function UnifiedChart({ rows }: { rows: Group[] }) {
           <div><span>Em revisão</span><strong>{count(activeRow.reviewCount ?? 0)}</strong></div>
           <div><span>Total de registros</span><strong>{count(activeRow.count)}</strong></div>
         </>}
+      </div>
+      <div className="report-viz-comparison" aria-label="Comparação com o período anterior">
+        <div className="report-viz-comparison-heading">
+          <span>COMPARATIVO DE DESEMPENHO</span>
+          <small>{comparisonCompatible && previousRow ? `vs. ${previousRow.label}` : "Sem período anterior equivalente"}</small>
+        </div>
+        {comparisonCompatible && previousRow ? <div className="report-viz-comparison-grid">
+          {comparisonItems.map((item) => {
+            const delta = item.current - item.previous;
+            const isNeutralMetric = item.label === "Excluídos" || item.label === "Em revisão";
+            const isCost = item.label === "Custos";
+            const positive = isCost ? delta <= 0 : delta >= 0;
+            const tone = delta === 0 || isNeutralMetric ? "is-neutral" : positive ? "is-positive" : "is-negative";
+            return <article key={item.label} className={`report-viz-comparison-item ${tone}`}>
+              <span>{item.label}</span>
+              <strong>{variation(item.current, item.previous)}</strong>
+              <small>{delta > 0 ? "+" : ""}{item.format(delta)} em relação ao período anterior</small>
+            </article>;
+          })}
+        </div> : <p className="report-viz-comparison-empty">Selecione um período que tenha outro período anterior do mesmo tipo para visualizar a evolução.</p>}
       </div>
     </section>
   </div>;
@@ -586,14 +639,16 @@ export default function ReportsPage() {
         </section>
         <section aria-label="Indicadores financeiros" className="report-kpi-grid">
           {[
-            { label: "Registros de clientes", value: numbers.format(filteredSummary.count), note: `${numbers.format(filteredSummary.eligibleCount)} incluídos no financeiro (exceto cancelados e não concluídos)`, tone: "navy" },
-            { label: "Faturamento contabilizado", value: currency.format(filteredSummary.revenue), note: "Soma apenas os registros classificados para o cálculo financeiro", tone: "positive" },
-            { label: "Custos contabilizados", value: currency.format(filteredSummary.cost), note: "Custos dos registros contabilizados", tone: "warning" },
-            { label: "Valor líquido estimado", value: currency.format(filteredSummary.profit), note: "Faturamento bruto menos custos dos registros contabilizados", tone: filteredSummary.profit >= 0 ? "profit-positive" : "profit-negative" },
-            { label: "Ticket médio", value: currency.format(filteredSummary.eligibleCount ? filteredSummary.revenue / filteredSummary.eligibleCount : 0), note: "Faturamento por registro contabilizado", tone: "teal" },
-            { label: "Aguardando revisão", value: numbers.format(filteredSummary.reviewCount), note: "Status ausente em planilhas de 2026 ou posteriores; confira pendências financeiras nos detalhes", tone: "muted" },
-            { label: "Datas divergentes/ausentes", value: numbers.format(filteredRows.filter((row) => row.dateIssue).length), note: "Data vazia ou fora do mês/ano da pasta", tone: "warning" },
-          ].map((item, index) => <article key={item.label} className={`report-kpi-card report-kpi-card--${item.tone} ${index < 4 ? "report-kpi-card--primary" : "report-kpi-card--secondary"}`}><span>{item.label}</span><strong>{item.value}</strong><small>{item.note}</small></article>)}
+            { label: "Registros de clientes", value: numbers.format(filteredSummary.count), note: `${numbers.format(filteredSummary.eligibleCount)} incluídos no financeiro; cancelados e não concluídos ficam fora dos valores`, tone: "navy" },
+            { label: "Faturamento contabilizado", value: currency.format(filteredSummary.revenue), note: "Soma dos registros elegíveis dentro dos filtros aplicados", tone: "positive" },
+            { label: "Custos contabilizados", value: currency.format(filteredSummary.cost), note: "Custo total dos registros elegíveis", tone: "warning" },
+            { label: "Valor líquido estimado", value: currency.format(filteredSummary.profit), note: "Faturamento menos custos dos registros elegíveis", tone: filteredSummary.profit >= 0 ? "profit-positive" : "profit-negative" },
+            { label: "Ticket médio", value: currency.format(filteredSummary.eligibleCount ? filteredSummary.revenue / filteredSummary.eligibleCount : 0), note: "Faturamento médio por registro elegível", tone: "teal" },
+            { label: "Margem líquida", value: `${filteredSummary.revenue > 0 ? (filteredSummary.profit / filteredSummary.revenue * 100).toLocaleString("pt-BR", { maximumFractionDigits: 1 }) : "0"}%`, note: "Parcela do faturamento que permanece após os custos", tone: "teal" },
+            { label: "Aguardando revisão", value: numbers.format(filteredSummary.reviewCount), note: "Registros sem situação financeira definida; confira os detalhes", tone: "muted" },
+            { label: "Dados financeiros incompletos", value: numbers.format(filteredRows.filter((row) => row.financialIssue).length), note: "Registros elegíveis sem faturamento ou custo preenchido", tone: "warning" },
+            { label: "Datas divergentes/ausentes", value: numbers.format(filteredRows.filter((row) => row.dateIssue).length), note: "Data vazia ou diferente do mês/ano da pasta", tone: "warning" },
+          ].map((item, index) => <article key={item.label} className={`report-kpi-card report-kpi-card--${item.tone} ${index < 4 ? "report-kpi-card--primary" : "report-kpi-card--secondary"}`}><div className="report-kpi-card__top"><span>{item.label}</span><i>{String(index + 1).padStart(2, "0")}</i></div><strong>{item.value}</strong><small>{item.note}</small></article>)}
         </section>
         <section aria-labelledby="unified-chart-title" className="report-chart-panel">
           <div className="report-chart-heading">
@@ -624,7 +679,7 @@ export default function ReportsPage() {
             {modelRanking.length ? <div className="report-model-bars">{modelRanking.map((item,index)=>{
               const maximum = Math.max(1,...modelRanking.map((entry)=>entry.revenue));
               return <div className="report-model-bar-item" key={item.label}>
-                <div className="report-model-bar-meta"><span><b>{String(index+1).padStart(2,"0")}</b>{item.label}</span><strong>{currency.format(item.revenue)}</strong></div>
+                <div className="report-model-bar-meta"><span><b>{String(index+1).padStart(2,"0")}</b>{item.label}<small className="report-ranking-share">{filteredSummary.revenue > 0 ? (item.revenue / filteredSummary.revenue * 100).toLocaleString("pt-BR", { maximumFractionDigits: 1 }) : "0"}% do faturamento</small></span><strong>{currency.format(item.revenue)}</strong></div>
                 <div className="report-model-bar-track"><span style={{width:`${Math.max(2,item.revenue/maximum*100)}%`}} /></div>
               </div>;
             })}</div> : <p className="report-insight-empty">Sem faturamento por modelo neste filtro.</p>}
@@ -634,7 +689,7 @@ export default function ReportsPage() {
             {clientRanking.length ? <div className="report-model-bars">{clientRanking.map((item,index)=>{
               const maximum = Math.max(1,...clientRanking.map((entry)=>entry.revenue));
               return <div className="report-model-bar-item" key={item.label}>
-                <div className="report-model-bar-meta"><span><b>{String(index+1).padStart(2,"0")}</b>{item.label}<small className="report-client-sales-count">{numbers.format(item.sales)} vendas</small></span><strong>{currency.format(item.revenue)}</strong></div>
+                <div className="report-model-bar-meta"><span><b>{String(index+1).padStart(2,"0")}</b>{item.label}<small className="report-client-sales-count">{numbers.format(item.sales)} vendas · {filteredSummary.revenue > 0 ? (item.revenue / filteredSummary.revenue * 100).toLocaleString("pt-BR", { maximumFractionDigits: 1 }) : "0"}% do faturamento</small></span><strong>{currency.format(item.revenue)}</strong></div>
                 <div className="report-model-bar-track"><span style={{width:`${Math.max(2,item.revenue/maximum*100)}%`}} /></div>
               </div>;
             })}</div> : <p className="report-insight-empty">Sem vendas contabilizadas neste filtro.</p>}
