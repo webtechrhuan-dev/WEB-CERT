@@ -46,6 +46,7 @@ export function CertificateFiles({ rowNumber, canUpload, saleStatus, saleExpiry 
   const [revealPassword, setRevealPassword] = useState("");
   const [revealedPassword, setRevealedPassword] = useState<string | null>(null);
   const [revealing, setRevealing] = useState(false);
+  const [revealError, setRevealError] = useState<string | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
   const refresh = useCallback(async () => {
@@ -105,6 +106,7 @@ export function CertificateFiles({ rowNumber, canUpload, saleStatus, saleExpiry 
   }
 
   function openPasswordReveal(file: CertificateFile) {
+    setRevealError(null);
     setError(null);
     setNotice(null);
     setRevealUsername("");
@@ -115,10 +117,10 @@ export function CertificateFiles({ rowNumber, canUpload, saleStatus, saleExpiry 
 
   async function confirmPasswordReveal() {
     if (!fileToReveal || !revealUsername.trim() || !revealPassword || revealing) {
-      setError("Informe seu usuário e sua senha para visualizar a senha do PFX.");
+      setRevealError("Informe seu usuário e sua senha para visualizar a senha do PFX.");
       return;
     }
-    setError(null);
+    setRevealError(null);
     setRevealing(true);
     try {
       const response = await fetch(`/api/records/${rowNumber}/certificates/${fileToReveal.id}/password`, {
@@ -134,7 +136,7 @@ export function CertificateFiles({ rowNumber, canUpload, saleStatus, saleExpiry 
       setRevealedPassword(value);
       setRevealPassword("");
     } catch (revealError) {
-      setError(revealError instanceof Error ? revealError.message : "Falha ao consultar a senha do certificado.");
+      setRevealError(revealError instanceof Error ? revealError.message : "Falha ao consultar a senha do certificado.");
     } finally {
       setRevealing(false);
     }
@@ -216,7 +218,7 @@ export function CertificateFiles({ rowNumber, canUpload, saleStatus, saleExpiry 
       )}
       {files.length > 0 && <p className="certificate-delete-dependency">{statusAllowsCertificate ? "Esta venda não pode ser excluída enquanto houver certificado vinculado. Exclua primeiro o certificado usando a confirmação de usuário e senha." : "Atenção: o status atual desta venda não permite manter certificado vinculado. Exclua o arquivo usando a confirmação de usuário e senha antes de continuar."}</p>}
       {fileToReveal && (
-        <div className="reauth-overlay" role="presentation" onMouseDown={(event) => { if (event.target === event.currentTarget && !revealing) { setFileToReveal(null); setRevealedPassword(null); } }}>
+        <div className="reauth-overlay" role="presentation" onMouseDown={(event) => { if (event.target === event.currentTarget && !revealing) { setFileToReveal(null); setRevealedPassword(null); setRevealError(null); } }}>
           <section className="reauth-dialog" role="dialog" aria-modal="true" aria-labelledby="certificate-password-auth-title">
             <div className="reauth-dialog-heading">
               <span className="reauth-warning-icon" aria-hidden="true">!</span>
@@ -230,13 +232,13 @@ export function CertificateFiles({ rowNumber, canUpload, saleStatus, saleExpiry 
               </>
             ) : (
               <div className="certificate-revealed-password">
-                <label className="record-form-field"><span>Senha do certificado PFX</span><input type="text" readOnly value={revealedPassword} onFocus={(event) => event.currentTarget.select()} /></label>
+                <label className="record-form-field"><span>Senha do certificado PFX</span><input type="text" readOnly autoComplete="off" spellCheck={false} value={revealedPassword} onClick={(event) => event.currentTarget.select()} aria-label="Senha do certificado revelada" /></label>
                 <p className="reauth-security-note">Mantenha esta informação protegida. Fechar esta janela ocultará a senha novamente.</p>
               </div>
             )}
-            {error && <p className="form-message form-message--error" role="alert">{error}</p>}
+            {revealError && <p className="form-message form-message--error" role="alert">{revealError}</p>}
             <div className="form-actions">
-              <button className="button button--secondary" type="button" disabled={revealing} onClick={() => { setFileToReveal(null); setRevealPassword(""); setRevealedPassword(null); }}>Fechar</button>
+              <button className="button button--secondary" type="button" disabled={revealing} onClick={() => { setFileToReveal(null); setRevealPassword(""); setRevealedPassword(null); setRevealError(null); }}>Fechar</button>
               {!revealedPassword && <button className="button button--primary" type="button" disabled={revealing || !revealUsername.trim() || !revealPassword} onClick={() => void confirmPasswordReveal()}>{revealing ? "Validando…" : "Confirmar e visualizar"}</button>}
             </div>
           </section>
