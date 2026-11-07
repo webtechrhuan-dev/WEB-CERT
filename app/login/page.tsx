@@ -1,6 +1,5 @@
 import { LoginButton } from "@/components/login-button";
 import { ThemeToggle } from "@/components/theme-toggle";
-import { LoginMascot } from "@/components/login-mascot";
 
 export default function LoginPage() {
   return (
@@ -11,7 +10,6 @@ export default function LoginPage() {
         <section className="login-showcase" aria-label="Web Tech Certificados Manager">
           <div className="login-showcase-orbit login-showcase-orbit--one" aria-hidden="true" />
           <div className="login-showcase-orbit login-showcase-orbit--two" aria-hidden="true" />
-          <LoginMascot />
           <div className="login-showcase-content">
             <div className="login-showcase-brand">
               <img src="/web-tech-logo.svg" alt="Web Tech" width="1200" height="383" />
