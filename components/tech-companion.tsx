@@ -31,7 +31,8 @@ export function TechCompanion() {
   const [mood, setMood] = useState<GuideMood>("wave");
   const [expanded, setExpanded] = useState(true);
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const lastAction = useRef(0);\n  const characterRef = useRef<HTMLButtonElement | null>(null);
+  const lastAction = useRef(0);
+  const characterRef = useRef<HTMLButtonElement | null>(null);
 
   const speak = (text: string, nextMood: GuideMood = "wave", duration = 5200) => {
     setMessage(text);
@@ -167,7 +168,8 @@ export function TechCompanion() {
       </div>
       <button
         type="button"
-        ref={characterRef}\n        className="tech-guide-character"
+        ref={characterRef}
+        className="tech-guide-character"
         onClick={() => {
           const hint = routeHint(pathname || "/");
           speak(hint.message, "wave", 6500);
