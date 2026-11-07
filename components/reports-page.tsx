@@ -150,15 +150,16 @@ function UnifiedChart({ rows }: { rows: Group[] }) {
   const currencyCompact = (value: number) => new Intl.NumberFormat("pt-BR", { notation: "compact", maximumFractionDigits: 1 }).format(value);
   const money = (value: number) => currency.format(value);
   const count = (value: number) => numbers.format(value);
+  const isMonthlyPeriod = (label: string) => /^.+\\s+\\d{4}$/.test(label);
   const candidatePreviousRow = activeDisplayIndex > 0 ? rows[activeDisplayIndex - 1] : null;
   const periodOrdinal = (label: string) => {
-    const monthMatch = /^(.+)\\s+(\\d{4})$/.exec(label);
+    const monthMatch = /^(.+)\s+(\d{4})$/.exec(label);
     if (monthMatch) {
       const monthIndex = MONTHS.indexOf(canonicalMonth(monthMatch[1]));
       return monthIndex >= 0 ? Number(monthMatch[2]) * 12 + monthIndex : null;
     }
     const year = Number(label);
-    return /^\\d{4}$/.test(label) && Number.isInteger(year) ? year : null;
+    return /^\d{4}$/.test(label) && Number.isInteger(year) ? year : null;
   };
   const currentOrdinal = periodOrdinal(activeRow.label);
   const candidateOrdinal = candidatePreviousRow ? periodOrdinal(candidatePreviousRow.label) : null;
@@ -166,7 +167,7 @@ function UnifiedChart({ rows }: { rows: Group[] }) {
     ? isMonthlyPeriod(activeRow.label) === isMonthlyPeriod(candidatePreviousRow.label)
     : false;
   const adjacentPeriod = currentOrdinal !== null && candidateOrdinal !== null
-    && currentOrdinal - candidateOrdinal === (isMonthlyPeriod(activeRow.label) ? 1 : 1);
+    && currentOrdinal - candidateOrdinal === 1;
   const comparisonCompatible = Boolean(candidatePreviousRow && sameGranularity && adjacentPeriod);
   const previousRow = comparisonCompatible ? candidatePreviousRow : null;
   const variation = (current: number, previous: number) => previous === 0
@@ -195,9 +196,7 @@ function UnifiedChart({ rows }: { rows: Group[] }) {
   const slot = plotWidth / rows.length;
   const groupWidth = Math.min(82, slot * 0.76);
   const barGap = 6;
-  const isMonthlyPeriod = (label: string) => /^.+\s+\d{4}$/.test(label);
-  const comparisonCompatible = Boolean(previousRow) && isMonthlyPeriod(activeRow.label) === isMonthlyPeriod(previousRow!.label);
-  const monthlyProfitRows = rows.map((row, index) => ({ row, index })).filter(({ row }) => isMonthlyPeriod(row.label));
+    const monthlyProfitRows = rows.map((row, index) => ({ row, index })).filter(({ row }) => isMonthlyPeriod(row.label));
   // Interrompe a linha quando há meses sem registros, evitando sugerir continuidade inexistente.
   const monthlyProfitSegments: { row: Group; index: number }[][] = [];
   monthlyProfitRows.forEach((point) => {
