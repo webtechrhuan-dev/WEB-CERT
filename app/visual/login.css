@@ -546,3 +546,9 @@
   .login-mascot.webit-mascot,.login-mascot.webit-mascot *{animation:none!important;transition:none!important}
   .webit-eye{transform:none!important}
 }
+
+/* Reserva a faixa superior para a marca e posiciona Wébit no espaço livre do painel. */
+.login-mascot.webit-mascot { top:auto; bottom:58px; right:18px; }
+@media(max-width:980px){.login-mascot.webit-mascot{top:auto;bottom:48px;right:12px}}
+@media(max-width:760px){.login-mascot.webit-mascot{top:auto;bottom:30px;right:10px}}
+@media(max-width:390px){.login-mascot.webit-mascot{top:auto;bottom:22px;right:6px}}
