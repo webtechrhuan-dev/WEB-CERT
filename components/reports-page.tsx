@@ -150,6 +150,22 @@ function UnifiedChart({ rows }: { rows: Group[] }) {
   const currencyCompact = (value: number) => new Intl.NumberFormat("pt-BR", { notation: "compact", maximumFractionDigits: 1 }).format(value);
   const money = (value: number) => currency.format(value);
   const count = (value: number) => numbers.format(value);
+  const previousRow = activeDisplayIndex > 0 ? rows[activeDisplayIndex - 1] : null;
+  const comparisonCompatible = Boolean(previousRow) && isMonthlyPeriod(activeRow.label) === isMonthlyPeriod(previousRow!.label);
+  const variation = (current: number, previous: number) => previous === 0
+    ? current === 0 ? "0%" : "Novo"
+    : `${current - previous > 0 ? "+" : ""}${((current - previous) / Math.abs(previous) * 100).toLocaleString("pt-BR", { maximumFractionDigits: 1 })}%`;
+  const comparisonItems = mode === "financial"
+    ? [
+        { label: "Faturamento", current: activeRow.revenue, previous: previousRow?.revenue ?? 0, format: money },
+        { label: "Custos", current: activeRow.cost, previous: previousRow?.cost ?? 0, format: money },
+        { label: "Valor líquido", current: activeRow.profit, previous: previousRow?.profit ?? 0, format: money },
+      ]
+    : [
+        { label: "Incluídos", current: activeRow.eligibleCount, previous: previousRow?.eligibleCount ?? 0, format: count },
+        { label: "Excluídos", current: activeRow.excludedCount ?? 0, previous: previousRow?.excludedCount ?? 0, format: count },
+        { label: "Em revisão", current: activeRow.reviewCount ?? 0, previous: previousRow?.reviewCount ?? 0, format: count },
+      ];
   const chartWidth = Math.max(760, rows.length * 108 + 112);
   const chartHeight = 352;
   const left = 78, right = 28, top = 24, bottom = 66;
@@ -304,6 +320,24 @@ function UnifiedChart({ rows }: { rows: Group[] }) {
           <div><span>Em revisão</span><strong>{count(activeRow.reviewCount ?? 0)}</strong></div>
           <div><span>Total de registros</span><strong>{count(activeRow.count)}</strong></div>
         </>}
+      </div>
+      <div className="report-viz-comparison" aria-label="Comparação com o período anterior">
+        <div className="report-viz-comparison-heading">
+          <span>COMPARATIVO DE DESEMPENHO</span>
+          <small>{comparisonCompatible && previousRow ? `vs. ${previousRow.label}` : "Sem período anterior equivalente"}</small>
+        </div>
+        {comparisonCompatible && previousRow ? <div className="report-viz-comparison-grid">
+          {comparisonItems.map((item) => {
+            const delta = item.current - item.previous;
+            const isCost = item.label === "Custos" || item.label === "Excluídos";
+            const positive = isCost ? delta <= 0 : delta >= 0;
+            return <article key={item.label} className={`report-viz-comparison-item ${delta === 0 ? "is-neutral" : positive ? "is-positive" : "is-negative"}`}>
+              <span>{item.label}</span>
+              <strong>{variation(item.current, item.previous)}</strong>
+              <small>{delta > 0 ? "+" : ""}{item.format(delta)} em relação ao período anterior</small>
+            </article>;
+          })}
+        </div> : <p className="report-viz-comparison-empty">Selecione um período que tenha outro período anterior do mesmo tipo para visualizar a evolução.</p>}
       </div>
     </section>
   </div>;
