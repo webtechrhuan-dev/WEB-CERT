@@ -100,7 +100,7 @@ export function TechCompanion() {
       }
     };
 
-    const onChange = (event: Event) => {
+    const onFocusIn = (event: FocusEvent) => {\n      const target = event.target;\n      if (!(target instanceof HTMLInputElement || target instanceof HTMLTextAreaElement || target instanceof HTMLSelectElement)) return;\n      const context = [target.id, target.name, target.placeholder, target.closest("label")?.textContent].filter(Boolean).join(" ").toLocaleLowerCase("pt-BR");\n      if (/cliente|nome/.test(context)) speak("Aqui você informa o cliente. Confira a grafia para facilitar as próximas buscas.", "think", 4800);\n      else if (/modelo|tipo.*certificado|certificado/.test(context)) speak("Selecione o tipo correto do certificado antes de avançar.", "think", 4600);\n      else if (/valor|faturamento|preço|preco|custo/.test(context)) speak("Confira os valores. O custo e o valor de venda alimentam os indicadores financeiros.", "chart", 5200);\n      else if (/emissão|emissao|data/.test(context)) speak("Atenção às datas: a validade é calculada a partir da emissão.", "think", 5000);\n      else if (/vencimento|validade/.test(context)) speak("Este campo é informativo quando a data vem automaticamente do cadastro.", "alert", 4800);\n      else if (/status|situação|situacao/.test(context)) speak("Escolha o status que representa a etapa atual do atendimento.", "think", 4700);\n      else if (/senha|password/.test(context)) speak("Digite sua senha com tranquilidade. Não vou olhar! 🤖", "happy", 3600);\n      else if (/pfx|arquivo|upload/.test(context)) speak("Confira se selecionou o arquivo PFX correto antes de vinculá-lo.", "think", 5000);\n    };\n\n    const onChange = (event: Event) => {
       const target = event.target;
       if (!(target instanceof HTMLSelectElement || target instanceof HTMLInputElement)) return;
       if (target instanceof HTMLSelectElement || target.type === "date") {
@@ -108,15 +108,15 @@ export function TechCompanion() {
       }
     };
 
-    const onSubmit = () => speak("Ação enviada! Aguarde o retorno do sistema antes de repetir.", "think", 6500);
+    const onSubmit = () => speak("Ação enviada! Aguarde o retorno do sistema antes de repetir.", "think", 6500);\n\n    const toastObserver = new MutationObserver((mutations) => {\n      for (const mutation of mutations) {\n        const element = mutation.target instanceof Element ? mutation.target : mutation.target.parentElement;\n        const notice = element?.closest("[role=alert], [data-sonner-toast], [role=status], .toast, .login-error, .form-message");\n        const text = notice?.textContent?.trim();\n        if (!text || text.length < 4 || text.length > 180 || notice?.classList.contains("tech-guide-bubble")) continue;\n        if (/sucesso|salvo|salva|cadastrad|concluíd|concluido|emitid|excluíd|excluido|atualizad/i.test(text)) {\n          speak("Boa! O sistema confirmou a operação. Vamos para a próxima etapa!", "happy", 6200);\n          break;\n        }\n        if (/erro|falha|inválid|invalido|não foi possível|nao foi possivel|obrigatóri|obrigatorio/i.test(text)) {\n          speak("Opa, encontrei um aviso. Leia a mensagem na tela e ajuste o que for necessário.", "alert", 6800);\n          break;\n        }\n      }\n    });\n    toastObserver.observe(document.body, { childList: true, subtree: true, characterData: true });
 
     document.addEventListener("click", onClick, true);
-    document.addEventListener("input", onInput, true);
+    document.addEventListener("input", onInput, true);\n    document.addEventListener("focusin", onFocusIn, true);
     document.addEventListener("change", onChange, true);
     document.addEventListener("submit", onSubmit, true);
     return () => {
       document.removeEventListener("click", onClick, true);
-      document.removeEventListener("input", onInput, true);
+      document.removeEventListener("input", onInput, true);\n      document.removeEventListener("focusin", onFocusIn, true);\n      toastObserver.disconnect();
       document.removeEventListener("change", onChange, true);
       document.removeEventListener("submit", onSubmit, true);
       if (timer.current) clearTimeout(timer.current);
