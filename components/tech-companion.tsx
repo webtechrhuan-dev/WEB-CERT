@@ -103,7 +103,7 @@ export function TechCompanion() {
     const onFocusIn = (event: FocusEvent) => {
       const target = event.target;
       if (!(target instanceof HTMLInputElement || target instanceof HTMLTextAreaElement || target instanceof HTMLSelectElement)) return;
-      const context = [target.id, target.name, target.placeholder, target.closest("label")?.textContent].filter(Boolean).join(" ").toLocaleLowerCase("pt-BR");
+      const context = [target.id, target.name, target.getAttribute("placeholder"), target.closest("label")?.textContent].filter(Boolean).join(" ").toLocaleLowerCase("pt-BR");
       if (/cliente|nome/.test(context)) speak("Aqui você informa o cliente. Confira a grafia para facilitar as próximas buscas.", "think", 4800);
       else if (/modelo|tipo.*certificado|certificado/.test(context)) speak("Selecione o tipo correto do certificado antes de avançar.", "think", 4600);
       else if (/valor|faturamento|preço|preco|custo/.test(context)) speak("Confira os valores. O custo e o valor de venda alimentam os indicadores financeiros.", "chart", 5200);
