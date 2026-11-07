@@ -311,3 +311,38 @@
   from { opacity:0; transform:translate(8px,12px) scale(.94); }
   to { opacity:1; transform:translate(0) scale(1); }
 }
+
+
+/* Ajuste de presença: o mascote fica fora da área de leitura e não cobre linhas/controles. */
+.wc-global-stage { padding-bottom: 112px; }
+.tech-guide {
+  right: max(10px,env(safe-area-inset-right));
+  bottom: max(8px,env(safe-area-inset-bottom));
+  width: 190px;
+  height: 112px;
+}
+.tech-guide-character {
+  scale: .76;
+  transform-origin: bottom right;
+}
+.tech-guide-name { display:none; }
+.tech-guide-bubble {
+  right: 88px;
+  bottom: 38px;
+  width: min(260px,calc(100vw - 125px));
+  padding: 12px 32px 12px 14px;
+  border-radius: 15px 15px 5px 15px;
+  font-size: 12px;
+}
+.tech-guide-bubble-label { letter-spacing:.12em; }
+.tech-guide-character:focus-visible { outline-offset:1px; }
+@media(max-width:600px) {
+  .wc-global-stage { padding-bottom: 94px; }
+  .tech-guide { right:5px; bottom:5px; width:150px; height:92px; }
+  .tech-guide-character { scale:.62; }
+  .tech-guide-bubble { right:70px; bottom:30px; width:min(220px,calc(100vw - 100px)); font-size:11px; }
+}
+@media(prefers-reduced-motion:reduce) {
+  .tech-guide-character,.tech-guide-head,.tech-guide-body,.tech-guide-arm,
+  .tech-guide-aura,.tech-guide-antenna,.tech-guide-core,.tech-guide-eye { animation:none!important; }
+}

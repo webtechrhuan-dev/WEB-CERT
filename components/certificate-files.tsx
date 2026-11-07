@@ -175,7 +175,7 @@ export function CertificateFiles({ rowNumber, canUpload, saleStatus, saleExpiry 
   }
 
   return (
-    <section className="content-panel certificate-files-panel" aria-labelledby="certificate-files-title">
+    <section className="content-panel certificate-files-panel" aria-labelledby="certificate-files-title" onClick={(event) => event.stopPropagation()} onSubmit={(event) => { event.preventDefault(); event.stopPropagation(); }}>
       <div className="panel-heading">
         <div><h3 id="certificate-files-title">Certificados digitais anexados</h3><p>Um certificado PFX vinculado exclusivamente a esta venda.</p></div>
         <span className="record-count">{files.length} arquivo(s)</span>
@@ -211,15 +211,15 @@ export function CertificateFiles({ rowNumber, canUpload, saleStatus, saleExpiry 
           {files.map((file) => (
             <li key={file.id}>
               <div><strong>{file.name}</strong><span>{formatSize(file.size)} · Enviado em {new Date(file.uploadedAt).toLocaleString("pt-BR")} · Vence em {file.expiresAt ? new Date(file.expiresAt).toLocaleDateString("pt-BR", { timeZone: "UTC" }) : "não informado"} · {file.uploadedBy}</span></div>
-              <div className="certificate-file-actions"><button className="button button--secondary button--small" type="button" onClick={() => openPasswordReveal(file)}>Ver senha</button><a className="button button--secondary button--small" href={`/api/certificates/${file.id}`} rel="noreferrer">Baixar</a>{canDeleteCertificate && <button className="button button--danger button--small" disabled={deleting} onClick={() => remove(file)} type="button">Excluir</button>}</div>
+              <div className="certificate-file-actions"><button className="button button--secondary button--small" type="button" onClick={(event) => { event.preventDefault(); event.stopPropagation(); openPasswordReveal(file); }}>Ver senha</button><a className="button button--secondary button--small" href={`/api/certificates/${file.id}`} rel="noreferrer">Baixar</a>{canDeleteCertificate && <button className="button button--danger button--small" disabled={deleting} onClick={() => remove(file)} type="button">Excluir</button>}</div>
             </li>
           ))}
         </ul>
       )}
       {files.length > 0 && <p className="certificate-delete-dependency">{statusAllowsCertificate ? "Esta venda não pode ser excluída enquanto houver certificado vinculado. Exclua primeiro o certificado usando a confirmação de usuário e senha." : "Atenção: o status atual desta venda não permite manter certificado vinculado. Exclua o arquivo usando a confirmação de usuário e senha antes de continuar."}</p>}
       {fileToReveal && (
-        <div className="reauth-overlay" role="presentation" onMouseDown={(event) => { if (event.target === event.currentTarget && !revealing) { setFileToReveal(null); setRevealedPassword(null); setRevealError(null); } }}>
-          <section className="reauth-dialog" role="dialog" aria-modal="true" aria-labelledby="certificate-password-auth-title">
+        <div className="reauth-overlay" role="presentation" onClick={(event) => event.stopPropagation()} onMouseDown={(event) => { if (event.target === event.currentTarget && !revealing) { setFileToReveal(null); setRevealedPassword(null); setRevealError(null); } }}>
+          <section className="reauth-dialog" role="dialog" aria-modal="true" aria-labelledby="certificate-password-auth-title" onClick={(event) => event.stopPropagation()}>
             <div className="reauth-dialog-heading">
               <span className="reauth-warning-icon" aria-hidden="true">!</span>
               <div><h3 id="certificate-password-auth-title">Visualizar senha do certificado</h3><p>Confirme sua identidade para revelar a senha do arquivo <strong>{fileToReveal.name}</strong>.</p></div>
@@ -238,7 +238,7 @@ export function CertificateFiles({ rowNumber, canUpload, saleStatus, saleExpiry 
             )}
             {revealError && <p className="form-message form-message--error" role="alert">{revealError}</p>}
             <div className="form-actions">
-              <button className="button button--secondary" type="button" disabled={revealing} onClick={() => { setFileToReveal(null); setRevealPassword(""); setRevealedPassword(null); setRevealError(null); }}>Fechar</button>
+              <button className="button button--secondary" type="button" disabled={revealing} onClick={(event) => { event.preventDefault(); event.stopPropagation(); setFileToReveal(null); setRevealPassword(""); setRevealedPassword(null); setRevealError(null); }}>Fechar</button>
               {!revealedPassword && <button className="button button--primary" type="button" disabled={revealing || !revealUsername.trim() || !revealPassword} onClick={() => void confirmPasswordReveal()}>{revealing ? "Validando…" : "Confirmar e visualizar"}</button>}
             </div>
           </section>
@@ -246,7 +246,7 @@ export function CertificateFiles({ rowNumber, canUpload, saleStatus, saleExpiry 
       )}
       {fileToDelete && (
         <div className="reauth-overlay" role="presentation" onMouseDown={(event) => { if (event.target === event.currentTarget && !deleting) setFileToDelete(null); }}>
-          <section className="reauth-dialog" role="dialog" aria-modal="true" aria-labelledby="certificate-delete-auth-title">
+          <section className="reauth-dialog" role="dialog" aria-modal="true" aria-labelledby="certificate-delete-auth-title" onClick={(event) => event.stopPropagation()}>
             <div className="reauth-dialog-heading">
               <span className="reauth-warning-icon" aria-hidden="true">!</span>
               <div><h3 id="certificate-delete-auth-title">Confirmar exclusão do certificado</h3><p>O arquivo <strong>{fileToDelete.name}</strong> será removido permanentemente. Confirme sua identidade para continuar.</p></div>
