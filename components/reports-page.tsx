@@ -144,7 +144,9 @@ function UnifiedChart({ rows }: { rows: Group[] }) {
     excluded: acc.excluded + (row.excludedCount ?? 0),
     review: acc.review + (row.reviewCount ?? 0),
   }), { revenue: 0, cost: 0, profit: 0, eligible: 0, excluded: 0, review: 0 });
-  const activeRow = activeIndex === null ? rows[rows.length - 1] : (rows[activeIndex] ?? rows[rows.length - 1]);
+  // Mantém a seleção sempre sincronizada com a lista quando filtros reduzem os períodos.
+  const activeDisplayIndex = activeIndex === null ? rows.length - 1 : Math.min(activeIndex, rows.length - 1);
+  const activeRow = rows[activeDisplayIndex];
   const currencyCompact = (value: number) => new Intl.NumberFormat("pt-BR", { notation: "compact", maximumFractionDigits: 1 }).format(value);
   const money = (value: number) => currency.format(value);
   const count = (value: number) => numbers.format(value);
@@ -234,8 +236,8 @@ function UnifiedChart({ rows }: { rows: Group[] }) {
           const rowSeries = activeSeries.filter((series) => mode !== "financial" || isMonthly || series.key !== "profit");
           const rowBarCount = rowSeries.length;
           const rowBarWidth = Math.max(5, (groupWidth - barGap * (rowBarCount - 1)) / rowBarCount);
-          return <g key={row.label} className={activeIndex === index ? "report-viz-group is-active" : "report-viz-group"}>
-            {activeIndex === index && <rect className="report-viz-selection" x={left + index * slot + 3} y={top + 2} width={Math.max(0, slot - 6)} height={plotHeight - 4} rx="9" />}
+          return <g key={row.label} className={activeDisplayIndex === index ? "report-viz-group is-active" : "report-viz-group"}>
+            {activeDisplayIndex === index && <rect className="report-viz-selection" x={left + index * slot + 3} y={top + 2} width={Math.max(0, slot - 6)} height={plotHeight - 4} rx="9" />}
             {rowSeries.map((series, seriesIndex) => {
               const value = series.value(row);
               const valueY = y(value);
@@ -256,8 +258,8 @@ function UnifiedChart({ rows }: { rows: Group[] }) {
             </text>
             <text x={center} y={chartHeight - 16} textAnchor="middle" className="report-viz-category-count">{count(row.count)} registros</text>
             <rect x={left + index * slot} y={top} width={slot} height={plotHeight} fill="transparent" className="report-viz-hit"
-              tabIndex={activeIndex === index || (activeIndex === null && index === rows.length - 1) ? 0 : -1}
-              role="button" aria-pressed={activeIndex === index} aria-controls="report-viz-detail"
+              tabIndex={activeDisplayIndex === index ? 0 : -1}
+              role="button" aria-pressed={activeDisplayIndex === index} aria-controls="report-viz-detail"
               aria-keyshortcuts="ArrowLeft ArrowRight Home End Enter Space"
               aria-label={mode === "financial"
                 ? `${row.label}. Faturamento: ${money(row.revenue)}. Custos: ${money(row.cost)}. Valor líquido: ${money(row.profit)}. ${count(row.count)} registros. Pressione Enter para selecionar.`
@@ -281,7 +283,7 @@ function UnifiedChart({ rows }: { rows: Group[] }) {
           {monthlyProfitSegments.map((segment, segmentIndex) => <path key={`profit-segment-${segmentIndex}`} className="report-viz-profit-line"
             d={segment.map(({ row, index }, pointIndex) => `${pointIndex === 0 ? "M" : "L"} ${left + slot * (index + 0.5)} ${y(row.profit)}`).join(" ")}
             fill="none" stroke="url(#reportVizProfit)" strokeWidth="3.5" strokeLinecap="round" strokeLinejoin="round" />)}
-          {monthlyProfitRows.map(({ row, index }) => <circle key={`profit-${row.label}`} className="report-viz-profit-point" cx={left + slot * (index + 0.5)} cy={y(row.profit)} r={activeIndex === index ? 6 : 4.5}>
+          {monthlyProfitRows.map(({ row, index }) => <circle key={`profit-${row.label}`} className="report-viz-profit-point" cx={left + slot * (index + 0.5)} cy={y(row.profit)} r={activeDisplayIndex === index ? 6 : 4.5}>
             <title>{row.label} · Valor líquido: {money(row.profit)}</title>
           </circle>)}
         </g>}
