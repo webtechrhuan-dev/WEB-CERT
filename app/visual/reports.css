@@ -771,3 +771,29 @@
   .report-renewals-controls .button { grid-column:auto; }
 }
 @media(prefers-reduced-motion:reduce) { .report-insight-card,.report-health-track > span { transition:none; } }
+
+
+/* Comparativo contextual do período selecionado */
+.report-viz-comparison {
+  display:grid;
+  gap:11px;
+  padding:15px 17px;
+  border:1px solid var(--line);
+  border-radius:14px;
+  background:var(--surface);
+}
+.report-viz-comparison-heading { display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:8px; }
+.report-viz-comparison-heading > span { color:var(--muted); font-size:9px; font-weight:850; letter-spacing:.11em; }
+.report-viz-comparison-heading > small { color:var(--muted); font-size:10px; font-weight:750; }
+.report-viz-comparison-grid { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:10px; }
+.report-viz-comparison-item { display:grid; gap:5px; min-width:0; padding:12px; border:1px solid var(--line); border-radius:11px; background:var(--canvas); }
+.report-viz-comparison-item > span { color:var(--muted); font-size:9px; font-weight:750; }
+.report-viz-comparison-item > strong { font-size:clamp(16px,1.8vw,21px); font-weight:900; letter-spacing:-.04em; font-variant-numeric:tabular-nums; }
+.report-viz-comparison-item > small { color:var(--muted); font-size:9px; line-height:1.4; overflow-wrap:anywhere; }
+.report-viz-comparison-item.is-positive > strong { color:#159b82; }
+.report-viz-comparison-item.is-negative > strong { color:#d16c54; }
+.report-viz-comparison-item.is-neutral > strong { color:var(--muted); }
+.report-viz-comparison-empty { margin:0; color:var(--muted); font-size:11px; line-height:1.55; }
+:root[data-theme="dark"] .report-viz-comparison { border-color:#30485a; background:#172d3e; }
+:root[data-theme="dark"] .report-viz-comparison-item { border-color:#30485a; background:#102333; }
+@media(max-width:600px) { .report-viz-comparison-grid { grid-template-columns:1fr; } .report-viz-comparison-item { grid-template-columns:1fr auto; align-items:center; } .report-viz-comparison-item > small { grid-column:1/-1; } }
