@@ -144,7 +144,9 @@ function UnifiedChart({ rows }: { rows: Group[] }) {
     excluded: acc.excluded + (row.excludedCount ?? 0),
     review: acc.review + (row.reviewCount ?? 0),
   }), { revenue: 0, cost: 0, profit: 0, eligible: 0, excluded: 0, review: 0 });
-  const activeRow = activeIndex === null ? rows[rows.length - 1] : (rows[activeIndex] ?? rows[rows.length - 1]);
+  // Mantém a seleção sempre sincronizada com a lista quando filtros reduzem os períodos.
+  const activeDisplayIndex = activeIndex === null ? rows.length - 1 : Math.min(activeIndex, rows.length - 1);
+  const activeRow = rows[activeDisplayIndex];
   const currencyCompact = (value: number) => new Intl.NumberFormat("pt-BR", { notation: "compact", maximumFractionDigits: 1 }).format(value);
   const money = (value: number) => currency.format(value);
   const count = (value: number) => numbers.format(value);
@@ -162,7 +164,20 @@ function UnifiedChart({ rows }: { rows: Group[] }) {
   const barGap = 6;
   const isMonthlyPeriod = (label: string) => /^.+\s+\d{4}$/.test(label);
   const monthlyProfitRows = rows.map((row, index) => ({ row, index })).filter(({ row }) => isMonthlyPeriod(row.label));
-  const profitPath = monthlyProfitRows.map(({ row, index }, pointIndex) => `${pointIndex === 0 ? "M" : "L"} ${left + slot * (index + 0.5)} ${y(row.profit)}`).join(" ");
+  // Interrompe a linha quando há meses sem registros, evitando sugerir continuidade inexistente.
+  const monthlyProfitSegments: { row: Group; index: number }[][] = [];
+  monthlyProfitRows.forEach((point) => {
+    const match = /^(.+)\s+(\d{4})$/.exec(point.row.label);
+    const monthIndex = match ? MONTHS.indexOf(canonicalMonth(match[1])) : -1;
+    const periodOrdinal = match && monthIndex >= 0 ? Number(match[2]) * 12 + monthIndex : null;
+    const currentSegment = monthlyProfitSegments[monthlyProfitSegments.length - 1];
+    const previous = currentSegment?.[currentSegment.length - 1];
+    const previousMatch = previous ? /^(.+)\s+(\d{4})$/.exec(previous.row.label) : null;
+    const previousMonth = previousMatch ? MONTHS.indexOf(canonicalMonth(previousMatch[1])) : -1;
+    const previousOrdinal = previousMatch && previousMonth >= 0 ? Number(previousMatch[2]) * 12 + previousMonth : null;
+    if (currentSegment && periodOrdinal !== null && previousOrdinal !== null && periodOrdinal === previousOrdinal + 1) currentSegment.push(point);
+    else monthlyProfitSegments.push([point]);
+  });
   const axisFormat = (value: number) => mode === "financial" ? "R$ " + currencyCompact(value) : count(Math.round(value));
   const metrics = mode === "financial"
     ? [
@@ -196,8 +211,8 @@ function UnifiedChart({ rows }: { rows: Group[] }) {
     </div>
 
     <div className="report-viz-scroll" role="region" aria-label="Gráfico por período. Role horizontalmente para consultar todo o histórico." tabIndex={0}>
-      <svg className="report-viz-svg" role="img"
-        aria-label={mode === "financial" ? "Comparação de faturamento, custos e valor líquido por período" : "Comparação de registros incluídos, excluídos e em revisão por período"}
+      <svg className="report-viz-svg" role="group" aria-roledescription="gráfico interativo"
+        aria-label={mode === "financial" ? "Gráfico interativo: comparação de faturamento, custos e valor líquido por período. Use as setas para navegar entre os períodos." : "Gráfico interativo: comparação de registros incluídos, excluídos e em revisão por período. Use as setas para navegar entre os períodos."}
         viewBox={"0 0 " + chartWidth + " " + chartHeight}
         style={{ width: chartWidth + "px", minWidth: chartWidth + "px" }}>
         <defs>
@@ -215,15 +230,14 @@ function UnifiedChart({ rows }: { rows: Group[] }) {
             <text x={left - 12} y={tickY + 4} textAnchor="end" className="report-viz-axis">{axisFormat(value)}</text>
           </g>;
         })}
-        {mode === "financial" && <path className="report-viz-profit-line" d={profitPath} fill="none" stroke="url(#reportVizProfit)" strokeWidth="3.5" strokeLinecap="round" strokeLinejoin="round" pointerEvents="none" />}
         {rows.map((row, index) => {
           const center = left + slot * (index + 0.5);
           const isMonthly = isMonthlyPeriod(row.label);
           const rowSeries = activeSeries.filter((series) => mode !== "financial" || isMonthly || series.key !== "profit");
           const rowBarCount = rowSeries.length;
           const rowBarWidth = Math.max(5, (groupWidth - barGap * (rowBarCount - 1)) / rowBarCount);
-          return <g key={row.label}>
-            {activeIndex === index && <rect className="report-viz-selection" x={left + index * slot + 3} y={top + 2} width={Math.max(0, slot - 6)} height={plotHeight - 4} rx="9" />}
+          return <g key={row.label} className={activeDisplayIndex === index ? "report-viz-group is-active" : "report-viz-group"}>
+            {activeDisplayIndex === index && <rect className="report-viz-selection" x={left + index * slot + 3} y={top + 2} width={Math.max(0, slot - 6)} height={plotHeight - 4} rx="9" />}
             {rowSeries.map((series, seriesIndex) => {
               const value = series.value(row);
               const valueY = y(value);
@@ -239,34 +253,57 @@ function UnifiedChart({ rows }: { rows: Group[] }) {
                 </rect>
               </g>;
             })}
-            {mode === "financial" && isMonthly && <circle className="report-viz-profit-point" cx={center} cy={y(row.profit)} r={activeIndex === index ? 6 : 4.5}>
-              <title>{row.label} · Valor líquido: {money(row.profit)}</title>
-            </circle>}
             <text x={center} y={chartHeight - 34} textAnchor="middle" className="report-viz-category">
               <title>{row.label}</title>{row.label.length > 16 ? row.label.slice(0, 14) + "…" : row.label}
             </text>
             <text x={center} y={chartHeight - 16} textAnchor="middle" className="report-viz-category-count">{count(row.count)} registros</text>
             <rect x={left + index * slot} y={top} width={slot} height={plotHeight} fill="transparent" className="report-viz-hit"
-              tabIndex={0} role="button" aria-pressed={activeIndex === index}
-              aria-label={"Ver valores de " + row.label}
+              tabIndex={activeDisplayIndex === index ? 0 : -1}
+              role="button" aria-pressed={activeDisplayIndex === index} aria-controls="report-viz-detail"
+              aria-keyshortcuts="ArrowLeft ArrowRight Home End Enter Space"
+              aria-label={mode === "financial"
+                ? `${row.label}. Faturamento: ${money(row.revenue)}. Custos: ${money(row.cost)}. Valor líquido: ${money(row.profit)}. ${count(row.count)} registros. Pressione Enter para selecionar.`
+                : `${row.label}. ${count(row.eligibleCount)} incluídos no financeiro, ${count(row.excludedCount ?? 0)} excluídos e ${count(row.reviewCount ?? 0)} em revisão. ${count(row.count)} registros no total. Pressione Enter para selecionar.`}
               onMouseEnter={() => setActiveIndex(index)} onFocus={() => setActiveIndex(index)}
               onClick={() => setActiveIndex(index)}
-              onKeyDown={(event) => { if (event.key === "Enter" || event.key === " ") { event.preventDefault(); setActiveIndex(index); } }}
+              onKeyDown={(event) => {
+                const targets = Array.from(event.currentTarget.ownerSVGElement?.querySelectorAll<SVGRectElement>(".report-viz-hit") ?? []);
+                let nextIndex: number | null = null;
+                if (event.key === "ArrowRight") nextIndex = Math.min(rows.length - 1, index + 1);
+                if (event.key === "ArrowLeft") nextIndex = Math.max(0, index - 1);
+                if (event.key === "Home") nextIndex = 0;
+                if (event.key === "End") nextIndex = rows.length - 1;
+                if (nextIndex !== null) { event.preventDefault(); setActiveIndex(nextIndex); targets[nextIndex]?.focus(); }
+                else if (event.key === "Enter" || event.key === " ") { event.preventDefault(); setActiveIndex(index); }
+              }}
               onBlur={() => setActiveIndex(null)} />
           </g>;
         })}
+        {mode === "financial" && <g className="report-viz-profit-overlay" pointerEvents="none">
+          {monthlyProfitSegments.map((segment, segmentIndex) => <path key={`profit-segment-${segmentIndex}`} className="report-viz-profit-line"
+            d={segment.map(({ row, index }, pointIndex) => `${pointIndex === 0 ? "M" : "L"} ${left + slot * (index + 0.5)} ${y(row.profit)}`).join(" ")}
+            fill="none" stroke="url(#reportVizProfit)" strokeWidth="3.5" strokeLinecap="round" strokeLinejoin="round" />)}
+          {monthlyProfitRows.map(({ row, index }) => <circle key={`profit-${row.label}`} className="report-viz-profit-point" cx={left + slot * (index + 0.5)} cy={y(row.profit)} r={activeDisplayIndex === index ? 6 : 4.5}>
+            <title>{row.label} · Valor líquido: {money(row.profit)}</title>
+          </circle>)}
+        </g>}
       </svg>
     </div>
 
-    <section className="report-viz-detail" aria-live="polite">
-      <div className="report-viz-detail-heading"><span>RESUMO DO PERÍODO</span><strong>{activeRow.label}</strong></div>
+    <section id="report-viz-detail" className="report-viz-detail" aria-live="polite" aria-atomic="true">
+      <div className="report-viz-detail-heading"><span>{mode === "financial" ? "RESUMO FINANCEIRO DO PERÍODO" : "RESUMO DO VOLUME NO PERÍODO"}</span><strong>{activeRow.label}</strong></div>
       <div className="report-viz-detail-values">
-        <div><span>Faturamento</span><strong>{money(activeRow.revenue)}</strong></div>
-        <div><span>Custos</span><strong>{money(activeRow.cost)}</strong></div>
-        <div><span>Valor líquido</span><strong>{money(activeRow.profit)}</strong></div>
-        <div><span>Incluídos no financeiro</span><strong>{count(activeRow.eligibleCount)}</strong></div>
-        <div><span>Excluídos</span><strong>{count(activeRow.excludedCount ?? 0)}</strong></div>
-        <div><span>Em revisão</span><strong>{count(activeRow.reviewCount ?? 0)}</strong></div>
+        {mode === "financial" ? <>
+          <div><span>Faturamento</span><strong>{money(activeRow.revenue)}</strong></div>
+          <div><span>Custos</span><strong>{money(activeRow.cost)}</strong></div>
+          <div><span>Valor líquido</span><strong>{money(activeRow.profit)}</strong></div>
+          <div><span>Registros contabilizados</span><strong>{count(activeRow.eligibleCount)}</strong></div>
+        </> : <>
+          <div><span>Incluídos no financeiro</span><strong>{count(activeRow.eligibleCount)}</strong></div>
+          <div><span>Excluídos</span><strong>{count(activeRow.excludedCount ?? 0)}</strong></div>
+          <div><span>Em revisão</span><strong>{count(activeRow.reviewCount ?? 0)}</strong></div>
+          <div><span>Total de registros</span><strong>{count(activeRow.count)}</strong></div>
+        </>}
       </div>
     </section>
   </div>;
