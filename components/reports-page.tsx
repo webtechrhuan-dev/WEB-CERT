@@ -680,7 +680,7 @@ export default function ReportsPage() {
             {modelRanking.length ? <div className="report-model-bars">{modelRanking.map((item,index)=>{
               const maximum = Math.max(1,...modelRanking.map((entry)=>entry.revenue));
               return <div className="report-model-bar-item" key={item.label}>
-                <div className="report-model-bar-meta"><span><b>{String(index+1).padStart(2,"0")}</b>{item.label}</span><strong>{currency.format(item.revenue)}</strong></div>
+                <div className="report-model-bar-meta"><span><b>{String(index+1).padStart(2,"0")}</b>{item.label}<small className="report-ranking-share">{filteredSummary.revenue > 0 ? (item.revenue / filteredSummary.revenue * 100).toLocaleString("pt-BR", { maximumFractionDigits: 1 }) : "0"}% do faturamento</small></span><strong>{currency.format(item.revenue)}</strong></div>
                 <div className="report-model-bar-track"><span style={{width:`${Math.max(2,item.revenue/maximum*100)}%`}} /></div>
               </div>;
             })}</div> : <p className="report-insight-empty">Sem faturamento por modelo neste filtro.</p>}
@@ -690,7 +690,7 @@ export default function ReportsPage() {
             {clientRanking.length ? <div className="report-model-bars">{clientRanking.map((item,index)=>{
               const maximum = Math.max(1,...clientRanking.map((entry)=>entry.revenue));
               return <div className="report-model-bar-item" key={item.label}>
-                <div className="report-model-bar-meta"><span><b>{String(index+1).padStart(2,"0")}</b>{item.label}<small className="report-client-sales-count">{numbers.format(item.sales)} vendas</small></span><strong>{currency.format(item.revenue)}</strong></div>
+                <div className="report-model-bar-meta"><span><b>{String(index+1).padStart(2,"0")}</b>{item.label}<small className="report-client-sales-count">{numbers.format(item.sales)} vendas · {filteredSummary.revenue > 0 ? (item.revenue / filteredSummary.revenue * 100).toLocaleString("pt-BR", { maximumFractionDigits: 1 }) : "0"}% do faturamento</small></span><strong>{currency.format(item.revenue)}</strong></div>
                 <div className="report-model-bar-track"><span style={{width:`${Math.max(2,item.revenue/maximum*100)}%`}} /></div>
               </div>;
             })}</div> : <p className="report-insight-empty">Sem vendas contabilizadas neste filtro.</p>}
