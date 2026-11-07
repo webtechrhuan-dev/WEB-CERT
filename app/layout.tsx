@@ -1,9 +1,11 @@
 import type { Metadata } from "next";
 import { AppSessionProvider } from "@/components/session-provider";
 import { KeyboardShortcuts } from "@/components/keyboard-shortcuts";
+import { TechCompanion } from "@/components/tech-companion";
 import "./globals.css";
 import "./quality-layer.css";
 import "./visual-system.css";
+import "./tech-companion.css";
 
 export const metadata: Metadata = {
   title: "WEB-CERT | Web Tech",
@@ -29,7 +31,7 @@ export default function RootLayout({
 }` }} />
       </head>
       <body>
-        <AppSessionProvider><KeyboardShortcuts />{children}</AppSessionProvider>
+        <AppSessionProvider><KeyboardShortcuts /><div className="wc-global-stage">{children}</div><TechCompanion /></AppSessionProvider>
       </body>
     </html>
   );
